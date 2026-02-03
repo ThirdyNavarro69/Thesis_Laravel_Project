@@ -1,16 +1,26 @@
 @extends('layouts.owner.app')
-@section('title', 'Admin Panel')
+@section('title', 'Invited Freelancers')
 
-{{-- Content --}}
+{{-- CONTENT --}}
 @section('content')
-        <div class="content-page">
-            <div class="container-fluid">                  
-                <div class="row mt-3">
-                    <div class="col-12">
+    <div class="content-page">
+        <div class="container-fluid">                  
+            <div class="row mt-3">
+                <div class="col-12">
+                    {{-- ALERT MESSAGES --}}
+                    <div id="alertContainer"></div>
+                    
+                    @if(!$studio)
+                        <div class="alert alert-warning">
+                            <i class="ti ti-alert-circle me-2"></i>
+                            You need to create a studio first before viewing members.
+                            <a href="{{ route('owner.studio.create') }}" class="alert-link">Create Studio</a>
+                        </div>
+                    @else
                         {{-- TABLE --}}
                         <div data-table data-table-rows-per-page="5" class="card">
                             <div class="card-header">
-                                <h4 class="card-title">List of Studio Members</h4>
+                                <h4 class="card-title">Invited Members</h4>
                             </div>
 
                             <div class="card-header border-light justify-content-between">
@@ -19,7 +29,6 @@
                                         <input data-table-search type="search" class="form-control" placeholder="Search...">
                                         <i data-lucide="search" class="app-search-icon text-muted"></i>
                                     </div>
-                                    <button class="btn btn-danger d-none">Delete</button>
                                 </div>
                             </div>
 
@@ -27,151 +36,123 @@
                                 <table class="table table-custom table-centered table-select table-hover table-bordered w-100 mb-0">
                                     <thead class="bg-light align-middle bg-opacity-25 thead-sm">
                                         <tr class="text-uppercase fs-xxs">
-                                            <th class="ps-3" style="width: 1%;">
-                                                <input data-table-select-all class="form-check-input form-check-input-light fs-14 mt-0" type="checkbox" value="option">
-                                            </th>
-                                            <th data-table-sort>Fullname</th>
-                                            <th data-table-sort>Email Address</th>
-                                            <th data-table-sort>Contact Number</th>
-                                            <th data-table-sort>Role</th>
+                                            <th data-table-sort>Freelancer</th>
+                                            <th data-table-sort>Invitation Date</th>
+                                            <th data-table-sort>Invitation Message</th>
                                             <th data-table-sort>Status</th>
-                                            <th data-table-sort>Date Joined</th>
                                             <th class="text-center" style="width: 1%;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td class="ps-3">
-                                                <input class="form-check-input form-check-input-light fs-14 product-item-check mt-0" type="checkbox" value="option">
-                                            </td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div class="avatar-lg me-1">
-                                                        <img src="{{ asset('assets/images/products/1.png') }}" alt="Product" class="img-fluid rounded">
+                                        @forelse($members as $member)
+                                            @php
+                                                $statusColors = [
+                                                    'pending' => 'warning',
+                                                    'approved' => 'success',
+                                                    'rejected' => 'danger',
+                                                    'cancelled' => 'secondary'
+                                                ];
+                                                
+                                                $statusTexts = [
+                                                    'pending' => 'Waiting for freelancer approval',
+                                                    'approved' => 'Freelancer accepted the invitation',
+                                                    'rejected' => 'Freelancer declined the invitation',
+                                                    'cancelled' => 'Invitation cancelled by you'
+                                                ];
+                                            @endphp
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        @if($member->freelancer && $member->freelancer->profile && $member->freelancer->profile->brand_logo)
+                                                            <img src="/storage/{{ $member->freelancer->profile->brand_logo }}" 
+                                                                 class="rounded-circle me-3" 
+                                                                 style="width: 40px; height: 40px; object-fit: cover;" 
+                                                                 alt="{{ $member->freelancer->full_name }}">
+                                                        @else
+                                                            <div class="rounded-circle bg-light-primary d-flex align-items-center justify-content-center me-3" 
+                                                                 style="width: 40px; height: 40px;">
+                                                                <i data-lucide="user" class="fs-16 text-primary"></i>
+                                                            </div>
+                                                        @endif
+                                                        <div>
+                                                            <h5 class="mb-1">
+                                                                <a href="javascript:void(0)" class="link-reset view-freelancer-btn" data-freelancer-id="{{ $member->freelancer_id }}">
+                                                                    {{ $member->freelancer->full_name ?? 'Unknown' }}
+                                                                </a>
+                                                            </h5>
+                                                            <p class="mb-0 fs-xxs">
+                                                                <span class="fw-medium">Email:</span>
+                                                                <span class="text-muted">{{ $member->freelancer->email ?? 'N/A' }}</span>
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">Ronan Bender</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="fw-medium">UUID:</span>
-                                                            <span class="text-muted">d3e26d71-ffb1-4f29-b3b7-b480f1e55c82</span>
-                                                        </p>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex">
+                                                        <div>
+                                                            <h5 class="mb-1">
+                                                                {{ $member->invited_at->format('M d, Y') }}
+                                                            </h5>
+                                                            <p class="mb-0 fs-xxs">
+                                                                <span class="text-muted">{{ $member->invited_at->format('h:i A') }}</span>
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>delacruz.justine@gmail.com</td>
-                                            <td>+(63) 423 336 9884</td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">Photographer</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="text-muted">Freelancer</span>
-                                                        </p>
+                                                </td>
+                                                <td>
+                                                    <div class="text-truncate" style="max-width: 200px;" 
+                                                         data-bs-toggle="tooltip" 
+                                                         title="{{ $member->invitation_message }}">
+                                                        {{ Str::limit($member->invitation_message, 50) }}
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td><span class="badge badge-soft-success fs-8 px-1 w-100">ACTIVE</span></td>
-                                            <td>April 26, 2026</td>
-                                            <td>
-                                                <div class="d-flex justify-content-center gap-1">
-                                                    <a href="#" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal"><i class="ti ti-eye fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-edit fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-trash fs-lg"></i></a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3">
-                                                <input class="form-check-input form-check-input-light fs-14 product-item-check mt-0" type="checkbox" value="option">
-                                            </td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div class="avatar-lg me-1">
-                                                        <img src="{{ asset('assets/images/products/2.png') }}" alt="Product" class="img-fluid rounded">
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div>
+                                                            <h5 class="mb-1">
+                                                                <span class="badge badge-soft-{{ $statusColors[$member->status] }} p-1">
+                                                                    {{ strtoupper($member->status) }}
+                                                                </span>
+                                                            </h5>
+                                                            <p class="mb-0 fs-xxs">
+                                                                <span class="text-muted">{{ $statusTexts[$member->status] }}</span>
+                                                                @if($member->responded_at)
+                                                                    <br>
+                                                                    <small>Responded: {{ $member->responded_at->format('M d, Y') }}</small>
+                                                                @endif
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">John Doe</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="fw-medium">UUID:</span>
-                                                            <span class="text-muted">4169c3dd-006a-47d8-a065-21ddce72cf2d</span>
-                                                        </p>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex justify-content-center gap-1">
+                                                        <button type="button" class="btn btn-sm view-freelancer-btn" data-freelancer-id="{{ $member->freelancer_id }}">
+                                                            <i class="ti ti-eye fs-lg"></i>
+                                                        </button>
+                                                        
+                                                        @if($member->status === 'pending')
+                                                            <button type="button" class="btn btn-sm cancel-invitation-btn" data-invitation-id="{{ $member->id }}"data-freelancer-name="{{ $member->freelancer->full_name ?? 'Unknown' }}">
+                                                                <i class="ti ti-cancel fs-lg"></i>
+                                                            </button>
+                                                        @endif
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>john.doe@example.com</td>
-                                            <td>+(63) 912 345 6789</td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">Photographer</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="text-muted">Freelancer</span>
-                                                        </p>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4">
+                                                    <div class="text-muted">
+                                                        <i class="ti ti-users-off fs-48 mb-3"></i>
+                                                        <h5>No Invitations Yet</h5>
+                                                        <p>You haven't invited any freelancers to collaborate with your studio.</p>
+                                                        <a href="{{ route('owner.members.invite') }}" class="btn btn-primary mt-2">
+                                                            <i class="ti ti-user-plus me-2"></i>Invite Freelancers
+                                                        </a>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td><span class="badge badge-soft-success fs-8 px-1 w-100">ACTIVE</span></td>
-                                            <td>April 26, 2026</td>
-                                            <td>
-                                                <div class="d-flex justify-content-center gap-1">
-                                                    <a href="#" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal"><i class="ti ti-eye fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-edit fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-trash fs-lg"></i></a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3">
-                                                <input class="form-check-input form-check-input-light fs-14 product-item-check mt-0" type="checkbox" value="option">
-                                            </td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div class="avatar-lg me-1">
-                                                        <img src="{{ asset('assets/images/products/3.png') }}" alt="Product" class="img-fluid rounded">
-                                                    </div>
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">Jane Doe</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="fw-medium">UUID:</span>
-                                                            <span class="text-muted">6c5a8a6d-9f2e-4f8c-a6c5-3f8b9a6c9d6f</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>jane.doe@example.com</td>
-                                            <td>+(63) 987 654 3210</td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    <div>
-                                                        <h5 class="mb-1">
-                                                            <a href="" class="link-reset">Photographer</a>
-                                                        </h5>
-                                                        <p class="mb-0 fs-xxs">
-                                                            <span class="text-muted">Freelancer</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td><span class="badge badge-soft-success fs-8 px-1 w-100">ACTIVE</span></td>
-                                            <td>April 26, 2026</td>
-                                            <td>
-                                                <div class="d-flex justify-content-center gap-1">
-                                                    <a href="#" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal"><i class="ti ti-eye fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-edit fs-lg"></i></a>
-                                                    <a href="#" class="btn btn-sm"><i class="ti ti-trash fs-lg"></i></a>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
                                 </table>
                             </div>
                             
@@ -182,184 +163,302 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
-        
-        <div class="modal fade" id="memberModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title fw-semibold" id="mymemberModalLabel">
-                            User Profile
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    
+    {{-- FREELANCER DETAILS MODAL --}}
+    <div class="modal fade" id="freelancerDetailsModal" tabindex="-1" aria-labelledby="freelancerDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="freelancerDetailsModalLabel">Freelancer Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="freelancerDetailsContent">
+                    <!-- Content loaded via AJAX -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading freelancer details...</p>
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="row g-4">
-                            {{-- Left Side: Profile Image --}}
-                            <div class="col-md-4 col-lg-3">
-                                <div class="text-center">
-                                    <div class="position-relative d-inline-block mb-3">
-                                        <img src="{{ asset('assets/images/users/user-1.jpg') }}" alt="avatar" 
-                                            class="rounded-circle border border-4 border-white shadow-sm" width="150" height="150">
-                                        <span class="position-absolute bottom-0 end-0 bg-success border border-3 border-white rounded-circle p-1">
-                                            <span class="visually-hidden">Online</span>
-                                        </span>
-                                    </div>
-                                    <h4 class="mb-1 fw-semibold">John Alexander</h4>
-                                    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                                        <span class="badge badge-soft-primary fw-semibold px-2 fs-6">Photographer | Freelancer</span>
-                                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                                    <hr class="my-3 border-dashed">
-                                    
-                                    {{-- Statistics Section --}}
-                                    <div class="mt-2">
-                                        <h6 class="mb-3 fw-semibold text-uppercase small text-primary">Activity Summary</h6>
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <div class="text-center p-2 bg-light-primary rounded-3">
-                                                    <h5 class="mb-0 fw-bold text-primary">5</h5>
-                                                    <p class="small text-muted mb-0">Successful Bookings</p>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="text-center p-2 bg-light-success rounded-3">
-                                                    <h5 class="mb-0 fw-bold text-success">12</h5>
-                                                    <p class="small text-muted mb-0">Bookings</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Right Side: User Details --}}
-                            <div class="col-md-8 col-lg-9">
-                                <div class="card border-0 shadow-none">
-                                    <div class="card-body p-0">
-                                        {{-- Personal Information Header --}}
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h6 class="card-title mb-0 fw-semibold text-uppercase small text-primary">
-                                                Personal Information
-                                            </h6>
-                                            <div class="text-muted small">
-                                                Member since: January 15, 2024
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="row g-3">
-                                            {{-- Full Name --}}
-                                            <div class="col-12 col-md-6">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="circle-user-round" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">Full Name</label>
-                                                        <p class="mb-0 fw-medium">John Alexander</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Email --}}
-                                            <div class="col-12 col-md-6">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="mail" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">Email Address</label>
-                                                        <p class="mb-0 fw-medium">john.alexander@example.com</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- UUID --}}
-                                            <div class="col-12 col-md-6">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="key-round" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">UUID</label>
-                                                        <p class="mb-0 fw-medium text-truncate">d3e26d71-ffb1-4f29-b3b7-b480f1e55c82</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Mobile Number --}}
-                                            <div class="col-12 col-md-6">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="phone" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">Mobile Number</label>
-                                                        <p class="mb-0 fw-medium">+(63) 912 345 6789</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Account Status --}}
-                                            <div class="col-12">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="shield-check" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">Account Status</label>
-                                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                            <span class="badge badge-soft-success px-2 fw-medium">Verified</span>
-                                                            <span class="text-muted small">Email verified on Jan 15, 2024</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Additional Information Section (Optional) --}}
-                                <div class="card border-0 shadow-none mt-4">
-                                    <div class="card-body p-0">
-                                        <h6 class="card-title mb-3 fw-semibold text-uppercase small text-primary">
-                                            Additional Information
-                                        </h6>
-                                        {{-- You can add more user details here --}}
-                                        <div class="row g-3">
-                                            <div class="col-12 col-md-6">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="flex-shrink-0">
-                                                        <div class="bg-light-primary rounded-circle p-2">
-                                                            <i data-lucide="map-pin" class="fs-20 text-primary"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1 ms-3">
-                                                        <label class="text-muted small mb-1">Location</label>
-                                                        <p class="mb-0 fw-medium">Manila, Philippines</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+    {{-- CANCEL INVITATION MODAL --}}
+    <div class="modal fade" id="cancelInvitationModal" tabindex="-1" aria-labelledby="cancelInvitationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold" id="cancelInvitationModalLabel">Cancel Invitation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="cancelInvitationForm">
+                    @csrf
+                    <input type="hidden" name="invitation_id" id="cancelInvitationId">
+                    
+                    <div class="modal-body">
+                        <p class="mb-4">You are about to cancel the invitation sent to <strong id="cancelFreelancerName">[Freelancer Name]</strong>.</p>
+                        
+                        <div class="mb-4">
+                            <label for="cancellation_reason" class="form-label">Cancellation Reason (Optional)</label>
+                            <textarea name="cancellation_reason" 
+                                      id="cancellation_reason" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Optional: Please provide a reason for cancelling this invitation..."></textarea>
+                            <div class="form-text mt-2">
+                                This will be recorded but not sent to the freelancer.
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Invitation</button>
+                        <button type="submit" class="btn btn-danger" id="cancelInvitationBtn">
+                            <i class="me-1" data-lucide="x"></i> Cancel Invitation
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
+@endsection
+
+{{-- SCRIPTS --}}
+@section('scripts')
+    <script>
+        $(document).ready(function() {
+            let csrfToken = $('meta[name="csrf-token"]').attr('content');
+            let currentInvitationId = null;
+            let currentFreelancerName = null;
+
+            // Function to show alert
+            function showAlert(type, message) {
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('#alertContainer').html(alertHtml);
+                
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                }, 5000);
+            }
+
+            // View freelancer details (same as invite page)
+            $(document).on('click', '.view-freelancer-btn', function() {
+                const freelancerId = $(this).data('freelancer-id');
+                
+                // Show loading state
+                $('#freelancerDetailsContent').html(`
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading freelancer details...</p>
+                    </div>
+                `);
+                
+                $('#freelancerDetailsModal').modal('show');
+                
+                // Load freelancer details via AJAX
+                $.ajax({
+                    url: '{{ route("owner.members.freelancer.details", ":id") }}'.replace(':id', freelancerId),
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            const freelancer = response.data;
+                            const profile = freelancer.profile;
+                            
+                            let categoriesHtml = '';
+                            if (profile.categories && profile.categories.length > 0) {
+                                categoriesHtml = profile.categories.map(cat => 
+                                    `<span class="badge badge-soft-primary me-1">${cat.category_name}</span>`
+                                ).join('');
+                            }
+                            
+                            let servicesHtml = '';
+                            if (profile.services && profile.services.length > 0) {
+                                servicesHtml = profile.services.map(service => {
+                                    const services = JSON.parse(service.services_name || '[]');
+                                    return services.map(s => 
+                                        `<li>${s}</li>`
+                                    ).join('');
+                                }).join('');
+                            }
+                            
+                            const detailsHtml = `
+                                <div class="container-fluid">
+                                    <div class="row align-items-center mb-4">
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-center flex-column flex-md-row">
+                                                <div class="flex-shrink-0 mb-3 mb-md-0">
+                                                    ${profile.brand_logo ? 
+                                                        `<img src="/storage/${profile.brand_logo}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" alt="${freelancer.full_name}">` :
+                                                        `<div class="rounded-circle d-flex align-items-center justify-content-center bg-light-primary" style="width: 100px; height: 100px;">
+                                                            <i data-lucide="user" class="fs-32 text-primary"></i>
+                                                        </div>`
+                                                    }
+                                                </div>
+
+                                                <div class="flex-grow-1 ms-md-4 text-center text-md-start">
+                                                    <h3 class="mb-1 fw-bold">${freelancer.full_name}</h3>
+                                                    <p class="text-primary fw-semibold mb-1">${profile.brand_name || 'No brand name'}</p>
+                                                    <p class="text-muted mb-0">
+                                                        <i class="ti ti-map-pin me-1"></i> 
+                                                        ${profile.location ? profile.location.municipality + ', ' + profile.location.province : 'Location not specified'}
+                                                        ${profile.years_experience ? ' · ' + profile.years_experience + ' years experience' : ''}
+                                                    </p>
+                                                    <div class="mt-2">
+                                                        ${categoriesHtml}
+                                                        ${freelancer.email_verified ? 
+                                                            '<span class="badge badge-soft-success fs-6 p-1 ms-1">Verified Email</span>' : 
+                                                            '<span class="badge badge-soft-warning fs-6 p-1 ms-1">Email Not Verified</span>'
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ... (rest of the details HTML same as invite page) ... -->
+                                </div>
+                            `;
+                            
+                            $('#freelancerDetailsContent').html(detailsHtml);
+                            
+                            // Initialize Lucide icons
+                            if (typeof lucide !== 'undefined') {
+                                lucide.createIcons();
+                            }
+                        } else {
+                            $('#freelancerDetailsContent').html(`
+                                <div class="text-center py-5">
+                                    <i class="ti ti-alert-circle fs-48 text-danger mb-3"></i>
+                                    <h5>Error Loading Details</h5>
+                                    <p class="text-muted">${response.message}</p>
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#freelancerDetailsContent').html(`
+                            <div class="text-center py-5">
+                                <i class="ti ti-alert-circle fs-48 text-danger mb-3"></i>
+                                <h5>Error Loading Details</h5>
+                                <p class="text-muted">Unable to load freelancer details. Please try again.</p>
+                            </div>
+                        `);
+                    }
+                });
+            });
+
+            // Open cancel invitation modal
+            $(document).on('click', '.cancel-invitation-btn', function() {
+                currentInvitationId = $(this).data('invitation-id');
+                currentFreelancerName = $(this).data('freelancer-name');
+                
+                $('#cancelInvitationId').val(currentInvitationId);
+                $('#cancelFreelancerName').text(currentFreelancerName);
+                
+                // Clear previous input
+                $('#cancellation_reason').val('');
+                
+                $('#cancelInvitationModal').modal('show');
+            });
+
+            // Handle cancel invitation form submission
+            $('#cancelInvitationForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const submitBtn = $('#cancelInvitationBtn');
+                const originalText = submitBtn.html();
+                
+                // Disable button and show loading
+                submitBtn.prop('disabled', true);
+                submitBtn.html(`
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Cancelling...
+                `);
+                
+                $.ajax({
+                    url: '{{ route("owner.members.cancel", ":id") }}'.replace(':id', currentInvitationId),
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Close modal
+                            $('#cancelInvitationModal').modal('hide');
+                            
+                            // Show success message with SweetAlert
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Invitation Cancelled',
+                                html: `<div class="text-center">
+                                    <i class="ti ti-check-circle fs-48 text-primary mb-3"></i>
+                                    <h5 class="fw-bold">Invitation Cancelled</h5>
+                                    <p class="text-muted">Invitation to <strong>${currentFreelancerName}</strong> has been cancelled.</p>
+                                </div>`,
+                                showConfirmButton: true,
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#007BFF',
+                                timer: 3000
+                            }).then((result) => {
+                                if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
+                                    // Reload page to update status
+                                    window.location.reload();
+                                }
+                            });
+                            
+                            // Reload page to update status
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 403) {
+                            showAlert('danger', 
+                                `<i class="ti ti-alert-circle me-2"></i> 
+                                You are not authorized to cancel this invitation.`
+                            );
+                        } else if (xhr.status === 400) {
+                            showAlert('danger', 
+                                `<i class="ti ti-alert-circle me-2"></i> 
+                                Only pending invitations can be cancelled.`
+                            );
+                        } else {
+                            showAlert('danger', 
+                                `<i class="ti ti-alert-circle me-2"></i> 
+                                Failed to cancel invitation. Please try again.`
+                            );
+                        }
+                    },
+                    complete: function() {
+                        // Re-enable button
+                        submitBtn.prop('disabled', false);
+                        submitBtn.html(originalText);
+                    }
+                });
+            });
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
 @endsection

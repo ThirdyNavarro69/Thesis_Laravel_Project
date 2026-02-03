@@ -1,5 +1,7 @@
 
 <?php $__env->startSection('title', 'Client Home'); ?>
+
+
 <?php $__env->startSection('content'); ?>
         <div class="content-page">
             <div class="container-fluid">
@@ -34,7 +36,7 @@
                                     <div class="p-3 border-bottom border-dashed">
                                         <div class="d-flex mb-2 justify-content-between align-items-center">
                                             <h5 class="mb-0">Photographer Type:</h5>
-                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold">View All</a>
+                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold text-primary">View All</a>
                                         </div>
 
                                         <div class="d-flex align-items-center gap-2 text-muted py-1">
@@ -56,7 +58,7 @@
                                     <div class="p-3 border-bottom border-dashed">
                                         <div class="d-flex mb-2 justify-content-between align-items-center">
                                             <h5 class="mb-0">Category:</h5>
-                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold">View All</a>
+                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold text-primary">View All</a>
                                         </div>
 
                                         <div class="d-flex align-items-center gap-2 text-muted py-1">
@@ -120,7 +122,7 @@
                                     <div class="p-3 border-bottom border-dashed">
                                         <div class="d-flex mb-2 justify-content-between align-items-center">
                                             <h5 class="mb-0">Locations:</h5>
-                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold">View All</a>
+                                            <a href="javascript: void(0);" class="btn btn-link btn-sm px-0 fw-semibold text-primary">View All</a>
                                         </div>
 
                                         <div class="d-flex align-items-center gap-2 text-muted py-1">
@@ -208,7 +210,7 @@
                     <div class="col-xl-9">
                         <div class="row row-cols-xxl-3 row-cols-lg-3 row-cols-sm-2 row-cols-1 g-2">
                             <div class="col">
-                                <div class="card h-100 mb-2 border-0 shadow-sm">
+                                <div class="card h-100 mb-2 border-1 shadow-sm">
                                     <div class="card-body pb-2">
                                         <div class="d-flex align-items-start">
                                             <div class="flex-shrink-0">
@@ -250,7 +252,7 @@
                             </div>
 
                             <div class="col">
-                                <div class="card h-100 mb-2 border-0 shadow-sm">
+                                <div class="card h-100 mb-2 border-1 shadow-sm">
                                     <div class="card-body pb-2">
                                         <div class="d-flex align-items-start">
                                             <div class="flex-shrink-0">
@@ -292,7 +294,7 @@
                             </div>
 
                             <div class="col">
-                                <div class="card h-100 mb-2 border-0 shadow-sm">
+                                <div class="card h-100 mb-2 border-1 shadow-sm">
                                     <div class="card-body pb-2">
                                         <div class="d-flex align-items-start">
                                             <div class="flex-shrink-0">
@@ -334,7 +336,7 @@
                             </div>
 
                             <div class="col">
-                                <div class="card h-100 mb-2 border-0 shadow-sm">
+                                <div class="card h-100 mb-2 border-1 shadow-sm">
                                     <div class="card-body pb-2">
                                         <div class="d-flex align-items-start">
                                             <div class="flex-shrink-0">

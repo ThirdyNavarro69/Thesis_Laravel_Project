@@ -143,7 +143,7 @@
                         </li>
                         <li class="side-nav-item">
                             <a href="<?php echo e(route('owner.members.invite')); ?>" class="side-nav-link">
-                                <span class="menu-text" data-lang="invite-members">Invited Members</span>
+                                <span class="menu-text" data-lang="invite-members">Invite New Members</span>
                             </a>
                         </li>
                         <li class="side-nav-item">

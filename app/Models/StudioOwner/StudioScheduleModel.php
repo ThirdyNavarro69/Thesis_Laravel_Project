@@ -69,6 +69,16 @@ class StudioScheduleModel extends Model
     public function getFormattedOperatingDaysAttribute()
     {
         $days = $this->operating_days ?? [];
+        
+        // Ensure $days is always an array
+        if (is_string($days)) {
+            // Try to decode if it's a JSON string
+            $decoded = json_decode($days, true);
+            $days = is_array($decoded) ? $decoded : [];
+        } elseif (!is_array($days)) {
+            $days = [];
+        }
+        
         $dayMap = [
             'monday' => 'Mon',
             'tuesday' => 'Tue',
@@ -109,6 +119,16 @@ class StudioScheduleModel extends Model
     public function getFormattedCoverageAreaAttribute()
     {
         $areas = $this->coverage_area ?? [];
+        
+        // Ensure $areas is always an array
+        if (is_string($areas)) {
+            // Try to decode if it's a JSON string
+            $decoded = json_decode($areas, true);
+            $areas = is_array($decoded) ? $decoded : [];
+        } elseif (!is_array($areas)) {
+            $areas = [];
+        }
+        
         return implode(', ', $areas);
     }
 }

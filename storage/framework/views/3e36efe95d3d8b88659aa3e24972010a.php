@@ -6,7 +6,7 @@
     <div class="content-page">
         <div class="container-fluid">
             <div class="row mt-3">
-                <div class="col-8">
+                <div class="col">
                     <div class="card">
                         <div class="card-header card-title">
                             <h4 class="card-title">Booking Details</h4>

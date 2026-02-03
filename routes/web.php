@@ -92,6 +92,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/view/members',                         [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'index'])->name('owner.members.index');
         Route::get('/invite/members',                       [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'invite'])->name('owner.members.invite');
         Route::get('/apply/members',                        [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'apply'])->name('owner.members.apply');
+        Route::post('/members/invite',                      [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'store'])->name('owner.members.invite.store');
+        Route::post('/members/{id}/cancel',                 [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'cancel'])->name('owner.members.cancel');
+        Route::get('/members/freelancer/{id}/details',      [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'getFreelancerDetails'])->name('owner.members.freelancer.details');
 
         // Manage Category Services                     
         Route::get('/view/services',                        [\App\Http\Controllers\StudioOwner\ServicesController::class, 'index'])->name('owner.services.index');

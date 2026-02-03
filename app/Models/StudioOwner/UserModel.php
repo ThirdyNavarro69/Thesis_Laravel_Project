@@ -91,4 +91,20 @@ class UserModel extends Authenticatable
     {
         return $this->role === 'owner';
     }
+
+    /**
+     * Get the freelancer profile if user is a freelancer.
+     */
+    public function freelancerProfile()
+    {
+        return $this->hasOne(\App\Models\Freelancer\ProfileModel::class, 'user_id');
+    }
+
+    /**
+     * Get the studio profile if user is a studio owner.
+     */
+    public function studio()
+    {
+        return $this->hasOne(\App\Models\StudioOwner\StudiosModel::class, 'user_id');
+    }
 }

@@ -83,7 +83,7 @@
 
                                     {{-- PACKAGES --}}
                                     <div class="mb-4">
-                                        <h5 class="card-title text-primary mb-3">Services Offered</h5>
+                                        <h5 class="card-title text-primary mb-3">List of Packages</h5>
 
                                         <div class="row">
                                             <div class="col">
@@ -183,46 +183,67 @@
                                                         <td>Monday</td>
                                                         <td>9:00 AM</td>
                                                         <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Tuesday</td>
                                                         <td>9:00 AM</td>
                                                         <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Wednesday</td>
                                                         <td>9:00 AM</td>
                                                         <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Thursday</td>
                                                         <td>9:00 AM</td>
                                                         <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Friday</td>
                                                         <td>9:00 AM</td>
                                                         <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Saturday</td>
-                                                        <td>10:00 AM</td>
-                                                        <td>4:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">OPEN</span></td>
+                                                        <td>9:00 AM</td>
+                                                        <td>6:00 PM</td>
+                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td>Sunday</td>
                                                         <td>-</td>
                                                         <td>-</td>
-                                                        <td><span class="badge badge-soft-danger w-100">CLOSED</span></td>
+                                                        <td><span class="badge badge-soft-danger w-100">UNAVAILABLE</span></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
+                                        </div>
+                                    </div>
+
+                                    {{-- AVAILABLE DATE --}}
+                                    <div class="row g-2 mb-3">
+                                        <h5 class="card-title mb-2 text-primary">Available Date</h5>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" data-provider="flatpickr" data-date-format="d M, Y" data-default-date data-inline-date="true">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted mb-2">Calendar Indicator</label>
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="ti ti-circle-filled text-success me-2 lh-1"></i>
+                                                    <span class="text-muted">Available Date for Booking</span>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="ti ti-circle-filled text-danger me-2 lh-1"></i>
+                                                    <span class="text-muted">Fully Booked / Unavailable</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
