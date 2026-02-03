@@ -1,0 +1,211 @@
+@extends('layouts.client.app')
+@section('title', 'Studio Details')
+
+{{-- CONTENT --}}
+@section('content')
+    <div class="content-page">
+        <div class="container-fluid">                  
+            <div class="row mt-3">
+                {{-- LEFT: BOOKING FORM --}}
+                <div class="col-md-8">
+                    <h4 class="text-primary mb-3">Booking Details</h4>
+                    
+                    <form class="needs-validation" novalidate>
+                        {{-- CLIENT INFORMATION --}}
+                        <div class="mb-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" placeholder="Enter your full name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="tel" class="form-control" placeholder="0917 123 4567">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" placeholder="your.email@example.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- SERVICE SELECTION --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Service Category</label>
+                            <div class="form-select-wrapper">
+                                <select class="form-select" id="serviceCategory">
+                                    <option value="">Select Category</option>
+                                    <option value="wedding">Wedding Photography</option>
+                                    <option value="portrait">Portrait Photography</option>
+                                    <option value="event">Event Photography</option>
+                                    <option value="family">Family Photography</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- EVENT DATE & TIME --}}
+                        <div class="mb-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Event Date</label>
+                                    <input type="date" class="form-control" id="eventDate" min="{{ date('Y-m-d') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="startTime" value="08:00">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="endTime" value="18:00">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- EVENT LOCATION --}}
+                        <div class="mb-3">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Venue Name</label>
+                                    <input type="text" class="form-control" id="venueName" placeholder="Enter venue name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Street</label>
+                                    <input type="text" class="form-control" id="street" placeholder="e.g., Governor's Drive">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Barangay</label>
+                                    <input type="text" class="form-control" id="barangay" placeholder="e.g., Paliparan">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">City/Municipality</label>
+                                    <input type="text" class="form-control" id="city" placeholder="e.g., Dasmariñas">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Province</label>
+                                    <input type="text" class="form-control" id="province" value="Cavite" placeholder="Cavite" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- PACKAGES --}}
+                        <div class="mb-3">
+                            <label class="form-label">Packages</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="package" value="basic" id="basicPackage">
+                                <label class="form-check-label" for="basicPackage">
+                                    Basic Package - <span class="text-success">₱15,000</span>
+                                </label>
+                                <small class="text-muted d-block">Default package with standard services</small>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="package" value="essentials" id="essentialsPackage">
+                                <label class="form-check-label" for="essentialsPackage">
+                                    Essentials Package - <span class="text-success">₱20,000</span>
+                                </label>
+                                <small class="text-muted d-block">Standard package with additional services</small>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="package" value="premium" id="premiumPackage">
+                                <label class="form-check-label" for="premiumPackage">
+                                    Premium Package - <span class="text-success">₱30,000</span>
+                                </label>
+                                <small class="text-muted d-block">Premium package with all services</small>
+                            </div>
+                        </div>
+
+                        {{-- SPECIAL REQUESTS --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Special Requests / Notes</label>
+                            <textarea class="form-control" rows="3" id="specialRequests" placeholder="Please let us know if you have any special requests, preferred shots, or specific instructions..."></textarea>
+                        </div>
+
+                        {{-- TERMS & CONDITIONS --}}
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">
+                                    I agree to the <a href="#" class="text-primary">booking terms and conditions</a>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="cancellationCheck" required>
+                                <label class="form-check-label" for="cancellationCheck">
+                                    I understand the <a href="#" class="text-primary">cancellation policy</a>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {{-- RIGHT: PRICE SUMMARY --}}
+                <div class="col-md-4">
+                    <h4 class="text-primary mb-3">Price Summary</h4>
+                    
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            {{-- BOOKING SUMMARY --}}
+                            <div class="mb-4">
+                                <h4 class="fw-semibold mb-3">Booking Summary</h4>
+                                
+                                <div class="mb-3">
+                                    <p class="text-muted small mb-1">Selected Package:</p>
+                                    <p class="fw-medium mb-2" id="summaryPackage">Wedding Photography</p>
+                                    
+                                    <p class="text-muted small mb-1">Event Date:</p>
+                                    <p class="fw-medium mb-2" id="summaryDate">02/02/2026</p>
+                                    
+                                    <p class="text-muted small mb-1">Event Time:</p>
+                                    <p class="fw-medium mb-2" id="summaryTime">08:00am - 05:00pm</p>
+                                    
+                                    <p class="text-muted small mb-1">Location:</p>
+                                    <p class="fw-medium mb-2" id="summaryLocation">The Green Pavilion</p>
+                                </div>
+                            </div>
+
+                            {{-- PRICE BREAKDOWN --}}
+                            <div class="mb-4">
+                                <p class="text-muted small mb-1">Price Breakdown</p>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Package Price:</span>
+                                    <span class="fw-medium" id="packagePrice">₱0</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Down Payment (30%):</span>
+                                    <span class="fw-medium" id="downPayment">₱0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Remaining Balance:</span>
+                                    <span class="fw-medium" id="remainingBalance">₱0</span>
+                                </div>
+                                                                
+                                <hr>
+                                
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="fw-bold">Total Price:</span>
+                                    <span class="fw-bold h5 text-success" id="totalPrice">₱0</span>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning small p-2">
+                                <i class="ti ti-alert-circle me-1"></i>
+                                <span id="balanceDueText">Remaining balance due on or before event date</span>
+                            </div>
+
+                            {{-- NEXT STEP --}}
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary btn-lg" onclick="validateBooking()">
+                                    <i class="ti ti-credit-card me-2"></i>Proceed to Payment
+                                </button>
+                            </div>
+                            
+                            <p class="text-muted small text-center mt-3">
+                                <i class="ti ti-info-circle me-1"></i>You'll review all details before payment
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection

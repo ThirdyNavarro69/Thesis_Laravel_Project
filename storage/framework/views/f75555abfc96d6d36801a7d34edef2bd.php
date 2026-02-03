@@ -1,0 +1,134 @@
+<div class="sidenav-menu">
+    
+    <a href="index.html" class="logo">
+        <span class="logo logo-light">
+            <span class="logo-lg"><img src="<?php echo e(asset('assets/images/logo.png')); ?>" alt="logo"></span>
+            <span class="logo-sm"><img src="<?php echo e(asset('assets/images/logo-sm.png')); ?>" alt="small logo"></span>
+        </span>
+
+        <span class="logo logo-dark">
+            <span class="logo-lg"><img src="<?php echo e(asset('assets/images/logo-black.png')); ?>" alt="dark logo"></span>
+            <span class="logo-sm"><img src="<?php echo e(asset('assets/images/logo-sm.png')); ?>" alt="small logo"></span>
+        </span>
+    </a>
+
+    
+    <button class="button-on-hover">
+        <i class="ti ti-menu-4 fs-22 align-middle"></i>
+    </button>
+
+    
+    <button class="button-close-offcanvas">
+        <i class="ti ti-x align-middle"></i>
+    </button>
+
+    
+    <div class="scrollbar" data-simplebar>
+        <ul class="side-nav">
+            <li class="side-nav-title mt-2" data-lang="apps-title">Freelancer Panel</li>
+
+            
+            <?php
+                $isDashboardActive = Route::is('owner.dashboard');
+            ?>
+            
+            <li class="side-nav-item <?php echo e($isDashboardActive ? 'active' : ''); ?>">
+                <a href="<?php echo e(route('owner.dashboard')); ?>" class="side-nav-link <?php echo e($isDashboardActive ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
+                    <span class="menu-text" data-lang="dashboard">Dashboard</span>
+                </a>
+            </li>
+
+            
+            <?php
+                $manageProfileRoutes = Route::is('freelancer.profile.index');
+                $setupProfileRoutes  = Route::is('freelancer.profile.setup');
+            ?>
+
+            <li class="side-nav-item <?php echo e($manageProfileRoutes || $setupProfileRoutes ? 'active' : ''); ?>">
+                <a data-bs-toggle="collapse" href="#sidebarManageProfile" aria-expanded="<?php echo e($manageProfileRoutes || $setupProfileRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageProfile" class="side-nav-link <?php echo e($manageProfileRoutes || $setupProfileRoutes ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="file-user"></i></span>
+                    <span class="menu-text" data-lang="manage-profile">Manage Profile</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse <?php echo e($manageProfileRoutes || $setupProfileRoutes ? 'show' : ''); ?>" id="sidebarManageProfile">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.profile.index')); ?>" class="side-nav-link <?php echo e($manageProfileRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="view-profile">View Profile</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.profile.setup')); ?>" class="side-nav-link <?php echo e($setupProfileRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="setup-profile">Setup Profile</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            
+            <?php
+                $manageServicesRoutes = Route::is('freelancer.services.index');
+                $createServicesRoutes = Route::is('freelancer.services.create');
+            ?>
+            
+            <li class="side-nav-item <?php echo e($manageServicesRoutes || $createServicesRoutes ? 'active' : ''); ?>">
+                <a data-bs-toggle="collapse" href="#sidebarManageServices" aria-expanded="<?php echo e($manageServicesRoutes || $createServicesRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageServices" class="side-nav-link <?php echo e($manageServicesRoutes || $createServicesRoutes ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="list-tree"></i></span>
+                    <span class="menu-text" data-lang="manage-category-services">Manage Services</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse <?php echo e($manageServicesRoutes || $createServicesRoutes ? 'show' : ''); ?>" id="sidebarManageServices">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.services.index')); ?>" class="side-nav-link <?php echo e($manageServicesRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="services">View Services</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.services.create')); ?>" class="side-nav-link <?php echo e($createServicesRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="create-service">Create Service</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            
+            <?php
+                $viewPackagesRoutes = Route::is('freelancer.packages.index');
+                $createPackagesRoutes = Route::is('freelancer.packages.create');
+                $listPackagesRoutes = Route::is('freelancer.packages.list');
+            ?>
+            
+            <li class="side-nav-item <?php echo e($viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : ''); ?>">
+                <a data-bs-toggle="collapse" href="#sidebarManagePackages" aria-expanded="<?php echo e($viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManagePackages" class="side-nav-link <?php echo e($viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="package-check"></i></span>
+                    <span class="menu-text" data-lang="manage-packages">Manage Packages</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse <?php echo e($viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'show' : ''); ?>" id="sidebarManagePackages">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.packages.index')); ?>" class="side-nav-link <?php echo e($viewPackagesRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="packages">View Packages</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.packages.create')); ?>" class="side-nav-link <?php echo e($createPackagesRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="create-package">Create Package</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.packages.list')); ?>" class="side-nav-link <?php echo e($listPackagesRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="list-packages">List Packages</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+<?php /**PATH C:\xampp\htdocs\proj\resources\views/layouts/freelancer/sidebar.blade.php ENDPATH**/ ?>
