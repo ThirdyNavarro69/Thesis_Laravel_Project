@@ -161,7 +161,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="freelancerDetailsContent">
-                    <!-- Content loaded via AJAX -->
                     <div class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -362,8 +361,6 @@
                                 categoriesHtml = profile.categories.map(cat => 
                                     `<span class="badge badge-soft-primary me-1">${cat.category_name}</span>`
                                 ).join('');
-                            } else {
-                                categoriesHtml = '<span class="badge badge-soft-secondary me-1">No categories specified</span>';
                             }
                             
                             let servicesHtml = '';

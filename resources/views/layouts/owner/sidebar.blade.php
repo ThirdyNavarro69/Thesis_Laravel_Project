@@ -48,7 +48,7 @@
             <li class="side-nav-item {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudios" aria-expanded="{{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageStudios" class="side-nav-link {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
-                    <span class="menu-text" data-lang="manage-studios">Manage Studios</span>
+                    <span class="menu-text" data-lang="manage-studios">Studios</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'show' : '' }}" id="sidebarManageStudios">
@@ -76,7 +76,7 @@
             <li class="side-nav-item {{ $manageBookingsRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageBookings" aria-expanded="{{ $manageBookingsRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageBookings" class="side-nav-link {{ $manageBookingsRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
-                    <span class="menu-text" data-lang="manage-bookings">Manage Bookings</span>
+                    <span class="menu-text" data-lang="manage-bookings">Bookings</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageBookingsRoutes ? 'show' : '' }}" id="sidebarManageBookings">
@@ -104,7 +104,7 @@
             <li class="side-nav-item {{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageSchedules" aria-expanded="{{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSchedules" class="side-nav-link {{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="calendar-check-2"></i></span>
-                    <span class="menu-text" data-lang="manage-schedules">Manage Schedules</span>
+                    <span class="menu-text" data-lang="manage-schedules">Schedules</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'show' : '' }}" id="sidebarManageSchedules">
@@ -123,7 +123,7 @@
                 </div>
             </li>
 
-            {{-- Studio Members --}}
+            {{-- Manage Studio Members --}}
             @php
                 $manageMembersRoutes   = Route::is('owner.members.index');
             @endphp
@@ -131,7 +131,7 @@
             <li class="side-nav-item {{ $manageMembersRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageMembers" aria-expanded="{{ $manageMembersRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageMembers" class="side-nav-link {{ $manageMembersRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="user-star"></i></span>
-                    <span class="menu-text" data-lang="manage-members">Manage Members</span>
+                    <span class="menu-text" data-lang="manage-members">Members</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageMembersRoutes ? 'show' : '' }}" id="sidebarManageMembers">
@@ -155,6 +155,33 @@
                 </div>
             </li>
 
+            {{-- Manage Studio Photographers --}}
+            @php
+                $manageStudioPhotographersRoutes = Route::is('owner.studio-photographers.index');
+            @endphp
+
+            <li class="side-nav-item {{ $manageStudioPhotographersRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageStudioPhotographers" aria-expanded="{{ $manageStudioPhotographersRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageStudioPhotographers" class="side-nav-link {{ $manageStudioPhotographersRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="square-user-round"></i></span>
+                    <span class="menu-text" data-lang="manage-studio-photographers">Photographers</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $manageStudioPhotographersRoutes ? 'show' : '' }}" id="sidebarManageStudioPhotographers">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('owner.studio-photographers.index') }}" class="side-nav-link {{ $manageStudioPhotographersRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="studio-photographers">Studio Photographers</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('owner.studio-photographers.create') }}" class="side-nav-link">
+                                <span class="menu-text" data-lang="add-photographer">Add Photographer</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             {{-- Manage Packages --}}
             @php
                 $managePackagesRoutes = Route::is('owner.packages.index');
@@ -165,7 +192,7 @@
             <li class="side-nav-item {{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManagePackages" aria-expanded="{{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManagePackages" class="side-nav-link {{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="package-check"></i></span>
-                    <span class="menu-text" data-lang="manage-packages">Manage Packages</span>
+                    <span class="menu-text" data-lang="manage-packages">Packages</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'show' : '' }}" id="sidebarManagePackages">
@@ -198,7 +225,7 @@
             <li class="side-nav-item {{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageCategoryServices" aria-expanded="{{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageCategoryServices" class="side-nav-link {{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="list-tree"></i></span>
-                    <span class="menu-text" data-lang="manage-category-services">Manage Services</span>
+                    <span class="menu-text" data-lang="manage-category-services">Services</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'show' : '' }}" id="sidebarManageCategoryServices">

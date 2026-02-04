@@ -47,7 +47,7 @@
             <li class="side-nav-item <?php echo e($manageUsersRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageUsers" aria-expanded="<?php echo e($manageUsersRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageUsers" class="side-nav-link <?php echo e($manageUsersRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="users"></i></span>
-                    <span class="menu-text" data-lang="manage-users">Manage Users</span>
+                    <span class="menu-text" data-lang="manage-users">Users</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageUsersRoutes ? 'show' : ''); ?>" id="sidebarManageUsers">
@@ -70,7 +70,7 @@
             <li class="side-nav-item <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudios" aria-expanded="<?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageStudios" class="side-nav-link <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
-                    <span class="menu-text" data-lang="manage-studios">Manage Studios</span>
+                    <span class="menu-text" data-lang="manage-studios">Studios</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'show' : ''); ?>" id="sidebarManageStudios">
@@ -97,7 +97,7 @@
             <li class="side-nav-item <?php echo e($viewFreelancerRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageFreelancer" aria-expanded="<?php echo e($viewFreelancerRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageFreelancer" class="side-nav-link <?php echo e($viewFreelancerRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="file-user"></i></span>
-                    <span class="menu-text" data-lang="manage-freelancer">Manage Freelancer</span>
+                    <span class="menu-text" data-lang="manage-freelancer">Freelancer</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($viewFreelancerRoutes ? 'show' : ''); ?>" id="sidebarManageFreelancer">
@@ -120,7 +120,7 @@
             <li class="side-nav-item <?php echo e($manageCategoriesRoutes || $createCategoryRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageCategories" aria-expanded="<?php echo e($manageCategoriesRoutes || $createCategoryRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageCategories" class="side-nav-link <?php echo e($manageCategoriesRoutes || $createCategoryRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="layout-list"></i></span>
-                    <span class="menu-text" data-lang="manage-categories">Manage Categories</span>
+                    <span class="menu-text" data-lang="manage-categories">Categories</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageCategoriesRoutes || $createCategoryRoutes ? 'show' : ''); ?>" id="sidebarManageCategories">
@@ -148,7 +148,7 @@
             <li class="side-nav-item <?php echo e($viewLocationRoutes || $createLocationRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageLocations" aria-expanded="<?php echo e($viewLocationRoutes || $createLocationRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageLocations" class="side-nav-link <?php echo e($viewLocationRoutes || $createLocationRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="map-pinned"></i></span>
-                    <span class="menu-text" data-lang="manage-locations">Manage Locations</span>
+                    <span class="menu-text" data-lang="manage-locations">Locations</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($viewLocationRoutes || $createLocationRoutes ? 'show' : ''); ?>" id="sidebarManageLocations">

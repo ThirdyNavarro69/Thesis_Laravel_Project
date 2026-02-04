@@ -96,6 +96,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/members/{id}/cancel',                 [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'cancel'])->name('owner.members.cancel');
         Route::get('/members/freelancer/{id}/details',      [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'getFreelancerDetails'])->name('owner.members.freelancer.details');
 
+        // Studio Photographers
+        Route::get('/view/studio-photographers',            [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'index'])->name('owner.studio-photographers.index');
+        Route::get('/create/studio-photographers',          [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'create'])->name('owner.studio-photographers.create');
+        Route::post('/studio-photographers',                [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'store'])->name('owner.studio-photographers.store');
+        Route::get('/studio-photographers/{id}',            [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'show'])->name('owner.studio-photographers.show');
+        Route::get('/studio/{id}/services',                 [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'getStudioServices'])->name('owner.studio.services');
+
         // Manage Category Services                     
         Route::get('/view/services',                        [\App\Http\Controllers\StudioOwner\ServicesController::class, 'index'])->name('owner.services.index');
         Route::get('/create/services',                      [\App\Http\Controllers\StudioOwner\ServicesController::class, 'create'])->name('owner.services.create');

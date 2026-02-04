@@ -48,7 +48,7 @@
             <li class="side-nav-item <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudios" aria-expanded="<?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageStudios" class="side-nav-link <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
-                    <span class="menu-text" data-lang="manage-studios">Manage Studios</span>
+                    <span class="menu-text" data-lang="manage-studios">Studios</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageStudiosRoutes || $pendingStudiosRoutes ? 'show' : ''); ?>" id="sidebarManageStudios">
@@ -76,7 +76,7 @@
             <li class="side-nav-item <?php echo e($manageBookingsRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageBookings" aria-expanded="<?php echo e($manageBookingsRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageBookings" class="side-nav-link <?php echo e($manageBookingsRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
-                    <span class="menu-text" data-lang="manage-bookings">Manage Bookings</span>
+                    <span class="menu-text" data-lang="manage-bookings">Bookings</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageBookingsRoutes ? 'show' : ''); ?>" id="sidebarManageBookings">
@@ -104,7 +104,7 @@
             <li class="side-nav-item <?php echo e($manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageSchedules" aria-expanded="<?php echo e($manageSchedulesRoutes || $setupSchedulesRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageSchedules" class="side-nav-link <?php echo e($manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="calendar-check-2"></i></span>
-                    <span class="menu-text" data-lang="manage-schedules">Manage Schedules</span>
+                    <span class="menu-text" data-lang="manage-schedules">Schedules</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageSchedulesRoutes || $setupSchedulesRoutes ? 'show' : ''); ?>" id="sidebarManageSchedules">
@@ -131,7 +131,7 @@
             <li class="side-nav-item <?php echo e($manageMembersRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageMembers" aria-expanded="<?php echo e($manageMembersRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageMembers" class="side-nav-link <?php echo e($manageMembersRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="user-star"></i></span>
-                    <span class="menu-text" data-lang="manage-members">Manage Members</span>
+                    <span class="menu-text" data-lang="manage-members">Members</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageMembersRoutes ? 'show' : ''); ?>" id="sidebarManageMembers">
@@ -157,6 +157,33 @@
 
             
             <?php
+                $manageStudioPhotographersRoutes = Route::is('owner.studio-photographers.index');
+            ?>
+
+            <li class="side-nav-item <?php echo e($manageStudioPhotographersRoutes ? 'active' : ''); ?>">
+                <a data-bs-toggle="collapse" href="#sidebarManageStudioPhotographers" aria-expanded="<?php echo e($manageStudioPhotographersRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageStudioPhotographers" class="side-nav-link <?php echo e($manageStudioPhotographersRoutes ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="square-user-round"></i></span>
+                    <span class="menu-text" data-lang="manage-studio-photographers">Photographers</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse <?php echo e($manageStudioPhotographersRoutes ? 'show' : ''); ?>" id="sidebarManageStudioPhotographers">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('owner.studio-photographers.index')); ?>" class="side-nav-link <?php echo e($manageStudioPhotographersRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="studio-photographers">Studio Photographers</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('owner.studio-photographers.create')); ?>" class="side-nav-link">
+                                <span class="menu-text" data-lang="add-photographer">Add Photographer</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            
+            <?php
                 $managePackagesRoutes = Route::is('owner.packages.index');
                 $createPackagesRoutes = Route::is('owner.packages.create');
                 $listPackagesRoutes   = Route::is('owner.packages.list');
@@ -165,7 +192,7 @@
             <li class="side-nav-item <?php echo e($managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManagePackages" aria-expanded="<?php echo e($managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManagePackages" class="side-nav-link <?php echo e($managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="package-check"></i></span>
-                    <span class="menu-text" data-lang="manage-packages">Manage Packages</span>
+                    <span class="menu-text" data-lang="manage-packages">Packages</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'show' : ''); ?>" id="sidebarManagePackages">
@@ -198,7 +225,7 @@
             <li class="side-nav-item <?php echo e($manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : ''); ?>">
                 <a data-bs-toggle="collapse" href="#sidebarManageCategoryServices" aria-expanded="<?php echo e($manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarManageCategoryServices" class="side-nav-link <?php echo e($manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : ''); ?>">
                     <span class="menu-icon"><i data-lucide="list-tree"></i></span>
-                    <span class="menu-text" data-lang="manage-category-services">Manage Services</span>
+                    <span class="menu-text" data-lang="manage-category-services">Services</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse <?php echo e($manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'show' : ''); ?>" id="sidebarManageCategoryServices">

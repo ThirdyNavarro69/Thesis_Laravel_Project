@@ -100,15 +100,11 @@
                                                                 <i class="ti ti-check me-1"></i> Invited
                                                             </button>
                                                         @elseif(!$hasProfile)
-                                                            <button type="button" class="w-100 btn btn-sm btn-warning" disabled
-                                                                    data-bs-toggle="tooltip" 
-                                                                    title="Freelancer has not completed their profile setup">
+                                                            <button type="button" class="w-100 btn btn-sm btn-warning" disabled data-bs-toggle="tooltip" title="Freelancer has not completed their profile setup">
                                                                 <i class="ti ti-user-x me-1"></i>Incomplete
                                                             </button>
                                                         @else
-                                                            <button type="button" class="w-100 btn btn-sm btn-primary invite-btn" 
-                                                                    data-freelancer-id="{{ $freelancer->id }}"
-                                                                    data-freelancer-name="{{ $freelancer->full_name }}">
+                                                            <button type="button" class="w-100 btn btn-sm btn-primary invite-btn" data-freelancer-id="{{ $freelancer->id }}"data-freelancer-name="{{ $freelancer->full_name }}">
                                                                 <i class="ti ti-user-plus me-1"></i> Invite
                                                             </button>
                                                         @endif
@@ -285,14 +281,14 @@
                                                     </div>
                                                 </div>
                                                 <div class="card">
-                                                    <div class="card-body text-center py-5">
+                                                    <div class="card-body text-center">
                                                         <i class="ti ti-user-off fs-48 text-muted mb-3"></i>
                                                         <h5 class="text-muted mb-2">No Profile Information Available</h5>
                                                         <p class="text-muted mb-4">
                                                             The freelancer needs to complete their profile setup in order to display:
                                                         </p>
                                                         <div class="row justify-content-center">
-                                                            <div class="col-12 col-md-8">
+                                                            <div class="col-12">
                                                                 <div class="list-group list-group-borderless">
                                                                     <div class="list-group-item d-flex align-items-center">
                                                                         <i class="ti ti-x text-danger me-3"></i>

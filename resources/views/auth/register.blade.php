@@ -73,7 +73,7 @@
                     <form id="registerForm" method="POST" novalidate>
                         @csrf
                         <div class="row g-3 mb-3">
-                            <h4 class="text-center">Choose your Account Type</h4>
+                            <h4 class="text-center">Hello! I am a</h4>
                             <div class="col-md-4">
                                 <input type="radio" class="btn-check" name="userType" id="clientType" value="client" required>
                                 <label class="card border-1 border-dashed h-100 cursor-pointer p-2 mb-0 user-type-card" for="clientType">
