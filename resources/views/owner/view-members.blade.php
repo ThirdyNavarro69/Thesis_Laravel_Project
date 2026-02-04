@@ -44,7 +44,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($members as $member)
+                                        @foreach($members as $member)
                                             @php
                                                 $statusColors = [
                                                     'pending' => 'warning',
@@ -64,15 +64,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         @if($member->freelancer && $member->freelancer->profile && $member->freelancer->profile->brand_logo)
-                                                            <img src="/storage/{{ $member->freelancer->profile->brand_logo }}" 
-                                                                 class="rounded-circle me-3" 
-                                                                 style="width: 40px; height: 40px; object-fit: cover;" 
-                                                                 alt="{{ $member->freelancer->full_name }}">
-                                                        @else
-                                                            <div class="rounded-circle bg-light-primary d-flex align-items-center justify-content-center me-3" 
-                                                                 style="width: 40px; height: 40px;">
-                                                                <i data-lucide="user" class="fs-16 text-primary"></i>
-                                                            </div>
+                                                            <img src="/storage/{{ $member->freelancer->profile->brand_logo }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ $member->freelancer->full_name }}">
                                                         @endif
                                                         <div>
                                                             <h5 class="mb-1">
@@ -138,20 +130,7 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center py-4">
-                                                    <div class="text-muted">
-                                                        <i class="ti ti-users-off fs-48 mb-3"></i>
-                                                        <h5>No Invitations Yet</h5>
-                                                        <p>You haven't invited any freelancers to collaborate with your studio.</p>
-                                                        <a href="{{ route('owner.members.invite') }}" class="btn btn-primary mt-2">
-                                                            <i class="ti ti-user-plus me-2"></i>Invite Freelancers
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -280,25 +259,182 @@
                     success: function(response) {
                         if (response.success) {
                             const freelancer = response.data;
-                            const profile = freelancer.profile;
+                            const profile = freelancer.freelancer_profile; // Changed from profile to freelancer_profile
+                            
+                            // Check if freelancer has a profile
+                            if (!profile) {
+                                // Show no profile message
+                                const noProfileHtml = `
+                                    <div class="container-fluid">
+                                        <div class="row align-items-center mb-4">
+                                            <div class="col-12">
+                                                <div class="d-flex align-items-center flex-column flex-md-row">
+                                                    <div class="flex-shrink-0 mb-3 mb-md-0">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light-secondary" style="width: 100px; height: 100px;">
+                                                            <i data-lucide="user-x" class="fs-32 text-secondary"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-md-4 text-center text-md-start">
+                                                        <h3 class="mb-1 fw-bold">${freelancer.first_name} ${freelancer.last_name}</h3>
+                                                        <p class="text-muted mb-0">
+                                                            <i class="ti ti-mail me-1"></i> 
+                                                            ${freelancer.email}
+                                                        </p>
+                                                        <div class="mt-2">
+                                                            <span class="badge badge-soft-warning fs-6 p-1">Profile Not Setup</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="alert alert-warning">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ti ti-alert-circle fs-20 me-3"></i>
+                                                        <div>
+                                                            <h5 class="alert-heading mb-1">Profile Not Complete</h5>
+                                                            <p class="mb-0">This freelancer has not set up their professional profile yet.</p>
+                                                            <p class="mb-0">They need to complete their profile setup before you can view their credentials and services.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card">
+                                                    <div class="card-body text-center py-5">
+                                                        <i class="ti ti-user-off fs-48 text-muted mb-3"></i>
+                                                        <h5 class="text-muted mb-2">No Profile Information Available</h5>
+                                                        <p class="text-muted mb-4">
+                                                            The freelancer needs to complete their profile setup in order to display:
+                                                        </p>
+                                                        <div class="row justify-content-center">
+                                                            <div class="col-12 col-md-8">
+                                                                <div class="list-group list-group-borderless">
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Brand information and logo</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Services and pricing</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Portfolio and work samples</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Availability schedule</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Contact and social media links</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-4">
+                                                            <p class="text-muted">
+                                                                You can still invite this freelancer, but they will need to complete their profile before collaborating.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                $('#freelancerDetailsContent').html(noProfileHtml);
+                                
+                                // Initialize Lucide icons
+                                if (typeof lucide !== 'undefined') {
+                                    lucide.createIcons();
+                                }
+                                return;
+                            }
                             
                             let categoriesHtml = '';
                             if (profile.categories && profile.categories.length > 0) {
                                 categoriesHtml = profile.categories.map(cat => 
                                     `<span class="badge badge-soft-primary me-1">${cat.category_name}</span>`
                                 ).join('');
+                            } else {
+                                categoriesHtml = '<span class="badge badge-soft-secondary me-1">No categories specified</span>';
                             }
                             
                             let servicesHtml = '';
                             if (profile.services && profile.services.length > 0) {
                                 servicesHtml = profile.services.map(service => {
-                                    const services = JSON.parse(service.services_name || '[]');
-                                    return services.map(s => 
-                                        `<li>${s}</li>`
-                                    ).join('');
+                                    // Get category name if available
+                                    let categoryName = 'Services';
+                                    if (service.category && service.category.category_name) {
+                                        categoryName = service.category.category_name;
+                                    } else if (service.category_id) {
+                                        // If category is not loaded but we have ID, we could fetch it
+                                        categoryName = 'Category #' + service.category_id;
+                                    }
+                                    
+                                    // Handle services_name - it's already an array in the response
+                                    let serviceItems = service.services_name;
+                                    
+                                    if (Array.isArray(serviceItems) && serviceItems.length > 0) {
+                                        const itemsHtml = serviceItems.map(s => `<li>${s}</li>`).join('');
+                                        return `<div class="list-group-item">
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="ti ti-check text-success me-2 mt-1"></i>
+                                                        <div class="flex-grow-1">
+                                                            <h5 class="mb-1 fw-semibold">${categoryName}</h5>
+                                                            <ul class="mb-2 ps-3 text-muted">
+                                                                ${itemsHtml}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>`;
+                                    }
+                                    
+                                    return '';
                                 }).join('');
                             }
                             
+                            // Handle operating_days - it's a JSON string
+                            let operatingDays = 'Not specified';
+                            if (profile.schedule && profile.schedule.operating_days) {
+                                let days = profile.schedule.operating_days;
+                                
+                                if (typeof days === 'string') {
+                                    try {
+                                        days = JSON.parse(days);
+                                    } catch (e) {
+                                        console.error('Error parsing operating_days:', e);
+                                        days = [];
+                                    }
+                                }
+                                
+                                if (Array.isArray(days) && days.length > 0) {
+                                    // Capitalize first letter of each day
+                                    operatingDays = days.map(day => 
+                                        day.charAt(0).toUpperCase() + day.slice(1)
+                                    ).join(', ');
+                                }
+                            }
+                            
+                            // Handle portfolio_works - it's a JSON string
+                            let portfolioWorks = [];
+                            if (profile.portfolio_works) {
+                                if (typeof profile.portfolio_works === 'string') {
+                                    try {
+                                        portfolioWorks = JSON.parse(profile.portfolio_works);
+                                    } catch (e) {
+                                        console.error('Error parsing portfolio_works:', e);
+                                        portfolioWorks = [];
+                                    }
+                                } else if (Array.isArray(profile.portfolio_works)) {
+                                    portfolioWorks = profile.portfolio_works;
+                                }
+                            }
+                            
+                            // Build the full details HTML
+                                                        // Build the full details HTML
                             const detailsHtml = `
                                 <div class="container-fluid">
                                     <div class="row align-items-center mb-4">
@@ -306,15 +442,14 @@
                                             <div class="d-flex align-items-center flex-column flex-md-row">
                                                 <div class="flex-shrink-0 mb-3 mb-md-0">
                                                     ${profile.brand_logo ? 
-                                                        `<img src="/storage/${profile.brand_logo}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" alt="${freelancer.full_name}">` :
+                                                        `<img src="/storage/${profile.brand_logo}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" alt="${freelancer.first_name} ${freelancer.last_name}">` :
                                                         `<div class="rounded-circle d-flex align-items-center justify-content-center bg-light-primary" style="width: 100px; height: 100px;">
                                                             <i data-lucide="user" class="fs-32 text-primary"></i>
                                                         </div>`
                                                     }
                                                 </div>
-
                                                 <div class="flex-grow-1 ms-md-4 text-center text-md-start">
-                                                    <h3 class="mb-1 fw-bold">${freelancer.full_name}</h3>
+                                                    <h3 class="mb-1 fw-bold">${freelancer.first_name} ${freelancer.last_name}</h3>
                                                     <p class="text-primary fw-semibold mb-1">${profile.brand_name || 'No brand name'}</p>
                                                     <p class="text-muted mb-0">
                                                         <i class="ti ti-map-pin me-1"></i> 
@@ -332,8 +467,411 @@
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Check if profile is completely empty -->
+                                    ${!profile.brand_name && !profile.tagline && !profile.bio && !profile.years_experience && !profile.services && !profile.starting_price && !profile.schedule && !profile.facebook_url && !profile.instagram_url && !profile.website_url && (!profile.portfolio_works || profile.portfolio_works === '[]') ? `
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="alert alert-info">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ti ti-info-circle fs-20 me-3"></i>
+                                                        <div>
+                                                            <h5 class="alert-heading mb-1">Profile Setup Started</h5>
+                                                            <p class="mb-0">This freelancer has started their profile setup but hasn't added any credentials yet.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <!-- Personal Information -->
+                                        <div class="row g-4">
+                                            <div class="col-12">
+                                                <h5 class="text-primary fw-semibold mb-3">Personal Information</h5>
+                                                <div class="row g-3">
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="user" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">Full Name</label>
+                                                                <p class="mb-0 fw-medium">${freelancer.first_name} ${freelancer.last_name}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                    <!-- ... (rest of the details HTML same as invite page) ... -->
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="mail" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">Email Address</label>
+                                                                <p class="mb-0 fw-medium">${freelancer.email}</p>
+                                                                <small class="text-muted">Status: ${freelancer.email_verified ? 'Verified' : 'Not Verified'}</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="phone" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">Mobile Number</label>
+                                                                <p class="mb-0 fw-medium">${freelancer.mobile_number || 'N/A'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="calendar" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">Registered Since</label>
+                                                                <p class="mb-0 fw-medium">${new Date(freelancer.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="shield" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">Account Status</label>
+                                                                <p class="mb-0 fw-medium">
+                                                                    <span class="badge badge-soft-${freelancer.status === 'active' ? 'success' : 'danger'}">${freelancer.status ? freelancer.status.toUpperCase() : 'UNKNOWN'}</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="d-flex align-items-start">
+                                                            <div class="flex-shrink-0">
+                                                                <div class="bg-light-primary rounded-circle p-2">
+                                                                    <i data-lucide="user-check" class="fs-20 text-primary"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1 ms-3">
+                                                                <label class="text-muted small mb-1">User Type</label>
+                                                                <p class="mb-0 fw-medium">${freelancer.user_type || 'Freelancer Individual'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Brand Identity -->
+                                            ${profile.brand_name || profile.tagline || profile.bio || profile.years_experience ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Brand Identity</h5>
+                                                    <div class="row g-3">
+                                                        ${profile.brand_name ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="building" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Brand Name</label>
+                                                                        <p class="mb-0 fw-medium">${profile.brand_name}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.tagline ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="info" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Professional Tagline</label>
+                                                                        <p class="mb-0 fw-medium">${profile.tagline}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.bio ? `
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="file-text" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">About Me</label>
+                                                                        <p class="mb-0">${profile.bio}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.years_experience ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="calendar" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Years of Experience</label>
+                                                                        <p class="mb-0 fw-medium">${profile.years_experience} years</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            <!-- Services -->
+                                            ${servicesHtml ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Services Offered</h5>
+                                                    <div class="row g-3">
+                                                        <div class="col-12 mb-3">
+                                                            <div class="list-group">
+                                                                ${servicesHtml}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            <!-- Pricing -->
+                                            ${profile.starting_price || profile.deposit_policy ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Pricing Information</h5>
+                                                    <div class="row g-3">
+                                                        ${profile.starting_price ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="tag" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Starting Price</label>
+                                                                        <p class="mb-0 fs-5">PHP ${parseFloat(profile.starting_price).toLocaleString('en-PH', {minimumFractionDigits: 2})}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.deposit_policy ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="banknote-arrow-down" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Deposit Policy</label>
+                                                                        <p class="mb-0 fw-medium">${profile.deposit_policy}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            <!-- Schedule -->
+                                            ${profile.schedule ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Availability and Schedule</h5>
+                                                    <div class="row g-3">
+                                                        <div class="col-12 col-md-6">
+                                                            <div class="d-flex align-items-start">
+                                                                <div class="flex-shrink-0">
+                                                                    <div class="bg-light-primary rounded-circle p-2">
+                                                                        <i data-lucide="calendar-days" class="fs-20 text-primary"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex-grow-1 ms-3">
+                                                                    <label class="text-muted small mb-1">Operating Days</label>
+                                                                    <p class="mb-0 fw-medium">${operatingDays}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12 col-md-6">
+                                                            <div class="d-flex align-items-start">
+                                                                <div class="flex-shrink-0">
+                                                                    <div class="bg-light-primary rounded-circle p-2">
+                                                                        <i data-lucide="clock" class="fs-20 text-primary"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex-grow-1 ms-3">
+                                                                    <label class="text-muted small mb-1">Operating Hours</label>
+                                                                    <p class="mb-0 fw-medium">${profile.schedule.start_time || 'N/A'} – ${profile.schedule.end_time || 'N/A'}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        ${profile.schedule.booking_limit ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="users" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Max Clients per Day</label>
+                                                                        <p class="mb-0 fw-medium">${profile.schedule.booking_limit}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.schedule.advance_booking ? `
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="alert-circle" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Advance Booking</label>
+                                                                        <p class="mb-0 fw-medium">${profile.schedule.advance_booking} day(s)</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            <!-- Social Links -->
+                                            ${profile.facebook_url || profile.instagram_url || profile.website_url ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Social Media Links</h5>
+                                                    <div class="row g-3">
+                                                        ${profile.facebook_url ? `
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="facebook" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Facebook Link</label>
+                                                                        <p class="mb-0 fw-medium">
+                                                                            <a href="${profile.facebook_url}" target="_blank" class="text-decoration-none">
+                                                                                ${profile.facebook_url}
+                                                                            </a>
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.instagram_url ? `
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="instagram" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Instagram Link</label>
+                                                                        <p class="mb-0 fw-medium">
+                                                                            <a href="${profile.instagram_url}" target="_blank" class="text-decoration-none">
+                                                                                ${profile.instagram_url}
+                                                                            </a>
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+
+                                                        ${profile.website_url ? `
+                                                            <div class="col-12">
+                                                                <div class="d-flex align-items-start">
+                                                                    <div class="flex-shrink-0">
+                                                                        <div class="bg-light-primary rounded-circle p-2">
+                                                                            <i data-lucide="globe" class="fs-20 text-primary"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="flex-grow-1 ms-3">
+                                                                        <label class="text-muted small mb-1">Website Link</label>
+                                                                        <p class="mb-0 fw-medium">
+                                                                            <a href="${profile.website_url}" target="_blank" class="text-decoration-none">
+                                                                                ${profile.website_url}
+                                                                            </a>
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            <!-- Portfolio -->
+                                            ${portfolioWorks.length > 0 ? `
+                                                <div class="col-12">
+                                                    <h5 class="text-primary fw-semibold mb-3">Portfolio Works</h5>
+                                                    <p class="text-muted">Sample works and recent projects</p>
+
+                                                    <div id="portfolioCarousel" class="carousel slide" data-bs-ride="carousel">
+                                                        <div class="carousel-inner">
+                                                            ${portfolioWorks.map((work, index) => `
+                                                                <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                                                    <img src="/storage/${work}" 
+                                                                        class="d-block w-100 rounded shadow" 
+                                                                        alt="Portfolio ${index + 1}" 
+                                                                        style="height: 300px; object-fit: cover;">
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                        ${portfolioWorks.length > 1 ? `
+                                                            <button class="carousel-control-prev" type="button" data-bs-target="#portfolioCarousel" data-bs-slide="prev">
+                                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                                <span class="visually-hidden">Previous</span>
+                                                            </button>
+                                                            <button class="carousel-control-next" type="button" data-bs-target="#portfolioCarousel" data-bs-slide="next">
+                                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                                <span class="visually-hidden">Next</span>
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `}
                                 </div>
                             `;
                             

@@ -67,6 +67,28 @@
                 </div>
             </li>
 
+            {{-- Member Invitations --}}
+            @php
+                $memberInvitationRoutes = Route::is('freelancer.invitation.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $memberInvitationRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarMemberInvitation" aria-expanded="{{ $memberInvitationRoutes ? 'true' : 'false' }}" aria-controls="sidebarMemberInvitation" class="side-nav-link {{ $memberInvitationRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="user-plus"></i></span>
+                    <span class="menu-text" data-lang="member-invitation">Member Invitations</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $memberInvitationRoutes ? 'show' : '' }}" id="sidebarMemberInvitation">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('freelancer.invitation.index') }}" class="side-nav-link {{ $memberInvitationRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="view-member-invitation">View Member Invitations</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             {{-- Manage Services --}}
             @php
                 $manageServicesRoutes = Route::is('freelancer.services.index');

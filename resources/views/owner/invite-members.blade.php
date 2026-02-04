@@ -45,6 +45,16 @@
                                         @forelse($freelancers as $freelancer)
                                             @php
                                                 $isInvited = $invitedFreelancerIds->contains($freelancer->id);
+                                                // Check if freelancer has profile and if it's complete
+                                                $hasProfile = $freelancer->freelancerProfile && (
+                                                    $freelancer->freelancerProfile->brand_name ||
+                                                    $freelancer->freelancerProfile->services->isNotEmpty() ||
+                                                    $freelancer->freelancerProfile->starting_price ||
+                                                    $freelancer->freelancerProfile->schedule ||
+                                                    $freelancer->freelancerProfile->facebook_url ||
+                                                    $freelancer->freelancerProfile->portfolio_works
+                                                );
+                                                $canInvite = !$isInvited && $hasProfile;
                                             @endphp
                                             <tr>
                                                 <td>
@@ -89,8 +99,16 @@
                                                             <button type="button" class="w-100 btn btn-sm btn-success" disabled>
                                                                 <i class="ti ti-check me-1"></i> Invited
                                                             </button>
+                                                        @elseif(!$hasProfile)
+                                                            <button type="button" class="w-100 btn btn-sm btn-warning" disabled
+                                                                    data-bs-toggle="tooltip" 
+                                                                    title="Freelancer has not completed their profile setup">
+                                                                <i class="ti ti-user-x me-1"></i>Incomplete
+                                                            </button>
                                                         @else
-                                                            <button type="button" class="w-100 btn btn-sm btn-primary invite-btn" data-freelancer-id="{{ $freelancer->id }}"data-freelancer-name="{{ $freelancer->full_name }}">
+                                                            <button type="button" class="w-100 btn btn-sm btn-primary invite-btn" 
+                                                                    data-freelancer-id="{{ $freelancer->id }}"
+                                                                    data-freelancer-name="{{ $freelancer->full_name }}">
                                                                 <i class="ti ti-user-plus me-1"></i> Invite
                                                             </button>
                                                         @endif
@@ -200,6 +218,9 @@
             let currentFreelancerId = null;
             let currentFreelancerName = null;
 
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
             // View freelancer details
             $(document).on('click', '.view-freelancer-btn', function() {
                 const freelancerId = $(this).data('freelancer-id');
@@ -224,6 +245,98 @@
                         if (response.success) {
                             const freelancer = response.data;
                             const profile = freelancer.freelancer_profile; // Note: snake_case in JSON
+                            
+                            // Check if freelancer has a profile
+                            if (!profile) {
+                                // Show no profile message
+                                const noProfileHtml = `
+                                    <div class="container-fluid">
+                                        <div class="row align-items-center mb-4">
+                                            <div class="col-12">
+                                                <div class="d-flex align-items-center flex-column flex-md-row">
+                                                    <div class="flex-shrink-0 mb-3 mb-md-0">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light-secondary" style="width: 100px; height: 100px;">
+                                                            <i data-lucide="user-x" class="fs-32 text-secondary"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-md-4 text-center text-md-start">
+                                                        <h3 class="mb-1 fw-bold">${freelancer.first_name} ${freelancer.last_name}</h3>
+                                                        <p class="text-muted mb-0">
+                                                            <i class="ti ti-mail me-1"></i> 
+                                                            ${freelancer.email}
+                                                        </p>
+                                                        <div class="mt-2">
+                                                            <span class="badge badge-soft-warning fs-6 p-1">Profile Not Setup</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="alert alert-warning">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ti ti-alert-circle fs-20 me-3"></i>
+                                                        <div>
+                                                            <h5 class="alert-heading mb-1">Profile Not Complete</h5>
+                                                            <p class="mb-0">This freelancer has not set up their professional profile yet.</p>
+                                                            <p class="mb-0">They need to complete their profile setup before you can view their credentials and services.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card">
+                                                    <div class="card-body text-center py-5">
+                                                        <i class="ti ti-user-off fs-48 text-muted mb-3"></i>
+                                                        <h5 class="text-muted mb-2">No Profile Information Available</h5>
+                                                        <p class="text-muted mb-4">
+                                                            The freelancer needs to complete their profile setup in order to display:
+                                                        </p>
+                                                        <div class="row justify-content-center">
+                                                            <div class="col-12 col-md-8">
+                                                                <div class="list-group list-group-borderless">
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Brand information and logo</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Services and pricing</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Portfolio and work samples</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Availability schedule</span>
+                                                                    </div>
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-x text-danger me-3"></i>
+                                                                        <span>Contact and social media links</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-4">
+                                                            <p class="text-muted">
+                                                                You can still invite this freelancer, but they will need to complete their profile before collaborating.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                $('#freelancerDetailsContent').html(noProfileHtml);
+                                
+                                // Initialize Lucide icons
+                                if (typeof lucide !== 'undefined') {
+                                    lucide.createIcons();
+                                }
+                                return;
+                            }
                             
                             let categoriesHtml = '';
                             if (profile.categories && profile.categories.length > 0) {
@@ -312,40 +425,150 @@
                                 }
                             }
                             
-                            const detailsHtml = `
-                                <div class="container-fluid">
-                                    <div class="row align-items-center mb-4">
-                                        <div class="col-12">
-                                            <div class="d-flex align-items-center flex-column flex-md-row">
-                                                <div class="flex-shrink-0 mb-3 mb-md-0">
-                                                    ${profile.brand_logo ? 
-                                                        `<img src="/storage/${profile.brand_logo}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" alt="${freelancer.first_name} ${freelancer.last_name}">` :
-                                                        `<div class="rounded-circle d-flex align-items-center justify-content-center bg-light-primary" style="width: 100px; height: 100px;">
-                                                            <i data-lucide="user" class="fs-32 text-primary"></i>
-                                                        </div>`
+                            // Check if profile has basic information
+                            const hasBasicInfo = profile.brand_name || profile.tagline || profile.bio || profile.years_experience;
+                            const hasServices = servicesHtml !== '';
+                            const hasPricing = profile.starting_price || profile.deposit_policy;
+                            const hasSchedule = profile.schedule;
+                            const hasSocialLinks = profile.facebook_url || profile.instagram_url || profile.website_url;
+                            const hasPortfolio = portfolioWorks.length > 0;
+                            
+                            // Check if profile is completely empty (no credentials at all)
+                            const isEmptyProfile = !hasBasicInfo && !hasServices && !hasPricing && !hasSchedule && !hasSocialLinks && !hasPortfolio;
+                            
+                            // Prepare the header section (always shown)
+                            const headerHtml = `
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center flex-column flex-md-row">
+                                            <div class="flex-shrink-0 mb-3 mb-md-0">
+                                                ${profile.brand_logo ? 
+                                                    `<img src="/storage/${profile.brand_logo}" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;" alt="${freelancer.first_name} ${freelancer.last_name}">` :
+                                                    `<div class="rounded-circle d-flex align-items-center justify-content-center ${isEmptyProfile ? 'bg-light-warning' : 'bg-light-primary'}" style="width: 100px; height: 100px;">
+                                                        <i data-lucide="${isEmptyProfile ? 'user-circle' : 'user'}" class="fs-32 ${isEmptyProfile ? 'text-warning' : 'text-primary'}"></i>
+                                                    </div>`
+                                                }
+                                            </div>
+                                            <div class="flex-grow-1 ms-md-4 text-center text-md-start">
+                                                <h3 class="mb-1 fw-bold">${freelancer.first_name} ${freelancer.last_name}</h3>
+                                                <p class="text-primary fw-semibold mb-1">${profile.brand_name || 'No brand name set'}</p>
+                                                <p class="text-muted mb-0">
+                                                    <i class="ti ti-map-pin me-1"></i> 
+                                                    ${profile.location ? profile.location.municipality + ', ' + profile.location.province : 'Location not specified'}
+                                                    ${profile.years_experience ? ' · ' + profile.years_experience + ' years experience' : ''}
+                                                </p>
+                                                <div class="mt-2">
+                                                    ${categoriesHtml}
+                                                    ${isEmptyProfile ? '<span class="badge badge-soft-warning fs-6 p-1">Profile Incomplete</span>' : ''}
+                                                    ${freelancer.email_verified ? 
+                                                        '<span class="badge badge-soft-success fs-6 p-1 ms-1">Verified Email</span>' : 
+                                                        '<span class="badge badge-soft-warning fs-6 p-1 ms-1">Email Not Verified</span>'
                                                     }
                                                 </div>
-
-                                                <div class="flex-grow-1 ms-md-4 text-center text-md-start">
-                                                    <h3 class="mb-1 fw-bold">${freelancer.first_name} ${freelancer.last_name}</h3>
-                                                    <p class="text-primary fw-semibold mb-1">${profile.brand_name || 'No brand name'}</p>
-                                                    <p class="text-muted mb-0">
-                                                        <i class="ti ti-map-pin me-1"></i> 
-                                                        ${profile.location ? profile.location.municipality + ', ' + profile.location.province : 'Location not specified'}
-                                                        ${profile.years_experience ? ' · ' + profile.years_experience + ' years experience' : ''}
-                                                    </p>
-                                                    <div class="mt-2">
-                                                        ${categoriesHtml}
-                                                        ${freelancer.email_verified ? 
-                                                            '<span class="badge badge-soft-success fs-6 p-1 ms-1">Verified Email</span>' : 
-                                                            '<span class="badge badge-soft-warning fs-6 p-1 ms-1">Email Not Verified</span>'
-                                                        }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            let contentHtml = '';
+                            
+                            if (isEmptyProfile) {
+                                // Profile exists but has no credentials
+                                contentHtml = `
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="alert alert-info">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ti ti-info-circle fs-20 me-3"></i>
+                                                    <div>
+                                                        <h5 class="alert-heading mb-1">Profile Setup Started</h5>
+                                                        <p class="mb-0">This freelancer has started their profile setup but hasn't added any credentials yet.</p>
+                                                        <p class="mb-0">The following information is missing:</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-12">
+                                                            <h5 class="text-primary fw-semibold mb-3">Missing Credentials</h5>
+                                                            <div class="list-group list-group-borderless">
+                                                                ${!profile.brand_name ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Brand Information</h6>
+                                                                            <p class="text-muted mb-0">Brand name, tagline, and about section not provided</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                                
+                                                                ${!hasServices ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Services</h6>
+                                                                            <p class="text-muted mb-0">No services or categories have been added</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                                
+                                                                ${!hasPricing ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Pricing Information</h6>
+                                                                            <p class="text-muted mb-0">Starting price and deposit policy not specified</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                                
+                                                                ${!hasSchedule ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Availability Schedule</h6>
+                                                                            <p class="text-muted mb-0">Operating days, hours, and booking limits not set</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                                
+                                                                ${!hasSocialLinks ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Contact Information</h6>
+                                                                            <p class="text-muted mb-0">Social media links and website not provided</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                                
+                                                                ${!hasPortfolio ? `
+                                                                    <div class="list-group-item d-flex align-items-center">
+                                                                        <i class="ti ti-circle-dashed text-secondary me-3"></i>
+                                                                        <div class="flex-grow-1">
+                                                                            <h6 class="mb-1">Portfolio</h6>
+                                                                            <p class="text-muted mb-0">No portfolio works or sample projects uploaded</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                            </div>
+                                                            <div class="mt-4 text-center">
+                                                                <p class="text-muted">
+                                                                    You can still invite this freelancer, but they should complete their profile for better collaboration.
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
+                                `;
+                            } else {
+                                // Complete profile - show all sections
+                                contentHtml = `
                                     <div class="row g-4">
                                         <!-- Personal Information -->
                                         <div class="col-12">
@@ -712,6 +935,14 @@
                                             </div>
                                         ` : ''}
                                     </div>
+                                `;
+                            }
+                            
+                            // Combine header and content
+                            const detailsHtml = `
+                                <div class="container-fluid">
+                                    ${headerHtml}
+                                    ${contentHtml}
                                 </div>
                             `;
                             
@@ -723,7 +954,7 @@
                             }
                             
                             // Initialize carousel if present
-                            if (portfolioWorks.length > 1) {
+                            if (portfolioWorks.length > 1 && !isEmptyProfile) {
                                 new bootstrap.Carousel(document.getElementById('portfolioCarousel'));
                             }
                         } else {

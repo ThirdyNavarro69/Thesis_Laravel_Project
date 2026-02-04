@@ -144,6 +144,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/packages/categories',                  [\App\Http\Controllers\Freelancer\PackagesController::class, 'getCategories'])->name('freelancer.packages.categories');
         Route::delete('/packages/{id}',                     [\App\Http\Controllers\Freelancer\PackagesController::class, 'destroy'])->name('freelancer.packages.destroy');
 
+        // Member Invitations
+        Route::get('view/member-invitation',                [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'index'])->name('freelancer.invitation.index');
+        Route::get('invitation/{id}/details',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'getInvitationDetails'])->name('freelancer.invitation.details');
+        Route::post('invitation/{id}/accept',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'accept'])->name('freelancer.invitation.accept');
+        Route::post('invitation/{id}/reject',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'reject'])->name('freelancer.invitation.reject');
     });
 
     // Client Routes =======================================================================================================================================================

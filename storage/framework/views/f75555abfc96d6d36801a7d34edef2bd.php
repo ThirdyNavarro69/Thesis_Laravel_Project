@@ -69,6 +69,28 @@
 
             
             <?php
+                $memberInvitationRoutes = Route::is('freelancer.invitation.index');
+            ?>
+            
+            <li class="side-nav-item <?php echo e($memberInvitationRoutes ? 'active' : ''); ?>">
+                <a data-bs-toggle="collapse" href="#sidebarMemberInvitation" aria-expanded="<?php echo e($memberInvitationRoutes ? 'true' : 'false'); ?>" aria-controls="sidebarMemberInvitation" class="side-nav-link <?php echo e($memberInvitationRoutes ? 'active' : ''); ?>">
+                    <span class="menu-icon"><i data-lucide="user-plus"></i></span>
+                    <span class="menu-text" data-lang="member-invitation">Member Invitations</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse <?php echo e($memberInvitationRoutes ? 'show' : ''); ?>" id="sidebarMemberInvitation">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="<?php echo e(route('freelancer.invitation.index')); ?>" class="side-nav-link <?php echo e($memberInvitationRoutes ? 'active' : ''); ?>">
+                                <span class="menu-text" data-lang="view-member-invitation">View Member Invitations</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            
+            <?php
                 $manageServicesRoutes = Route::is('freelancer.services.index');
                 $createServicesRoutes = Route::is('freelancer.services.create');
             ?>

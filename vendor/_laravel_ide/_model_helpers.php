@@ -2988,9 +2988,37 @@ namespace App\Models\StudioOwner {
     /**
      * App\Models\StudioOwner\StudioMemberModel
      *
+     * @property \Illuminate\Support\Carbon|null $updated_at
+     * @property \Illuminate\Support\Carbon|null $created_at
+     * @property \Illuminate\Support\Carbon|null $responded_at
+     * @property \Illuminate\Support\Carbon $invited_at
+     * @property string|null $response_message
+     * @property mixed $status
+     * @property string|null $invitation_message
+     * @property mixed $invited_by
+     * @property mixed $freelancer_id
+     * @property mixed $studio_id
+     * @property int $id
+     * @property-read \App\Models\StudioOwner\StudiosModel $studio
+     * @property-read \App\Models\StudioOwner\UserModel $freelancer
+     * @property-read \App\Models\StudioOwner\UserModel $inviter
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereStudioId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereFreelancerId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereInvitedBy($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereInvitationMessage($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereStatus($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereResponseMessage($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereInvitedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereRespondedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereCreatedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel whereUpdatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel query()
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel pending() {@see App\Models\StudioOwner\StudioMemberModel::scopePending()}
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel approved() {@see App\Models\StudioOwner\StudioMemberModel::scopeApproved()}
+     * @method static \Illuminate\Database\Eloquent\Builder<StudioMemberModel>|StudioMemberModel rejected() {@see App\Models\StudioOwner\StudioMemberModel::scopeRejected()}
      * @method static mixed select($columns)
      * @method static mixed selectSub($query, $as)
      * @method static mixed selectRaw($expression, array $bindings)
@@ -4019,6 +4047,8 @@ namespace App\Models\StudioOwner {
      * @property-read mixed $full_name
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StudioOwner\StudiosModel> $studios
      * @property-read int|null $studios_count
+     * @property-read \App\Models\Freelancer\ProfileModel $freelancerProfile
+     * @property-read \App\Models\StudioOwner\StudiosModel $studio
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
      * @property-read int|null $notifications_count
      * @method static \Illuminate\Database\Eloquent\Builder<UserModel>|UserModel whereId($value)
