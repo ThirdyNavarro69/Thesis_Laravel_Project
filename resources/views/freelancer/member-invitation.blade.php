@@ -43,7 +43,7 @@
                                                 'pending' => 'warning',
                                                 'approved' => 'success',
                                                 'rejected' => 'danger',
-                                                'cancelled' => 'secondary'
+                                                'cancelled' => 'danger'
                                             ];
                                             
                                             $statusTexts = [
@@ -206,10 +206,8 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger" id="rejectInvitationBtn">
-                            <i class="me-1" data-lucide="x"></i> Decline Invitation
-                        </button>
+                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="rejectInvitationBtn">Decline Invitation</button>
                     </div>
                 </form>
             </div>
@@ -410,16 +408,16 @@
                 const studioName = $(this).data('studio-name');
                 
                 Swal.fire({
+                    icon: 'question',
                     title: 'Accept Invitation?',
                     html: `<div class="text-center">
                         <i class="ti ti-check-circle fs-48 text-primary mb-3"></i>
-                        <h5 class="fw-bold">Accept Invitation</h5>
                         <p class="text-muted">Are you sure you want to accept the invitation from <strong>${studioName}</strong>?</p>
                         <p class="text-muted small">You will become a member of this studio.</p>
                     </div>`,
                     showCancelButton: true,
                     confirmButtonText: 'Yes, Accept',
-                    confirmButtonColor: '#007BFF',
+                    confirmButtonColor: '#3475db',
                     cancelButtonText: 'Cancel',
                     cancelButtonColor: '#6C757D',
                     reverseButtons: true
@@ -439,14 +437,12 @@
                                         title: 'Invitation Accepted!',
                                         html: `<div class="text-center">
                                             <i class="ti ti-check-circle fs-48 text-primary mb-3"></i>
-                                            <h5 class="fw-bold">Invitation Accepted</h5>
                                             <p class="text-muted">You have successfully accepted the invitation from <strong>${studioName}</strong>.</p>
                                             <p class="text-muted small">You are now a member of this studio.</p>
                                         </div>`,
-                                        showConfirmButton: true,
-                                        confirmButtonText: 'OK',
-                                        confirmButtonColor: '#007BFF',
-                                        timer: 3000
+                                        showConfirmButton: false,
+                                        timer: 3000,
+                                        timerProgressBar: true
                                     }).then(() => {
                                         window.location.reload();
                                     });
@@ -533,13 +529,11 @@
                                 title: 'Invitation Declined',
                                 html: `<div class="text-center">
                                     <i class="ti ti-check-circle fs-48 text-primary mb-3"></i>
-                                    <h5 class="fw-bold">Invitation Declined</h5>
                                     <p class="text-muted">Invitation from <strong>${currentStudioName}</strong> has been declined.</p>
                                 </div>`,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK',
-                                confirmButtonColor: '#007BFF',
-                                timer: 3000
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
                             }).then(() => {
                                 window.location.reload();
                             });
@@ -565,9 +559,3 @@
         });
     </script>
 @endsection
-
-
-
-
-
-

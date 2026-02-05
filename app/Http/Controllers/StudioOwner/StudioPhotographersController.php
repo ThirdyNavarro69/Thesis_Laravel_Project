@@ -298,7 +298,7 @@ class StudioPhotographersController extends Controller
         if ($request->hasFile('profile_photo')) {
             $file = $request->file('profile_photo');
             $filename = 'profile_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('profiles/photographers', $filename, 'public');
+            $file->storeAs('profile-photos', $filename, 'public');
             return $filename;
         }
         

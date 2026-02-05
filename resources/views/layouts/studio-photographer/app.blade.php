@@ -30,10 +30,10 @@
 
     {{-- MAIN WRAPPER --}}
     <div class="wrapper">
-        @include('layouts.client.sidebar')
-        @include('layouts.client.topbar')
+        @include('layouts.studio-photographer.sidebar')
+        @include('layouts.studio-photographer.topbar')
         @yield('content')
-        @include('layouts.client.theme')
+        @include('layouts.studio-photographer.theme')
     </div>
 
     {{-- VENDOR JS --}}

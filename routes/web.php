@@ -5,6 +5,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ClientMiddleware;
 use App\Http\Middleware\OwnerMiddleware;
 use App\Http\Middleware\FreelancerMiddleware;
+use App\Http\Middleware\StudioPhotographerMiddleware;
 
 // Auth Routes =========================================================================================================================================================
 Route::prefix('auth')->group(function () {
@@ -170,6 +171,14 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
+    // Studio-Photographer  =======================================================================================================================================================
+    Route::prefix('studio-photographer')->middleware([StudioPhotographerMiddleware::class])->group(function () {
+
+        // Dashboard
+        Route::get('/dashboard',                [\App\Http\Controllers\StudioPhotographer\DashboardController::class, 'index'])->name('studio-photographer.dashboard');
+
+    });
+
     // Home redirect based on authentication
     Route::get('/', function () {
         if (auth()->check()) {
@@ -178,7 +187,8 @@ Route::middleware(['auth'])->group(function () {
                 'admin' => 'admin.dashboard',
                 'owner' => 'owner.dashboard',
                 'freelancer' => 'freelancer.dashboard',
-                'client' => 'client.dashboard'
+                'client' => 'client.dashboard',
+                'studio-photographer' => 'studio-photographer.dashboard'
             ];
             
             return redirect()->route($routes[$user->role] ?? 'login');
@@ -197,7 +207,8 @@ Route::fallback(function () {
             'admin' => 'admin.dashboard',
             'owner' => 'owner.dashboard',
             'freelancer' => 'freelancer.dashboard',
-            'client' => 'client.dashboard'
+            'client' => 'client.dashboard',
+            'studio-photographer' => 'studio-photographer.dashboard'
         ];
         
         return redirect()->route($routes[$user->role] ?? 'login');

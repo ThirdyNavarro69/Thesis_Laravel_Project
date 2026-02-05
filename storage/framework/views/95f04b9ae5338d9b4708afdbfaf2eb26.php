@@ -204,10 +204,8 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Invitation</button>
-                        <button type="submit" class="btn btn-danger" id="cancelInvitationBtn">
-                            <i class="me-1" data-lucide="x"></i> Cancel Invitation
-                        </button>
+                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Keep Invitation</button>
+                        <button type="submit" class="btn btn-danger" id="cancelInvitationBtn">Cancel Invitation</button>
                     </div>
                 </form>
             </div>
@@ -950,13 +948,11 @@
                                 title: 'Invitation Cancelled',
                                 html: `<div class="text-center">
                                     <i class="ti ti-check-circle fs-48 text-primary mb-3"></i>
-                                    <h5 class="fw-bold">Invitation Cancelled</h5>
                                     <p class="text-muted">Invitation to <strong>${currentFreelancerName}</strong> has been cancelled.</p>
                                 </div>`,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK',
-                                confirmButtonColor: '#007BFF',
-                                timer: 3000
+                                showConfirmButton: false,
+                                timer: 3000,
+                                timerProgressBar: true
                             }).then((result) => {
                                 if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
                                     // Reload page to update status

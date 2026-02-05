@@ -240,7 +240,8 @@ class AuthController extends Controller
             'admin' => 'admin.dashboard',
             'owner' => 'owner.dashboard',
             'freelancer' => 'freelancer.dashboard',
-            'client' => 'client.dashboard'
+            'client' => 'client.dashboard',
+            'studio-photographer' => 'studio-photographer.dashboard'
         ];
         
         return route($routes[$role] ?? 'login');

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\StudioOwner;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StudioMemberInviteRequest;
+use App\Http\Requests\StudioOwner\StudioMemberInviteRequest;
 use App\Models\StudioOwner\StudioMemberModel;
 use App\Models\StudioOwner\UserModel;
 use App\Models\StudioOwner\StudiosModel;

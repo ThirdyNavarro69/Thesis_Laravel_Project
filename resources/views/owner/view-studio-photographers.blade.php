@@ -435,7 +435,7 @@
                                                     <div class="col-12 col-lg-8">
                                                         <div class="d-flex align-items-center flex-column flex-md-row">
                                                             <div class="flex-shrink-0 mb-3 mb-md-0">
-                                                                <img src="${user.profile_photo ? '/storage/profiles/photographers/' + user.profile_photo : 'https://via.placeholder.com/80'}" 
+                                                                <img src="${user.profile_photo ? '/storage/profile-photos/' + user.profile_photo : 'https://via.placeholder.com/80'}" 
                                                                     class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" 
                                                                     alt="Photographer Profile Photo">
                                                             </div>

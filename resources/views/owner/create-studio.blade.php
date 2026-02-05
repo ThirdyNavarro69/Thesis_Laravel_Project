@@ -156,7 +156,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-6 mb-3">
-                                        <label class="form-label">Municipality <span class="text-danger">*</span></label>
+                                        <label class="form-label">Municipality</label>
                                         <select class="form-control" id="municipalitySelect" name="municipality" required>
                                             <option value="">Select your municipality</option>
                                             @foreach($municipalities as $municipality)
@@ -169,7 +169,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-6 mb-3">
-                                        <label class="form-label">Barangay <span class="text-danger">*</span></label>
+                                        <label class="form-label">Barangay</label>
                                         <select class="form-control" id="barangaySelect" name="barangay" required disabled>
                                             <option value="">Select municipality first</option>
                                         </select>
@@ -179,7 +179,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-6 mb-3">
-                                        <label class="form-label">ZIP Code <span class="text-danger">*</span></label>
+                                        <label class="form-label">ZIP Code</label>
                                         <input type="text" class="form-control" id="zipCodeInput" placeholder="ZIP code will auto-fill" name="zip_code_display" readonly required>
                                         <div class="invalid-feedback">
                                             Please wait for the ZIP code to load or select a valid municipality.
@@ -187,7 +187,7 @@
                                     </div>
 
                                     <div class="col-12 mb-3">
-                                        <label class="form-label">Street Address <span class="text-danger">*</span></label>
+                                        <label class="form-label">Street Address</label>
                                         <input type="text" class="form-control" placeholder="Enter your street address" name="street" required>
                                         <div class="invalid-feedback">
                                             Please enter your street address.
@@ -227,18 +227,32 @@
                                     <h4 class="card-title text-primary mb-3">Operating Schedule</h4>
                                     <div class="col-12 mb-3">
                                         <label class="form-label">Operating Days</label>
-                                        <select class="form-control" id="operatingDays" name="operating_days[]" multiple required>
-                                            <option value="monday">Monday</option>
-                                            <option value="tuesday">Tuesday</option>
-                                            <option value="wednesday">Wednesday</option>
-                                            <option value="thursday">Thursday</option>
-                                            <option value="friday">Friday</option>
-                                            <option value="saturday">Saturday</option>
-                                            <option value="sunday">Sunday</option>
-                                        </select>
-                                        <div class="invalid-feedback">
-                                            Please select the operating days.
+                                        <div class="btn-group w-100 mb-1" role="group" aria-label="Weekday toggle button group" id="operatingDaysGroup">
+                                            <input type="checkbox" class="btn-check" id="btnMonday" name="operating_days[]" value="monday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnMonday">Monday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnTuesday" name="operating_days[]" value="tuesday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnTuesday">Tuesday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnWednesday" name="operating_days[]" value="wednesday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnWednesday">Wednesday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnThursday" name="operating_days[]" value="thursday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnThursday">Thursday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnFriday" name="operating_days[]" value="friday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnFriday">Friday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnSaturday" name="operating_days[]" value="saturday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnSaturday">Saturday</label>
+
+                                            <input type="checkbox" class="btn-check" id="btnSunday" name="operating_days[]" value="sunday" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="btnSunday">Sunday</label>
                                         </div>
+                                        <div class="invalid-feedback operating-days-error" style="display: none;">
+                                            Please select at least one operating day.
+                                        </div>
+                                        <small class="form-text text-muted">Select all days your studio will be open for business</small>
                                     </div>
 
                                     <div class="col-12 col-md-6 mb-3">
@@ -328,7 +342,7 @@
 @section('scripts')
     <script>
         $(document).ready(function() {
-            // Initialize Choices for multi-select
+            // Initialize Choices for service categories only
             function initializeChoices() {
                 if (typeof Choices !== 'undefined') {
                     // Service Categories (multi-select)
@@ -339,18 +353,6 @@
                             searchEnabled: true,
                             placeholder: true,
                             placeholderValue: 'Select service categories',
-                            shouldSort: false
-                        });
-                    }
-
-                    // Operating days (multi-select)
-                    const operatingDaysSelect = document.querySelector('select[name="operating_days[]"]');
-                    if (operatingDaysSelect) {
-                        new Choices(operatingDaysSelect, {
-                            removeItemButton: true,
-                            searchEnabled: true,
-                            placeholder: true,
-                            placeholderValue: 'Select operating days',
                             shouldSort: false
                         });
                     }
@@ -432,11 +434,42 @@
                 $('#zipCodeInput').after(`<input type="hidden" id="hiddenZipCode" name="zip_code" value="${initialZipCode}">`);
             }
 
-            // AJAX Form Submission - UPDATED for new fields
+            // Function to validate operating days
+            function validateOperatingDays() {
+                const checkedDays = $('#operatingDaysGroup input[type="checkbox"]:checked');
+                const errorElement = $('.operating-days-error');
+                const operatingDaysGroup = $('#operatingDaysGroup');
+                
+                if (checkedDays.length === 0) {
+                    operatingDaysGroup.addClass('border border-danger rounded');
+                    errorElement.show();
+                    return false;
+                } else {
+                    operatingDaysGroup.removeClass('border border-danger rounded');
+                    errorElement.hide();
+                    return true;
+                }
+            }
+
+            // Validate operating days when checkboxes change
+            $('#operatingDaysGroup input[type="checkbox"]').on('change', function() {
+                validateOperatingDays();
+            });
+
+            // AJAX Form Submission
             $('#studioRegistrationForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                // Validate required fields before submission
+                // Validate operating days before submission
+                if (!validateOperatingDays()) {
+                    // Scroll to operating days section
+                    $('html, body').animate({
+                        scrollTop: $('#operatingDaysGroup').offset().top - 100
+                    }, 500);
+                    return;
+                }
+                
+                // Validate other required fields before submission
                 if (!validateForm()) {
                     return;
                 }
@@ -464,16 +497,17 @@
                     });
                 }
                 
-                // Get selected operating days (multi-select)
-                const operatingDaysSelect = document.querySelector('select[name="operating_days[]"]');
-                if (operatingDaysSelect && operatingDaysSelect.choices) {
-                    const selectedDays = operatingDaysSelect.choices.getValue(true);
-                    // Clear existing values and add new ones
-                    formData.delete('operating_days[]');
-                    selectedDays.forEach(value => {
-                        formData.append('operating_days[]', value);
-                    });
-                }
+                // Get selected operating days from checkboxes
+                const selectedOperatingDays = [];
+                $('#operatingDaysGroup input[type="checkbox"]:checked').each(function() {
+                    selectedOperatingDays.push($(this).val());
+                });
+                
+                // Clear existing operating days values and add new ones from checkboxes
+                formData.delete('operating_days[]');
+                selectedOperatingDays.forEach(value => {
+                    formData.append('operating_days[]', value);
+                });
                 
                 // Ensure barangay value is included
                 const barangayValue = $('#barangaySelect').val();
@@ -526,27 +560,35 @@
                             // Clear previous error messages
                             $('.is-invalid').removeClass('is-invalid');
                             $('.invalid-feedback').hide();
+                            $('.border-danger').removeClass('border border-danger rounded');
                             
                             // Show field errors
                             $.each(errors, function(field, messages) {
                                 // Handle array fields
                                 const fieldName = field.replace(/\.\d+/, '').replace('[]', '');
-                                const input = $(`[name="${fieldName}"], [name="${fieldName}[]"]`);
                                 
-                                if (input.length) {
-                                    input.addClass('is-invalid');
-                                    const feedback = input.closest('.mb-3').find('.invalid-feedback');
-                                    if (feedback.length) {
-                                        feedback.text(messages.join(', ')).show();
-                                    } else {
-                                        // Create feedback element if it doesn't exist
-                                        input.closest('.mb-3').append(`<div class="invalid-feedback">${messages.join(', ')}</div>`);
+                                if (fieldName === 'operating_days') {
+                                    // Special handling for operating days
+                                    $('#operatingDaysGroup').addClass('border border-danger rounded');
+                                    $('.operating-days-error').text(messages.join(', ')).show();
+                                } else {
+                                    const input = $(`[name="${fieldName}"], [name="${fieldName}[]"]`);
+                                    
+                                    if (input.length) {
+                                        input.addClass('is-invalid');
+                                        const feedback = input.closest('.mb-3').find('.invalid-feedback');
+                                        if (feedback.length) {
+                                            feedback.text(messages.join(', ')).show();
+                                        } else {
+                                            // Create feedback element if it doesn't exist
+                                            input.closest('.mb-3').append(`<div class="invalid-feedback">${messages.join(', ')}</div>`);
+                                        }
                                     }
                                 }
                             });
                             
                             // Scroll to first error
-                            const firstError = $('.is-invalid').first();
+                            const firstError = $('.is-invalid, .border-danger').first();
                             if (firstError.length) {
                                 $('html, body').animate({
                                     scrollTop: firstError.offset().top - 100
@@ -583,6 +625,13 @@
                 // Clear previous validation
                 $('.is-invalid').removeClass('is-invalid');
                 $('.invalid-feedback').hide();
+                $('#operatingDaysGroup').removeClass('border border-danger rounded');
+                $('.operating-days-error').hide();
+                
+                // Validate operating days
+                if (!validateOperatingDays()) {
+                    isValid = false;
+                }
                 
                 // Check municipality
                 const municipality = $('#municipalitySelect').val();
@@ -610,7 +659,7 @@
                 
                 if (!isValid) {
                     // Scroll to first error
-                    const firstError = $('.is-invalid').first();
+                    const firstError = $('.is-invalid, .border-danger').first();
                     if (firstError.length) {
                         $('html, body').animate({
                             scrollTop: firstError.offset().top - 100
@@ -619,7 +668,7 @@
                     
                     Swal.fire({
                         title: 'Validation Error!',
-                        text: 'Please fill in all required fields in the Location Information section.',
+                        text: 'Please fill in all required fields.',
                         icon: 'error',
                         confirmButtonColor: '#DC3545',
                         confirmButtonText: 'OK'
@@ -635,6 +684,12 @@
                 $(this).closest('.mb-3').find('.invalid-feedback').hide();
             });
             
+            // Remove border on operating days checkbox change
+            $('#operatingDaysGroup input[type="checkbox"]').on('change', function() {
+                $('#operatingDaysGroup').removeClass('border border-danger rounded');
+                $('.operating-days-error').hide();
+            });
+            
             // Bootstrap validation
             (function() {
                 'use strict';
@@ -642,6 +697,15 @@
                     var forms = document.getElementsByClassName('needs-validation');
                     var validation = Array.prototype.filter.call(forms, function(form) {
                         form.addEventListener('submit', function(event) {
+                            // Custom validation for operating days
+                            const checkedDays = $('#operatingDaysGroup input[type="checkbox"]:checked');
+                            if (checkedDays.length === 0) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                $('#operatingDaysGroup').addClass('border border-danger rounded');
+                                $('.operating-days-error').show();
+                            }
+                            
                             if (form.checkValidity() === false) {
                                 event.preventDefault();
                                 event.stopPropagation();

@@ -195,7 +195,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-soft-primary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary" id="sendInvitationBtn">
                             <i class="me-1" data-lucide="send"></i> Send Invitation
                         </button>
@@ -1033,17 +1033,16 @@
                                     <h5 class="fw-bold">Invitation Sent Successfully</h5>
                                     <p class="text-muted">Your invitation has been sent to <strong>${currentFreelancerName}</strong>.</p>
                                 </div>`,
-                                showConfirmButton: true,
-                                confirmButtonText: 'OK',
-                                confirmButtonColor: '#007BFF',
-                                timer: 3000
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
                             });
                             
                             // Update UI
                             $(`.invite-btn[data-freelancer-id="${currentFreelancerId}"]`)
                                 .replaceWith(`
                                     <button type="button" class="btn btn-sm btn-success" disabled>
-                                        <i class="ti ti-check fs-lg"></i> Invited
+                                        <i class="ti ti-check fs-lg me-2"></i> Invited
                                     </button>
                                 `);
                             
@@ -1072,8 +1071,6 @@
                                 icon: 'error',
                                 title: 'Validation Error',
                                 html: `<div class="text-center">
-                                    <i class="ti ti-alert-circle fs-48 text-danger mb-3"></i>
-                                    <h5 class="fw-bold">Please Check the Form</h5>
                                     <p class="text-muted">There are errors in the form that need to be corrected.</p>
                                 </div>`,
                                 showConfirmButton: true,
@@ -1086,10 +1083,8 @@
                                 icon: 'error',
                                 title: 'Operation Failed',
                                 html: `<div class="text-center">
-                                    <i class="ti ti-alert-circle fs-48 text-danger mb-3"></i>
-                                    <h5 class="fw-bold">Operation Failed</h5>
                                     <p class="text-muted">${xhr.responseJSON?.message || 'Please try again.'}</p>
-                                </div>`,
+                                    </div>`,
                                 showConfirmButton: true,
                                 confirmButtonText: 'OK',
                                 confirmButtonColor: '#DC3545', // Red color

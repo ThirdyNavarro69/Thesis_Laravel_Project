@@ -49,13 +49,10 @@
                                 </div>
                                 @empty
                                 <div class="col-12">
-                                    <div class="text-center py-5">
+                                    <div class="text-center">
                                         <i class="ti ti-package-off fs-1 text-muted"></i>
                                         <h4 class="mt-3">No Packages Created Yet</h4>
                                         <p class="text-muted mb-4">Start by creating your first package</p>
-                                        <a href="{{ route('owner.packages.create') }}" class="btn btn-primary">
-                                            <i class="ti ti-plus me-1"></i> Create Package
-                                        </a>
                                     </div>
                                 </div>
                                 @endforelse

@@ -65,8 +65,8 @@
                                                         <a href="#" class="link-reset"><?php echo e($studio->studio_name); ?></a>
                                                     </h5>
                                                     <p class="mb-0 fs-xxs">
-                                                        <span class="fw-medium">ID:</span>
-                                                        <span class="text-muted"><?php echo e($studio->id); ?></span>
+                                                        <span class="fw-medium">Studio Owner:</span>
+                                                        <span class="text-muted"><?php echo e($studio->user->first_name); ?> <?php echo e($studio->user->last_name); ?></span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -502,12 +502,8 @@
                                 <?php endif; ?>
 
                                 <div class="row g-2 mb-3">
-                                    <h5 class="card-title text-primary">SERVICE AND BUSINESS INFORMATION</h5>
-                                    
-                                    
+                                    <h5 class="card-title text-primary">SERVICE AND BUSINESS INFORMATION</h5>                                    
                                     <div class="row g-2 mb-3">
-                                        <h5 class="card-title text-primary">SERVICE INFORMATION</h5>
-                                        
                                         
                                         <div class="col-12 mb-3">
                                             <label class="text-muted small mb-1">Service Categories</label>

@@ -52,8 +52,8 @@
                                                         <a href="#" class="link-reset">{{ $studio->studio_name }}</a>
                                                     </h5>
                                                     <p class="mb-0 fs-xxs">
-                                                        <span class="fw-medium">ID:</span>
-                                                        <span class="text-muted">{{ $studio->id }}</span>
+                                                        <span class="fw-medium">Studio Owner:</span>
+                                                        <span class="text-muted">{{ $studio->user->first_name }} {{ $studio->user->last_name }}</span>
                                                     </p>
                                                 </div>
                                             </div>

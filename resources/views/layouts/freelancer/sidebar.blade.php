@@ -82,7 +82,7 @@
                     <ul class="sub-menu">
                         <li class="side-nav-item">
                             <a href="{{ route('freelancer.invitation.index') }}" class="side-nav-link {{ $memberInvitationRoutes ? 'active' : '' }}">
-                                <span class="menu-text" data-lang="view-member-invitation">View Member Invitations</span>
+                                <span class="menu-text" data-lang="view-invitation">View Invitations</span>
                             </a>
                         </li>
                     </ul>

@@ -52,8 +52,8 @@
                                                         <a href="#" class="link-reset"><?php echo e($studio->studio_name); ?></a>
                                                     </h5>
                                                     <p class="mb-0 fs-xxs">
-                                                        <span class="fw-medium">ID:</span>
-                                                        <span class="text-muted"><?php echo e($studio->id); ?></span>
+                                                        <span class="fw-medium">Studio Owner:</span>
+                                                        <span class="text-muted"><?php echo e($studio->user->first_name); ?> <?php echo e($studio->user->last_name); ?></span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -622,5 +622,4 @@
         </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.admin.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\proj\resources\views/admin/view-studios.blade.php ENDPATH**/ ?>
