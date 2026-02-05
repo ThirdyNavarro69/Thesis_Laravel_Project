@@ -1,5 +1,5 @@
 @extends('layouts.owner.app')
-@section('title', 'Studio Photographers')
+@section('title', 'Add Studio Photographers')
 
 {{-- CONTENT --}}
 @section('content')
@@ -107,7 +107,7 @@
                                     <div class="form-group mb-2">
                                         <label class="form-label">Specialization</label>
                                         <select class="form-select" id="specializationSelect" name="specialization" required>
-                                            <option value="">Select specialization...</option>
+                                            <option value="">Select specialization</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Please select a valid specialization.
@@ -167,35 +167,37 @@
                     return;
                 }
                 
-                // Show loading
-                $specializationSelect.append('<option value="" disabled>Loading specializations...</option>');
+                // Add loading option
+                const $loadingOption = $('<option value="" disabled>Loading categories...</option>');
+                $specializationSelect.append($loadingOption);
                 
                 $.ajax({
                     url: "{{ route('owner.studio.services', ['id' => '__ID__']) }}".replace('__ID__', studioId),
                     method: 'GET',
                     success: function(response) {
-                        // Clear loading option
-                        $specializationSelect.find('option[value=""]:disabled:not(:first)').remove();
+                        // Remove loading option specifically
+                        $loadingOption.remove();
                         
                         if (response.success && response.categories && response.categories.length > 0) {
                             response.categories.forEach(category => {
                                 $specializationSelect.append(
-                                    `<option value="${category.category_id}">${category.category_name} (${category.services_count} Services)</option>`
+                                    `<option value="${category.id}">${category.category_name}</option>`
                                 );
                             });
                             $specializationSelect.prop('disabled', false);
                         } else {
-                            $specializationSelect.append('<option value="" disabled>No specializations available</option>');
+                            $specializationSelect.append('<option value="" disabled>No categories available for this studio</option>');
                         }
                     },
                     error: function() {
-                        $specializationSelect.find('option[value=""]:disabled:not(:first)').remove();
-                        $specializationSelect.append('<option value="" disabled>Failed to load specializations</option>');
+                        // Remove loading option on error
+                        $loadingOption.remove();
+                        $specializationSelect.append('<option value="" disabled>Failed to load categories</option>');
                     }
                 });
             });
-
-            // Handle form submission with AJAX
+            
+            // Rest of the form submission code remains the same...
             $('form.needs-validation').on('submit', function(e) {
                 e.preventDefault();
                 
@@ -205,7 +207,7 @@
                 const $spinner = $('#spinner');
                 
                 // Validate form
-                if (!this.checkValidity()) {
+                if (!$form[0].checkValidity()) {
                     e.stopPropagation();
                     $form.addClass('was-validated');
                     return;
@@ -213,12 +215,6 @@
                 
                 // Prepare form data
                 const formData = new FormData(this);
-                
-                // Debug: Show what's being sent
-                console.log('FormData entries:');
-                for (let pair of formData.entries()) {
-                    console.log(pair[0] + ': ' + pair[1]);
-                }
                 
                 // Show loading
                 $submitBtn.prop('disabled', true);
@@ -236,10 +232,7 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
-                        console.log('Create Response:', response);
-                        
                         if (response.success) {
-                            // Show success message
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Success!',
@@ -248,30 +241,8 @@
                                 timer: 1500,
                                 timerProgressBar: true,
                                 didClose: () => {
-                                    // Reset form
-                                    $form[0].reset();
-                                    $form.removeClass('was-validated');
-                                    $('#specializationSelect').find('option:not(:first)').remove();
-                                    $('#specializationSelect').prop('disabled', true);
-                                    
-                                    // Show generated password
-                                    if (response.data && response.data.password) {
-                                        Swal.fire({
-                                            icon: 'info',
-                                            title: 'Photographer Created',
-                                            html: `
-                                                <p>Photographer has been created successfully!</p>
-                                                <p class="text-danger fw-bold mt-2">
-                                                    Generated Password: <code>${response.data.password}</code>
-                                                </p>
-                                                <p class="text-muted small">Please provide this password to the photographer.</p>
-                                            `,
-                                            confirmButtonText: 'OK'
-                                        });
-                                    } else {
-                                        // Redirect to list page
-                                        window.location.href = "{{ route('owner.studio-photographers.index') }}";
-                                    }
+                                    // Remove the password display Swal and redirect immediately
+                                    window.location.href = "{{ route('owner.studio-photographers.index') }}";
                                 }
                             });
                         } else {
@@ -283,14 +254,11 @@
                         }
                     },
                     error: function(xhr) {
-                        console.error('Create Error:', xhr);
-                        
                         let errorMessage = 'An error occurred. Please try again.';
                         
                         if (xhr.responseJSON && xhr.responseJSON.errors) {
                             const errors = xhr.responseJSON.errors;
                             errorMessage = Object.values(errors).flat().join('<br>');
-                            console.log('Validation errors:', errors);
                         } else if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMessage = xhr.responseJSON.message;
                         }

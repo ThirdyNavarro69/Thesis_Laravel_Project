@@ -36,7 +36,7 @@ class StudioPhotographerRequest extends FormRequest
             'mobile_number' => 'required|string|max:20',
             'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'position' => 'required|string|max:100',
-            'specialization' => 'required|exists:tbl_categories,id', // Single value, not array
+            'specialization' => 'required|exists:tbl_categories,id', // Changed back to categories
             'years_experience' => 'required|integer|min:0|max:50',
             'status' => 'required|in:active,inactive',
         ];
@@ -58,7 +58,8 @@ class StudioPhotographerRequest extends FormRequest
             'email.unique' => 'This email is already registered.',
             'mobile_number.required' => 'Contact number is required.',
             'position.required' => 'Position is required.',
-            'specialization.required' => 'Please select at least one specialization.',
+            'specialization.required' => 'Please select a specialization.',
+            'specialization.exists' => 'The selected specialization is invalid.',
             'years_experience.required' => 'Years of experience is required.',
             'status.required' => 'Status is required.',
         ];

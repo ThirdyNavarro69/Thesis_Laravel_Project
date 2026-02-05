@@ -23,7 +23,7 @@ class StudioPhotographersModel extends Model
         'owner_id',
         'photographer_id',
         'position',
-        'specialization',
+        'specialization', // Now FK to tbl_services.id
         'years_of_experience',
         'status',
     ];
@@ -63,12 +63,20 @@ class StudioPhotographersModel extends Model
     }
 
     /**
-     * Get the services through pivot table.
+     * Get the service that is the photographer's specialization.
+     */
+    public function specializationService()
+    {
+        return $this->belongsTo(\App\Models\StudioOwner\ServicesModel::class, 'specialization');
+    }
+
+    /**
+     * Get all services assigned to photographer through pivot.
      */
     public function services()
     {
         return $this->belongsToMany(
-            ServicesModel::class,
+            \App\Models\StudioOwner\ServicesModel::class,
             'pvt_studio_photographers',
             'photographer_id',
             'services_id'
@@ -91,5 +99,22 @@ class StudioPhotographersModel extends Model
     public function isActive()
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Get the category through the service.
+     */
+    public function category()
+    {
+        // Since specialization now points to tbl_categories.id directly
+        return $this->belongsTo(\App\Models\Admin\CategoriesModel::class, 'specialization');
+    }
+
+    /**
+     * Get the category that is the photographer's specialization.
+     */
+    public function specializationCategory()
+    {
+        return $this->belongsTo(\App\Models\Admin\CategoriesModel::class, 'specialization');
     }
 }

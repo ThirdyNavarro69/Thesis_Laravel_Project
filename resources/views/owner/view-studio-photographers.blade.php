@@ -57,7 +57,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($photographers as $photographer)
+                                    @foreach($photographers as $photographer)
                                         @php
                                             $user = $photographer->photographer;
                                             $studio = $photographer->studio;
@@ -108,17 +108,7 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">
-                                                <div class="text-muted">
-                                                    <i class="ti ti-users-off fs-20 mb-2"></i>
-                                                    <p class="mb-0">No studio photographers found.</p>
-                                                    <p class="small mb-0">Click "Create Studio Photographers" to add new photographers.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>

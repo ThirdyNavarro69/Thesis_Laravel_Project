@@ -10,6 +10,8 @@ use App\Models\StudioOwner\StudioPhotographerPivotModel;
 use App\Models\StudioOwner\UserModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\ServicesModel;
+use App\Mail\PhotographerRegistrationMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -23,18 +25,24 @@ class StudioPhotographersController extends Controller
         // Get studios owned by the current user
         $studios = StudiosModel::where('user_id', $ownerId)->get();
         
-        // Get studio photographers for the current owner with category name
+        // Get studio photographers for the current owner with service details
         $photographers = StudioPhotographersModel::with([
                 'photographer',
                 'studio',
+                'specializationService.category' // Load service with category
             ])
             ->where('owner_id', $ownerId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function($photographer) {
-                // Get category name
-                $category = \App\Models\Admin\CategoriesModel::find($photographer->specialization);
-                $photographer->category_name = $category ? $category->category_name : 'Not specified';
+                // Get service name from specialization
+                if ($photographer->specializationService) {
+                    $photographer->service_name = $this->getServiceName($photographer->specializationService);
+                    $photographer->category_name = $photographer->specializationService->category->category_name ?? 'Not specified';
+                } else {
+                    $photographer->service_name = 'Not specified';
+                    $photographer->category_name = 'Not specified';
+                }
                 return $photographer;
             });
         
@@ -52,7 +60,7 @@ class StudioPhotographersController extends Controller
     }
 
     /**
-     * Get services for a specific studio - grouped by category
+     * Get services for a specific studio - returns services grouped by category
      */
     public function getStudioServices($studioId)
     {
@@ -63,60 +71,17 @@ class StudioPhotographersController extends Controller
             ->where('user_id', $ownerId)
             ->firstOrFail();
         
-        // Get all services for this studio
-        $services = ServicesModel::where('studio_id', $studioId)
-            ->with('category')
+        // Get DISTINCT categories from services for this studio
+        $categories = ServicesModel::where('studio_id', $studioId)
+            ->join('tbl_categories', 'tbl_services.category_id', '=', 'tbl_categories.id')
+            ->select(
+                'tbl_categories.id',
+                'tbl_categories.category_name',
+                DB::raw('COUNT(tbl_services.id) as services_count')
+            )
+            ->groupBy('tbl_categories.id', 'tbl_categories.category_name')
+            ->orderBy('tbl_categories.category_name')
             ->get();
-        
-        // Group services by category
-        $categories = [];
-        
-        foreach ($services as $service) {
-            $categoryId = $service->category_id;
-            $categoryName = $service->category->category_name ?? 'Uncategorized';
-            
-            if (!isset($categories[$categoryId])) {
-                $categories[$categoryId] = [
-                    'category_id' => $categoryId,
-                    'category_name' => $categoryName,
-                    'service_ids' => [],
-                    'service_names' => [],
-                    'services_count' => 0
-                ];
-            }
-            
-            // Add service ID
-            $categories[$categoryId]['service_ids'][] = $service->id;
-            
-            // Count individual service items within the service_name JSON
-            if (is_array($service->service_name)) {
-                $categories[$categoryId]['services_count'] += count($service->service_name);
-                $categories[$categoryId]['service_names'] = array_merge(
-                    $categories[$categoryId]['service_names'],
-                    $service->service_name
-                );
-            } elseif (is_string($service->service_name)) {
-                try {
-                    $decoded = json_decode($service->service_name, true);
-                    if (is_array($decoded)) {
-                        $categories[$categoryId]['services_count'] += count($decoded);
-                        $categories[$categoryId]['service_names'] = array_merge(
-                            $categories[$categoryId]['service_names'],
-                            $decoded
-                        );
-                    } else {
-                        $categories[$categoryId]['services_count']++;
-                        $categories[$categoryId]['service_names'][] = $service->service_name;
-                    }
-                } catch (\Exception $e) {
-                    $categories[$categoryId]['services_count']++;
-                    $categories[$categoryId]['service_names'][] = $service->service_name;
-                }
-            }
-        }
-        
-        // Convert to array and reset keys
-        $categories = array_values($categories);
         
         return response()->json([
             'success' => true,
@@ -125,7 +90,7 @@ class StudioPhotographersController extends Controller
     }
 
     /**
-     * Store a newly created studio photographer - SIMPLIFIED for single category
+     * Store a newly created studio photographer
      */
     public function store(StudioPhotographerRequest $request)
     {
@@ -137,6 +102,7 @@ class StudioPhotographersController extends Controller
             
             // Generate password: role + uuid
             $password = 'studio-photographer' . $uuid;
+            $temporaryPassword = $password; // Store for email
             
             // Create photographer user
             $photographerUser = UserModel::create([
@@ -156,27 +122,37 @@ class StudioPhotographersController extends Controller
                 'token_expiry' => null,
             ]);
             
-            // Get selected category ID (single value now)
+            // Get selected category ID from the dropdown
             $categoryId = $request->specialization;
             
-            // Get all service IDs for this category in this studio
+            // Get ALL services under this category for the selected studio
             $serviceIds = ServicesModel::where('studio_id', $request->studio_id)
                 ->where('category_id', $categoryId)
                 ->pluck('id')
                 ->toArray();
             
-            // Create studio photographer record - store single category ID
+            if (empty($serviceIds)) {
+                throw new \Exception('No services found for the selected category.');
+            }
+            
+            // Use the first service as the primary specialization
+            $primaryServiceId = $serviceIds[0];
+            
+            // Get studio info for email
+            $studio = StudiosModel::find($request->studio_id);
+            
+            // Create studio photographer record - store the primary service ID as specialization
             $studioPhotographer = StudioPhotographersModel::create([
                 'studio_id' => $request->studio_id,
                 'owner_id' => $ownerId,
                 'photographer_id' => $photographerUser->id,
                 'position' => $request->position,
-                'specialization' => $categoryId, // Store single category ID (not JSON)
+                'specialization' => $primaryServiceId, // Store primary service ID
                 'years_of_experience' => $request->years_experience,
                 'status' => $request->status,
             ]);
             
-            // Create pivot records for ALL services in selected category
+            // Create pivot records for ALL services in this category
             foreach ($serviceIds as $serviceId) {
                 StudioPhotographerPivotModel::create([
                     'studio_id' => $request->studio_id,
@@ -186,19 +162,40 @@ class StudioPhotographersController extends Controller
                 ]);
             }
             
+            // Prepare data for email
+            $photographerData = [
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'position' => $request->position,
+                'years_experience' => $request->years_experience,
+                'status' => $request->status,
+                'profile_photo' => $this->handleProfilePhoto($request),
+                'studio_name' => $studio->studio_name ?? 'N/A',
+                'specialization' => $request->specialization,
+            ];
+            
+            // Send registration email
+            $this->sendRegistrationEmail($photographerData, $temporaryPassword);
+            
             DB::commit();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Studio photographer created successfully!',
+                'message' => 'Studio photographer registered successfully! Login credentials have been emailed to ' . $request->email,
                 'data' => [
-                    'photographer_id' => $photographerUser->id,
-                    'password' => $password // For demo purposes only
+                    'photographer_id' => $photographerUser->id
                 ]
             ]);
             
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Log the error for debugging
+            \Log::error('Failed to create studio photographer: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all()
+            ]);
             
             return response()->json([
                 'success' => false,
@@ -217,7 +214,7 @@ class StudioPhotographersController extends Controller
         $query = StudioPhotographersModel::with([
             'photographer',
             'studio',
-            'services'
+            'specializationService.category'
         ])
         ->where('owner_id', $ownerId);
         
@@ -244,6 +241,15 @@ class StudioPhotographersController extends Controller
         $photographers = $query->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 10));
         
+        // Format response
+        $photographers->getCollection()->transform(function($photographer) {
+            if ($photographer->specializationService) {
+                $photographer->service_name = $this->getServiceName($photographer->specializationService);
+                $photographer->category_name = $photographer->specializationService->category->category_name ?? 'Not specified';
+            }
+            return $photographer;
+        });
+        
         return response()->json([
             'success' => true,
             'data' => $photographers
@@ -260,22 +266,26 @@ class StudioPhotographersController extends Controller
         $photographer = StudioPhotographersModel::with([
             'photographer',
             'studio',
+            'specializationService.category',
             'services.category'
         ])
         ->where('id', $id)
         ->where('owner_id', $ownerId)
         ->firstOrFail();
         
-        // Get category name for the specialization (single value now)
-        $categoryName = null;
-        if ($photographer->specialization) {
-            $category = \App\Models\Admin\CategoriesModel::find($photographer->specialization);
-            $categoryName = $category ? $category->category_name : null;
+        // Get service name for the specialization
+        $serviceName = 'Not specified';
+        $categoryName = 'Not specified';
+        
+        if ($photographer->specializationService) {
+            $serviceName = $this->getServiceName($photographer->specializationService);
+            $categoryName = $photographer->specializationService->category->category_name ?? 'Not specified';
         }
         
         return response()->json([
             'success' => true,
             'data' => $photographer,
+            'service_name' => $serviceName,
             'category_name' => $categoryName
         ]);
     }
@@ -293,5 +303,56 @@ class StudioPhotographersController extends Controller
         }
         
         return null;
+    }
+
+    /**
+     * Extract service name from service record
+     */
+    private function getServiceName($service)
+    {
+        if (!$service) {
+            return 'Not specified';
+        }
+
+        if (is_array($service->service_name)) {
+            return implode(', ', $service->service_name);
+        } elseif (is_string($service->service_name)) {
+            try {
+                $decoded = json_decode($service->service_name, true);
+                if (is_array($decoded)) {
+                    return implode(', ', $decoded);
+                }
+                return $service->service_name;
+            } catch (\Exception $e) {
+                return $service->service_name;
+            }
+        }
+        
+        return 'Not specified';
+    }
+
+    /**
+     * Send registration email to photographer
+     *
+     * @param array $photographerData
+     * @param string $temporaryPassword
+     * @return bool
+     */
+    private function sendRegistrationEmail(array $photographerData, string $temporaryPassword): bool
+    {
+        try {
+            Mail::to($photographerData['email'])->send(
+                new PhotographerRegistrationMail($photographerData, $temporaryPassword)
+            );
+            
+            \Log::info('Registration email sent to photographer: ' . $photographerData['email']);
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to send registration email: ' . $e->getMessage(), [
+                'photographer_email' => $photographerData['email']
+            ]);
+            return false;
+        }
     }
 }
