@@ -38,6 +38,28 @@
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
+
+            {{-- Assigned Studio --}}
+            @php
+                $assignedStudioRoutes   = Route::is('studio-photographer.studio.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $assignedStudioRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageAssignedStudio" aria-expanded="{{ $assignedStudioRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageAssignedStudio" class="side-nav-link {{ $assignedStudioRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
+                    <span class="menu-text" data-lang="assigned-studio">Assigned Studio</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $assignedStudioRoutes ? 'show' : '' }}" id="sidebarManageAssignedStudio">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('studio-photographer.studio.index') }}" class="side-nav-link {{ $assignedStudioRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="assigned-studio">Studios</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 </div>

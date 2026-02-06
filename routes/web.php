@@ -177,6 +177,10 @@ Route::middleware(['auth'])->group(function () {
         // Dashboard
         Route::get('/dashboard',                [\App\Http\Controllers\StudioPhotographer\DashboardController::class, 'index'])->name('studio-photographer.dashboard');
 
+        // Assigned Studio
+        Route::get('/view/studio',              [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'index'])->name('studio-photographer.studio.index');
+        Route::get('/studio/{id}/details',      [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'getStudioDetails'])->name('studio-photographer.studio.details');
+
     });
 
     // Home redirect based on authentication

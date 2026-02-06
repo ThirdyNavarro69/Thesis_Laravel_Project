@@ -2,9 +2,9 @@
 
 namespace App\Models\StudioOwner;
 
+use App\Models\Admin\CategoriesModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Admin\CategoriesModel;
 
 class StudiosModel extends Model
 {
@@ -108,7 +108,7 @@ class StudiosModel extends Model
         return [
             'studio_name' => 'required|string|max:255',
             'studio_type' => 'required|in:photography_studio,video_production,mixed_media',
-            'year_established' => 'required|integer|min:1900|max:' . date('Y'),
+            'year_established' => 'required|integer|min:1900|max:'.date('Y'),
             'studio_description' => 'required|string|min:10|max:1000',
             'studio_logo' => 'required|image|mimes:jpg,jpeg,png|max:3072',
             'province' => 'required|string',
@@ -141,5 +141,21 @@ class StudiosModel extends Model
     public function packages()
     {
         return $this->hasMany(PackagesModel::class, 'studio_id');
+    }
+
+    /**
+     * Get the services for the studio.
+     */
+    public function services()
+    {
+        return $this->hasMany(\App\Models\StudioOwner\ServicesModel::class, 'studio_id');
+    }
+
+    /**
+     * Get the studio photographers assigned to this studio.
+     */
+    public function studioPhotographers()
+    {
+        return $this->hasMany(\App\Models\StudioOwner\StudioPhotographersModel::class, 'studio_id');
     }
 }
