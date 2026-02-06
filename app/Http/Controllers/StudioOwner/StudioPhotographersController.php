@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\StudioOwner\StudioPhotographerRequest;
 use App\Models\StudioOwner\StudioPhotographersModel;
-use App\Models\StudioOwner\StudioPhotographerPivotModel;
 use App\Models\StudioOwner\UserModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\ServicesModel;
@@ -90,7 +89,7 @@ class StudioPhotographersController extends Controller
     }
 
     /**
-     * Store a newly created studio photographer
+     * Store a newly created studio photographer - SIMPLIFIED VERSION
      */
     public function store(StudioPhotographerRequest $request)
     {
@@ -125,18 +124,14 @@ class StudioPhotographersController extends Controller
             // Get selected category ID from the dropdown
             $categoryId = $request->specialization;
             
-            // Get ALL services under this category for the selected studio
-            $serviceIds = ServicesModel::where('studio_id', $request->studio_id)
+            // Find ONE service under this category for the selected studio
+            $primaryService = ServicesModel::where('studio_id', $request->studio_id)
                 ->where('category_id', $categoryId)
-                ->pluck('id')
-                ->toArray();
+                ->first();
             
-            if (empty($serviceIds)) {
+            if (!$primaryService) {
                 throw new \Exception('No services found for the selected category.');
             }
-            
-            // Use the first service as the primary specialization
-            $primaryServiceId = $serviceIds[0];
             
             // Get studio info for email
             $studio = StudiosModel::find($request->studio_id);
@@ -147,20 +142,12 @@ class StudioPhotographersController extends Controller
                 'owner_id' => $ownerId,
                 'photographer_id' => $photographerUser->id,
                 'position' => $request->position,
-                'specialization' => $primaryServiceId, // Store primary service ID
+                'specialization' => $primaryService->id, // Store primary service ID
                 'years_of_experience' => $request->years_experience,
                 'status' => $request->status,
             ]);
             
-            // Create pivot records for ALL services in this category
-            foreach ($serviceIds as $serviceId) {
-                StudioPhotographerPivotModel::create([
-                    'studio_id' => $request->studio_id,
-                    'owner_id' => $ownerId,
-                    'photographer_id' => $photographerUser->id,
-                    'services_id' => $serviceId,
-                ]);
-            }
+            // REMOVED: Pivot table creation - no longer needed
             
             // Prepare data for email
             $photographerData = [
@@ -257,7 +244,7 @@ class StudioPhotographersController extends Controller
     }
 
     /**
-     * Get photographer details
+     * Get photographer details - SIMPLIFIED VERSION
      */
     public function show($id)
     {
@@ -266,8 +253,8 @@ class StudioPhotographersController extends Controller
         $photographer = StudioPhotographersModel::with([
             'photographer',
             'studio',
-            'specializationService.category',
-            'services.category'
+            'specializationService.category'
+            // REMOVED: 'services.category' - pivot table no longer exists
         ])
         ->where('id', $id)
         ->where('owner_id', $ownerId)

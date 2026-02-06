@@ -5,7 +5,6 @@ namespace App\Http\Controllers\StudioPhotographer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\StudioOwner\StudioPhotographersModel;
-use App\Models\StudioOwner\StudioPhotographerPivotModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\UserModel;
 use App\Models\Admin\CategoriesModel;
@@ -30,51 +29,48 @@ class AssignedStudioController extends Controller
             },
             'owner',
             'photographer',
-            'photographerServices.service.category'
+            'specializationService.category' // Changed: Use specializationService instead of photographerServices
         ])
         ->where('photographer_id', $photographerId)
         ->where('status', 'active')
         ->orderBy('created_at', 'desc')
         ->get()
         ->map(function($assignment) {
-            // Get specialization - if it's a service ID, get the category name
+            // Get specialization - it's now a service ID
             $assignment->specialization_display = 'N/A';
 
-            if ($assignment->specialization) {
-                // Try to find the service
-                $service = \App\Models\StudioOwner\ServicesModel::with('category')
-                    ->find($assignment->specialization);
+            if ($assignment->specializationService) {
+                // Get service details
+                $service = $assignment->specializationService;
                 
-                if ($service) {
-                    // If service has a category, show category name
-                    if ($service->category) {
-                        $assignment->specialization_display = $service->category->category_name;
-                    } 
-                    // If no category, try to get the first service name from JSON
-                    else {
-                        $serviceNames = $service->service_name;
-                        
-                        // Parse JSON if service_name is stored as JSON
-                        if (is_string($serviceNames) && json_decode($serviceNames, true) !== null) {
-                            $serviceNames = json_decode($serviceNames, true);
-                        }
-                        
-                        // Ensure it's an array
-                        if (is_array($serviceNames) && !empty($serviceNames)) {
-                            $assignment->specialization_display = is_array($serviceNames[0]) 
-                                ? (isset($serviceNames[0]['name']) ? $serviceNames[0]['name'] : 'Service')
-                                : $serviceNames[0];
-                        } else if (is_string($serviceNames)) {
-                            $assignment->specialization_display = $serviceNames;
-                        }
+                // If service has a category, show category name
+                if ($service->category) {
+                    $assignment->specialization_display = $service->category->category_name;
+                } 
+                // If no category, show service name
+                else {
+                    $serviceNames = $service->service_name;
+                    
+                    // Parse JSON if service_name is stored as JSON
+                    if (is_string($serviceNames) && json_decode($serviceNames, true) !== null) {
+                        $serviceNames = json_decode($serviceNames, true);
+                    }
+                    
+                    // Ensure it's an array
+                    if (is_array($serviceNames) && !empty($serviceNames)) {
+                        $assignment->specialization_display = is_array($serviceNames[0]) 
+                            ? (isset($serviceNames[0]['name']) ? $serviceNames[0]['name'] : 'Service')
+                            : $serviceNames[0];
+                    } else if (is_string($serviceNames)) {
+                        $assignment->specialization_display = $serviceNames;
                     }
                 }
             }
             
-            // Get services for this studio
+            // Get services for this studio (all services, not just assigned ones)
             $studioServices = [];
             if ($assignment->studio) {
-                $services = \App\Models\StudioOwner\ServicesModel::where('studio_id', $assignment->studio->id)
+                $services = ServicesModel::where('studio_id', $assignment->studio->id)
                     ->with('category')
                     ->get();
                 
@@ -116,16 +112,14 @@ class AssignedStudioController extends Controller
             ->filter()
             ->values();
         
-        // Get specializations from tbl_services
-        $specializations = ServicesModel::whereHas('studio', function($query) use ($photographerId) {
-                $query->whereHas('studioPhotographers', function($q) use ($photographerId) {
-                    $q->where('photographer_id', $photographerId)
-                      ->where('status', 'active');
-                });
-            })
-            ->pluck('service_name')
-            ->unique()
+        // Get specializations from tbl_services (via specializationService relationship)
+        $specializations = StudioPhotographersModel::where('photographer_id', $photographerId)
+            ->where('status', 'active')
+            ->with('specializationService')
+            ->get()
+            ->pluck('specializationService.service_name')
             ->filter()
+            ->unique()
             ->values();
         
         return view('studio-photographer.view-assigned-studio', compact(
@@ -151,7 +145,7 @@ class AssignedStudioController extends Controller
                 $query->with(['user', 'location', 'services.category']);
             },
             'owner',
-            'photographerServices.service.category'
+            'specializationService.category' // Changed: Use specializationService instead of photographerServices
         ])
         ->where('photographer_id', $photographerId)
         ->where('studio_id', $id)
@@ -176,37 +170,11 @@ class AssignedStudioController extends Controller
             }
         }
         
-        // Format services by category
+        // Format services by category (now using all studio services)
         $servicesByCategory = [];
-        foreach ($assignment->photographerServices as $pivot) {
-            if ($pivot->service && $pivot->service->category) {
-                $categoryName = $pivot->service->category->category_name;
-                $serviceNames = $pivot->service->service_name;
-                
-                // Parse JSON if service_name is stored as JSON
-                if (is_string($serviceNames) && json_decode($serviceNames, true) !== null) {
-                    $serviceNames = json_decode($serviceNames, true);
-                }
-                
-                // Ensure it's an array
-                if (!is_array($serviceNames)) {
-                    $serviceNames = [$serviceNames];
-                }
-                
-                if (!isset($servicesByCategory[$categoryName])) {
-                    $servicesByCategory[$categoryName] = [];
-                }
-                
-                foreach ($serviceNames as $serviceName) {
-                    if (!in_array($serviceName, $servicesByCategory[$categoryName])) {
-                        $servicesByCategory[$categoryName][] = $serviceName;
-                    }
-                }
-            }
-        }
-
-        // If no services from pivot, get all studio services
-        if (empty($servicesByCategory) && $studio->services) {
+        
+        // Get all studio services
+        if ($studio->services) {
             foreach ($studio->services as $service) {
                 if ($service->category) {
                     $categoryName = $service->category->category_name;
@@ -253,6 +221,25 @@ class AssignedStudioController extends Controller
             $verificationStatus = ucfirst($studio->status);
         }
         
+        // Get specialization display name
+        $specializationDisplay = 'N/A';
+        if ($assignment->specializationService) {
+            $service = $assignment->specializationService;
+            if ($service->category) {
+                $specializationDisplay = $service->category->category_name;
+            } else {
+                $serviceNames = $service->service_name;
+                if (is_string($serviceNames) && json_decode($serviceNames, true) !== null) {
+                    $serviceNames = json_decode($serviceNames, true);
+                }
+                if (is_array($serviceNames) && !empty($serviceNames)) {
+                    $specializationDisplay = $serviceNames[0];
+                } else if (is_string($serviceNames)) {
+                    $specializationDisplay = $serviceNames;
+                }
+            }
+        }
+        
         $data = [
             'id' => $studio->id,
             'name' => $studio->studio_name,
@@ -276,13 +263,13 @@ class AssignedStudioController extends Controller
             'zip_code' => $studio->location ? $studio->location->zip_code : 'N/A',
             'operating_days' => $operatingDays,
             'start_time' => $studio->start_time ? date('g:i A', strtotime($studio->start_time)) : 'N/A',
-            'end_time' => $studio->end_time ? date('g:i A', strtotime($studio->end_time)) : '/A',
+            'end_time' => $studio->end_time ? date('g:i A', strtotime($studio->end_time)) : 'N/A',
             'max_clients_per_day' => $studio->max_clients_per_day,
             'advance_booking_days' => $studio->advance_booking_days,
             'business_permit' => $studio->business_permit ? asset('storage/' . $studio->business_permit) : null,
             'owner_id_document' => $studio->owner_id_document ? asset('storage/' . $studio->owner_id_document) : null,
             'photographer_position' => $assignment->position,
-            'photographer_specialization' => $assignment->specialization_display ?? 'N/A',
+            'photographer_specialization' => $specializationDisplay,
             'years_experience' => $assignment->years_of_experience,
             'assigned_date' => $assignment->created_at->format('F d, Y'),
             'services' => $formattedServices,
