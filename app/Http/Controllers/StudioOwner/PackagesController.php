@@ -104,6 +104,37 @@ class PackagesController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('owner.packages-list', compact('packages'));
+        // Get all active categories for the filter dropdown
+        $categories = \App\Models\Admin\CategoriesModel::where('status', 'active')->get();
+
+        return view('owner.packages-list', compact('packages', 'categories'));
+    }
+
+    /**
+     * Display the specified package.
+     */
+    public function show($id)
+    {
+        try {
+            $userId = Auth::id();
+            
+            // Get package with relationships, ensure it belongs to current user
+            $package = PackagesModel::with(['studio', 'category'])
+                ->whereHas('studio', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $package
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Package not found or you do not have permission to view it.'
+            ], 404);
+        }
     }
 }

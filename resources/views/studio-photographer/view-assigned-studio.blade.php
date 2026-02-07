@@ -1,4 +1,4 @@
-@extends('layouts.owner.app')
+@extends('layouts.studio-photographer.app')
 @section('title', 'View Registered Studios')
 
 {{-- CONTENT --}}

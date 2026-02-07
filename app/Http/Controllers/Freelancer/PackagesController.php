@@ -84,14 +84,19 @@ class PackagesController extends Controller
      */
     public function list()
     {
-        // Get active packages for the current freelancer with category
+        // Get active categories for filter dropdown
+        $categories = CategoriesModel::where('status', 'active')
+            ->select('id', 'category_name')
+            ->get();
+
+        // Get ACTIVE packages for the current freelancer with category
         $packages = PackagesModel::with('category')
             ->where('user_id', Auth::id())
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('freelancer.packages-list', compact('packages'));
+        return view('freelancer.packages-list', compact('packages', 'categories'));
     }
 
     /**
@@ -213,6 +218,40 @@ class PackagesController extends Controller
                 'success' => false,
                 'message' => 'Package not found or you do not have permission to delete it.'
             ], 404);
+        }
+    }
+
+    /**
+     * Display the specified package.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        try {
+            $package = PackagesModel::with('category')
+                ->where('user_id', Auth::id())
+                ->where('id', $id)
+                ->first();
+
+            if (!$package) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Package not found or you do not have permission to view it.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $package
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading package details.'
+            ], 500);
         }
     }
 }

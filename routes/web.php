@@ -119,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/create/packages',                      [\App\Http\Controllers\StudioOwner\PackagesController::class, 'create'])->name('owner.packages.create');
         Route::post('/packages',                            [\App\Http\Controllers\StudioOwner\PackagesController::class, 'store'])->name('owner.packages.store');
         Route::get('/packages/lists',                       [\App\Http\Controllers\StudioOwner\PackagesController::class, 'list'])->name('owner.packages.list');
+        Route::get('/packages/{package}',                   [\App\Http\Controllers\StudioOwner\PackagesController::class, 'show'])->name('owner.packages.show');
     });
 
     // Freelancer Routes ===================================================================================================================================================
@@ -151,7 +152,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/packages/data',                        [\App\Http\Controllers\Freelancer\PackagesController::class, 'getPackages'])->name('freelancer.packages.data');
         Route::get('/packages/categories',                  [\App\Http\Controllers\Freelancer\PackagesController::class, 'getCategories'])->name('freelancer.packages.categories');
         Route::delete('/packages/{id}',                     [\App\Http\Controllers\Freelancer\PackagesController::class, 'destroy'])->name('freelancer.packages.destroy');
-
+        Route::get('/packages/{id}',                        [\App\Http\Controllers\Freelancer\PackagesController::class, 'show'])->name('freelancer.packages.show');
+        
         // Member Invitations
         Route::get('view/member-invitation',                [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'index'])->name('freelancer.invitation.index');
         Route::get('invitation/{id}/details',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'getInvitationDetails'])->name('freelancer.invitation.details');
