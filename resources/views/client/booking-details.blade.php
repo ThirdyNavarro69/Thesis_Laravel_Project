@@ -1,7 +1,7 @@
 @extends('layouts.client.app')
-@section('title', 'Studio Details')
+@section('title', 'Booking Details')
 
-{{-- CONTENT --}}
+{{-- CONTENTS --}}
 @section('content')
     <div class="content-page">
         <div class="container-fluid">                  
@@ -13,11 +13,23 @@
                                 <div class="col-12 col-lg-8">
                                     <div class="d-flex align-items-center flex-column flex-md-row">
                                         <div class="flex-shrink-0 mb-3 mb-md-0">
-                                            <img src="{{ asset('assets/images/sellers/7.png') }}"  class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" alt="Studio Logo">
+                                            @if($type === 'studio')
+                                            <img src="{{ $studio->studio_logo ? asset('storage/' . $studio->studio_logo) : asset('assets/images/sellers/7.png') }}"  
+                                                 class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" alt="Studio Logo">
+                                            @else
+                                            <img src="{{ $freelancer->brand_logo ? asset('storage/' . $freelancer->brand_logo) : asset('assets/images/sellers/3.png') }}"  
+                                                 class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" alt="Freelancer Logo">
+                                            @endif
                                         </div>
                                         
                                         <div class="flex-grow-1 ms-md-4 text-center text-md-start">
-                                            <h2 class="mb-1 h4 h3-md">Luxe Lens Photography Studio</h2>
+                                            <h2 class="mb-1 h4 h3-md">
+                                                @if($type === 'studio')
+                                                    {{ $studio->studio_name }}
+                                                @else
+                                                    {{ $freelancer->brand_name }}
+                                                @endif
+                                            </h2>
                                             <div class="d-flex align-items-center justify-content-center justify-content-md-start mb-2 flex-wrap">
                                                 <span class="text-warning me-2">
                                                     <i class="ti ti-star-filled"></i>
@@ -27,11 +39,19 @@
                                                     <i class="ti ti-star"></i>
                                                 </span>
                                                 <span class="text-muted me-2">4.5</span>
-                                                <span class="badge badge-soft-success p-1">Verified Studio</span>
+                                                <span class="badge badge-soft-success p-1">
+                                                    {{ $type === 'studio' ? 'Verified Studio' : 'Verified Freelancer' }}
+                                                </span>
                                             </div>
                                             
                                             <p class="text-muted mb-0 small">
-                                                <i class="ti ti-map-pin me-1"></i> Dasmariñas City, Cavite | Established: 2018
+                                                <i class="ti ti-map-pin me-1"></i> 
+                                                @if($type === 'studio')
+                                                    {{ $studio->location ? $studio->location->municipality . ', Cavite' : 'Location not specified' }} | 
+                                                    Established: {{ $studio->year_established }}
+                                                @else
+                                                    {{ $freelancer->location ? $freelancer->location->municipality . ', Cavite' : 'Location not specified' }}
+                                                @endif
                                             </p>
                                         </div>
                                     </div>
@@ -41,9 +61,16 @@
                                     <div class="d-flex flex-column gap-2 align-items-center align-items-lg-end">
                                         <div class="text-center text-lg-end">
                                             <span class="text-muted d-block">Starting Price at</span>
-                                            <h3 class="text-success mb-0 h4">PHP 3,500</h3>
+                                            <h3 class="text-success mb-0 h4">
+                                                PHP 
+                                                @if($type === 'studio')
+                                                    {{ number_format($studio->starting_price, 2) }}
+                                                @else
+                                                    {{ number_format($freelancer->starting_price, 2) }}
+                                                @endif
+                                            </h3>
                                         </div>
-                                        <a href="{{ route('client.booking-forms') }}" class="btn btn-primary w-md-auto">
+                                        <a href="{{ route('client.booking-forms', ['type' => $type, 'id' => $type === 'studio' ? $studio->id : $freelancer->id]) }}" class="btn btn-primary w-md-auto">
                                             <i class="ti ti-calendar-check me-2"></i> Book Now
                                         </a>
                                     </div>
@@ -59,26 +86,16 @@
                                 <div class="card-body">
                                     {{-- ABOUT --}}
                                     <div class="row mb-3">
-                                        <h5 class="card-title mb-2 text-primary">About Our Studio</h5>
+                                        <h5 class="card-title mb-2 text-primary">
+                                            {{ $type === 'studio' ? 'About Our Studio' : 'About Me' }}
+                                        </h5>
                                         <p class="mb-0">
-                                            Professional photography studio specializing in wedding, portrait, and event photography. 
-                                            With over 5 years of experience, we capture your special moments with creativity and precision. 
-                                            Our team of certified photographers ensures high-quality results for every project.
+                                            @if($type === 'studio')
+                                                {{ $studio->studio_description ?: 'No description available.' }}
+                                            @else
+                                                {{ $freelancer->bio ?: 'No bio available.' }}
+                                            @endif
                                         </p>
-                                    </div>
-
-                                    {{-- SERVICES --}}
-                                    <div class="row mb-3">
-                                        <h5 class="card-title text-primary">Services Offered</h5>
-                                        <div class="row g-0">
-                                            <div class="col-md-6">
-                                                <ul class="list-group border-0">
-                                                    <li class="list-group-item"><i class="ti ti-check text-success me-2"></i> Wedding Photography</li>
-                                                    <li class="list-group-item"><i class="ti ti-check text-success me-2"></i> Portrait Photography</li>
-                                                    <li class="list-group-item"><i class="ti ti-check text-success me-2"></i> Food Photography</li>
-                                                </ul>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     {{-- PACKAGES --}}
@@ -89,85 +106,70 @@
                                             <div class="col">
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Select Service Package</label>
-                                                    <select class="form-select" aria-label="Default select example">
-                                                        <option selected>Select Service Category</option>
-                                                        <option value="">Wedding Photography</option>
-                                                        <option value="">Pet Photography</option>
-                                                        <option value="">Fashion Photography</option>
+                                                    <select class="form-select" id="packageCategory" aria-label="Select service category">
+                                                        <option value="">Select Service Category</option>
+                                                        @foreach($categories as $category)
+                                                        <option value="{{ $category->id }}">{{ $category->category_name }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="card border h-100 rounded-0">
-                                                    <div class="card-body pb-0">
-                                                        <div class="mb-3">
-                                                            <h6 class="card-title fw-bold">Basic Wedding Package</h6>
-                                                            <span class="text-success fw-semibold mb-0">PHP 15,000</span>
-                                                        </div>
-                                                        <div class="list-group">
-                                                            <div class="mb-1">2 hours photography coverage</div>
-                                                            <div class="mb-1">Basic editing & retouching</div>
-                                                            <div class="mb-1">Digital delivery of all photos</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-12">
-                                                <div class="card border h-100 rounded-0 border-top-0">
-                                                    <div class="card-body pb-0">
-                                                        <div class="mb-3">
-                                                            <h6 class="card-title fw-bold">Essentials Wedding Package</h6>
-                                                            <span class="text-success fw-semibold mb-0">PHP 30,000</span>
-                                                        </div>
-                                                        <div class="list-group">
-                                                            <div class="mb-1">6 hours photography coverage</div>
-                                                            <div class="mb-1">Standard editing & retouching</div>
-                                                            <div class="mb-1">Digital delivery of all photos</div>
-                                                            <div class="mb-1">Online gallery for 60 days</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-12">
-                                                <div class="card border h-100 rounded-0 border-top-0">
-                                                    <div class="card-body pb-0">
-                                                        <div class="mb-3">
-                                                            <h6 class="card-title fw-bold">Premium Wedding Package</h6>
-                                                            <span class="text-success fw-semibold mb-0">PHP 45,000</span>
-                                                        </div>
-                                                        <div class="list-group">
-                                                            <div class="mb-1">12 hours photography coverage</div>
-                                                            <div class="mb-1">Advanced editing & retouching</div>
-                                                            <div class="mb-1">Digital delivery of all photos</div>
-                                                            <div class="mb-1">Online gallery for 90 days</div>
+                                        
+                                        <div id="packages-container">
+                                            @php
+                                                $packagesData = $type === 'studio' ? $studioPackages : $freelancerPackages;
+                                            @endphp
+                                            
+                                            @foreach($packagesData as $categoryId => $packages)
+                                            <div class="package-category" data-category="{{ $categoryId }}">
+                                                @foreach($packages as $package)
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <div class="card border h-100 rounded-0">
+                                                            <div class="card-body pb-0">
+                                                                <div class="mb-3">
+                                                                    <h6 class="card-title fw-bold">{{ $package->package_name }}</h6>
+                                                                    <span class="text-success fw-semibold mb-0">PHP {{ number_format($package->package_price, 2) }}</span>
+                                                                    <p class="text-muted small mt-1">{{ $package->package_description }}</p>
+                                                                </div>
+                                                                <div class="list-group">
+                                                                    @if($package->package_inclusions && is_array($package->package_inclusions))
+                                                                        @foreach($package->package_inclusions as $inclusion)
+                                                                        <div class="mb-1">{{ $inclusion }}</div>
+                                                                        @endforeach
+                                                                    @endif
+                                                                    @if($package->duration)
+                                                                        <div class="mb-1">{{ $package->duration }} hours photography coverage</div>
+                                                                    @endif
+                                                                    @if($package->maximum_edited_photos)
+                                                                        <div class="mb-1">{{ $package->maximum_edited_photos }} edited photos</div>
+                                                                    @endif
+                                                                    @if($package->coverage_scope)
+                                                                        <div class="mb-1">Coverage: {{ $package->coverage_scope }}</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @endforeach
                                             </div>
+                                            @endforeach
                                         </div>
+
+                                        @if($packagesData->isEmpty())
+                                        <div class="alert alert-info">
+                                            <i class="ti ti-info-circle me-2"></i> No packages available.
+                                        </div>
+                                        @endif
                                     </div>
 
-                                    {{-- COVERAGE AREAS --}}
+                                    {{-- OPERATING HOURS / AVAILABILITY --}}
                                     <div class="row mb-3">
-                                        <h5 class="card-title text-primary">Service Coverage Areas</h5>
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <ul class="list-group border-0">
-                                                    <li class="list-group-item"><i class="ti ti-map-pin text-success me-2"></i> Dasmariñas City</li>
-                                                    <li class="list-group-item"><i class="ti ti-map-pin text-success me-2"></i> Imus City</li>
-                                                    <li class="list-group-item"><i class="ti ti-map-pin text-success me-2"></i> Bacoor City</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {{-- OPERATING HOURS --}}
-                                    <div class="row mb-3">
-                                        <h5 class="card-title mb-3 text-primary">Operating Hours</h5>
+                                        <h5 class="card-title mb-3 text-primary">
+                                            {{ $type === 'studio' ? 'Operating Hours' : 'Availability' }}
+                                        </h5>
                                         <div class="table-responsive">
                                             <table class="table table-bordered mb-0">
                                                 <thead>
@@ -179,94 +181,146 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr>
-                                                        <td>Monday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Tuesday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Wednesday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Thursday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Friday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Saturday</td>
-                                                        <td>9:00 AM</td>
-                                                        <td>6:00 PM</td>
-                                                        <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Sunday</td>
-                                                        <td>-</td>
-                                                        <td>-</td>
-                                                        <td><span class="badge badge-soft-danger w-100">UNAVAILABLE</span></td>
-                                                    </tr>
+                                                    @if($type === 'studio')
+                                                        @if($studio->schedules && $studio->schedules->isNotEmpty())
+                                                            @php
+                                                                $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                                                                $schedule = $studio->schedules->first();
+                                                                
+                                                                // Ensure operating_days is always an array
+                                                                $operatingDays = $schedule->operating_days ?? [];
+                                                                
+                                                                // If it's a string, try to decode it
+                                                                if (is_string($operatingDays)) {
+                                                                    $decoded = json_decode($operatingDays, true);
+                                                                    $operatingDays = is_array($decoded) ? $decoded : [];
+                                                                }
+                                                                
+                                                                // If it's not an array, make it an empty array
+                                                                if (!is_array($operatingDays)) {
+                                                                    $operatingDays = [];
+                                                                }
+                                                            @endphp
+                                                            
+                                                            @foreach($days as $day)
+                                                            <tr>
+                                                                <td>{{ ucfirst($day) }}</td>
+                                                                @if(in_array($day, $operatingDays))
+                                                                <td>{{ $schedule->opening_time ? \Carbon\Carbon::parse($schedule->opening_time)->format('h:i A') : 'N/A' }}</td>
+                                                                <td>{{ $schedule->closing_time ? \Carbon\Carbon::parse($schedule->closing_time)->format('h:i A') : 'N/A' }}</td>
+                                                                <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
+                                                                @else
+                                                                <td>-</td>
+                                                                <td>-</td>
+                                                                <td><span class="badge badge-soft-danger w-100">UNAVAILABLE</span></td>
+                                                                @endif
+                                                            </tr>
+                                                            @endforeach
+                                                        @else
+                                                            <tr>
+                                                                <td colspan="4" class="text-center text-muted">
+                                                                    No operating schedule available.
+                                                                </td>
+                                                            </tr>
+                                                        @endif
+                                                    @else
+                                                        {{-- Freelancer Availability --}}
+                                                        @if($freelancer->schedule)
+                                                            @php
+                                                                $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                                                                $schedule = $freelancer->schedule;
+                                                                $operatingDays = $schedule->operating_days ?? [];
+                                                                
+                                                                // Ensure operating_days is always an array
+                                                                if (is_string($operatingDays)) {
+                                                                    $decoded = json_decode($operatingDays, true);
+                                                                    $operatingDays = is_array($decoded) ? $decoded : [];
+                                                                }
+                                                                
+                                                                if (!is_array($operatingDays)) {
+                                                                    $operatingDays = [];
+                                                                }
+                                                            @endphp
+                                                            
+                                                            @foreach($days as $day)
+                                                            <tr>
+                                                                <td>{{ ucfirst($day) }}</td>
+                                                                @if(in_array($day, $operatingDays))
+                                                                <td>{{ $schedule->start_time ? \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') : 'N/A' }}</td>
+                                                                <td>{{ $schedule->end_time ? \Carbon\Carbon::parse($schedule->end_time)->format('h:i A') : 'N/A' }}</td>
+                                                                <td><span class="badge badge-soft-primary w-100">AVAILABLE</span></td>
+                                                                @else
+                                                                <td>-</td>
+                                                                <td>-</td>
+                                                                <td><span class="badge badge-soft-danger w-100">UNAVAILABLE</span></td>
+                                                                @endif
+                                                            </tr>
+                                                            @endforeach
+                                                        @else
+                                                            <tr>
+                                                                <td colspan="4" class="text-center text-muted">
+                                                                    No schedule available.
+                                                                </td>
+                                                            </tr>
+                                                        @endif
+                                                    @endif
                                                 </tbody>
                                             </table>
                                         </div>
                                     </div>
 
-                                    {{-- AVAILABLE DATE --}}
-                                    <div class="row g-2 mb-3">
-                                        <h5 class="card-title mb-2 text-primary">Available Date</h5>
-                                        <div class="col-md-6">
-                                            <input type="text" class="form-control" data-provider="flatpickr" data-date-format="d M, Y" data-default-date data-inline-date="true">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-muted mb-2">Calendar Indicator</label>
-                                            <div class="d-flex flex-column">
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <i class="ti ti-circle-filled text-success me-2 lh-1"></i>
-                                                    <span class="text-muted">Available Date for Booking</span>
-                                                </div>
-                                                <div class="d-flex align-items-center mb-2">
-                                                    <i class="ti ti-circle-filled text-danger me-2 lh-1"></i>
-                                                    <span class="text-muted">Fully Booked / Unavailable</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     {{-- LOCATION --}}
                                     <div class="row mb-3">
-                                        <h5 class="card-title mb-3 text-primary">Studio Location</h5>
+                                        <h5 class="card-title mb-3 text-primary">
+                                            {{ $type === 'studio' ? 'Studio Location' : 'Location' }}
+                                        </h5>
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label class="form-label text-muted mb-1">Province</label>
-                                                    <p class="mb-0 fw-medium">Cavite</p>
+                                                    <p class="mb-0 fw-medium">
+                                                        @if($type === 'studio')
+                                                            {{ $studio->location ? $studio->location->province : 'Not specified' }}
+                                                        @else
+                                                            {{ $freelancer->location ? $freelancer->location->province : 'Not specified' }}
+                                                        @endif
+                                                    </p>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label class="form-label text-muted mb-1">Municipality</label>
-                                                    <p class="mb-0 fw-medium">Dasmariñas City</p>
+                                                    <p class="mb-0 fw-medium">
+                                                        @if($type === 'studio')
+                                                            {{ $studio->location ? $studio->location->municipality : 'Not specified' }}
+                                                        @else
+                                                            {{ $freelancer->location ? $freelancer->location->municipality : 'Not specified' }}
+                                                        @endif
+                                                    </p>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label class="form-label text-muted mb-1">Barangay</label>
-                                                    <p class="mb-0 fw-medium">Zone 4</p>
+                                                    <p class="mb-0 fw-medium">
+                                                        @if($type === 'studio')
+                                                            {{ $studio->barangay ?: 'Not specified' }}
+                                                        @else
+                                                            {{ $freelancer->barangay ?: 'Not specified' }}
+                                                        @endif
+                                                    </p>
                                                 </div>
                                                 <div class="mb-3">
                                                     <label class="form-label text-muted mb-1">Address</label>
-                                                    <p class="mb-0 fw-medium">123 Photography Street, Zone 4, Dasmariñas City, Cavite 4114</p>
+                                                    <p class="mb-0 fw-medium">
+                                                        @if($type === 'studio')
+                                                            {{ $studio->street ? $studio->street . ', ' : '' }}
+                                                            {{ $studio->barangay ? 'Brgy. ' . $studio->barangay . ', ' : '' }}
+                                                            {{ $studio->location ? $studio->location->municipality . ', ' : '' }}
+                                                            {{ $studio->location ? $studio->location->province : '' }}
+                                                        @else
+                                                            {{ $freelancer->street ? $freelancer->street . ', ' : '' }}
+                                                            {{ $freelancer->barangay ? 'Brgy. ' . $freelancer->barangay . ', ' : '' }}
+                                                            {{ $freelancer->location ? $freelancer->location->municipality . ', ' : '' }}
+                                                            {{ $freelancer->location ? $freelancer->location->province : '' }}
+                                                        @endif
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -282,18 +336,40 @@
                                     <h5 class="card-title text-primary mb-3">Contact Information</h5>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label text-muted mb-1">Studio Owner</label>
-                                        <p class="mb-0 fw-medium">Juan Dela Cruz</p>
+                                        <label class="form-label text-muted mb-1">
+                                            {{ $type === 'studio' ? 'Studio Owner' : 'Name' }}
+                                        </label>
+                                        <p class="mb-0 fw-medium">
+                                            @if($type === 'studio')
+                                                {{ $studio->user ? $studio->user->full_name : 'Not available' }}
+                                            @else
+                                                {{ $freelancer->user ? $freelancer->user->full_name : 'Not available' }}
+                                            @endif
+                                        </p>
                                     </div>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label text-muted mb-1">Email Address</label>
-                                        <p class="mb-0 fw-medium">info@luxelens.com</p>
+                                        <label class="form-label text-muted mb-1">
+                                            {{ $type === 'studio' ? 'Studio Email' : 'Email' }}
+                                        </label>
+                                        <p class="mb-0 fw-medium">
+                                            @if($type === 'studio')
+                                                {{ $studio->studio_email ?: 'Not available' }}
+                                            @else
+                                                {{ $freelancer->user ? $freelancer->user->email : 'Not available' }}
+                                            @endif
+                                        </p>
                                     </div>
                                     
                                     <div class="mb-3">
                                         <label class="form-label text-muted mb-1">Contact Number</label>
-                                        <p class="mb-0 fw-medium">+(63) 917 123 4567</p>
+                                        <p class="mb-0 fw-medium">
+                                            @if($type === 'studio')
+                                                {{ $studio->contact_number ?: 'Not available' }}
+                                            @else
+                                                {{ $freelancer->user ? $freelancer->user->mobile_number : 'Not available' }}
+                                            @endif
+                                        </p>
                                     </div>
                                     
                                     <div class="mb-4">
@@ -304,7 +380,7 @@
                                     <div class="d-grid gap-2">
                                         <button class="btn btn-primary">
                                             <i class="ti ti-phone me-2"></i>
-                                            Contact Studio
+                                            {{ $type === 'studio' ? 'Contact Studio' : 'Contact' }}
                                         </button>
                                         <button class="btn btn-soft-primary">
                                             <i class="ti ti-message-circle me-2"></i>
@@ -323,7 +399,13 @@
                                             <i class="ti ti-calendar text-primary me-2 mt-1"></i>
                                             <div>
                                                 <h5 class="mb-1">Advance Booking</h5>
-                                                <p class="text-muted mb-0">Book at least 3 days in advance</p>
+                                                <p class="text-muted mb-0">
+                                                    @if($type === 'studio')
+                                                        Book at least {{ $studio->advance_booking_days ?? 3 }} days in advance
+                                                    @else
+                                                        Book at least {{ $freelancer->schedule->advance_booking ?? 3 }} days in advance
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -331,7 +413,13 @@
                                             <i class="ti ti-coin text-primary me-2 mt-1"></i>
                                             <div>
                                                 <h5 class="mb-1">Payment Terms</h5>
-                                                <p class="text-muted mb-0">30% downpayment to confirm booking</p>
+                                                <p class="text-muted mb-0">
+                                                    @if($type === 'studio')
+                                                        {{ $studio->deposit_policy ?? '30%' }} downpayment to confirm booking
+                                                    @else
+                                                        {{ $freelancer->deposit_policy ?? '30%' }} downpayment to confirm booking
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -339,7 +427,13 @@
                                             <i class="ti ti-users text-primary me-2 mt-1"></i>
                                             <div>
                                                 <h5 class="mb-1">Capacity</h5>
-                                                <p class="text-muted mb-0">Maximum 3 clients per day</p>
+                                                <p class="text-muted mb-0">
+                                                    @if($type === 'studio')
+                                                        Maximum {{ $studio->max_clients_per_day ?? 3 }} clients per day
+                                                    @else
+                                                        Maximum {{ $freelancer->schedule->booking_limit ?? 3 }} clients per day
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -356,200 +450,30 @@
 {{-- SCRIPTS --}}
 @section('scripts')
     <script>
-        // Simple JavaScript for price calculation (static example)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get all interactive elements
-            const packageSelect = document.getElementById('packageSelect');
-            const eventDate = document.getElementById('eventDate');
-            const startTime = document.getElementById('startTime');
-            const endTime = document.getElementById('endTime');
-            const venueName = document.getElementById('venueName');
-            const city = document.getElementById('city');
-            const addonCheckboxes = document.querySelectorAll('input[type="checkbox"][data-price]');
-            
-            // Set tomorrow's date as default
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            eventDate.valueAsDate = tomorrow;
-            
-            // Update summary when any input changes
-            const updateElements = [packageSelect, eventDate, startTime, endTime, venueName, city, ...addonCheckboxes];
-            updateElements.forEach(element => {
-                element.addEventListener('change', updateSummary);
-            });
-            
-            // Also update when typing in location fields
-            ['street', 'barangay', 'city', 'province'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener('input', updateSummary);
-                }
-            });
-            
-            // Initialize summary
-            updateSummary();
-            
-            function updateSummary() {
-                // Update booking summary
-                const packageOption = packageSelect.options[packageSelect.selectedIndex];
-                document.getElementById('summaryPackage').textContent = packageOption.text || '-';
-                
-                // Format date
-                if (eventDate.value) {
-                    const date = new Date(eventDate.value);
-                    document.getElementById('summaryDate').textContent = date.toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                    
-                    // Update balance due text
-                    document.getElementById('balanceDueText').textContent = 
-                        `Remaining balance due on or before ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-                } else {
-                    document.getElementById('summaryDate').textContent = '-';
+        $(document).ready(function() {
+            // Function to filter packages
+            function filterPackages(categoryId) {
+                // Show all packages if no category selected
+                if (!categoryId) {
+                    $('.package-category').show();
+                    return;
                 }
                 
-                // Update time
-                if (startTime.value && endTime.value) {
-                    const formatTime = (time) => {
-                        const [hours, minutes] = time.split(':');
-                        const hour = parseInt(hours);
-                        const ampm = hour >= 12 ? 'PM' : 'AM';
-                        const displayHour = hour % 12 || 12;
-                        return `${displayHour}:${minutes} ${ampm}`;
-                    };
-                    document.getElementById('summaryTime').textContent = 
-                        `${formatTime(startTime.value)} - ${formatTime(endTime.value)}`;
-                } else {
-                    document.getElementById('summaryTime').textContent = '-';
-                }
+                // Hide all packages first
+                $('.package-category').hide();
                 
-                // Update location
-                const venue = venueName.value;
-                const cityVal = document.getElementById('city').value;
-                const provinceVal = document.getElementById('province').value;
-                
-                if (venue || cityVal || provinceVal) {
-                    const locationParts = [];
-                    if (venue) locationParts.push(venue);
-                    if (cityVal) locationParts.push(cityVal);
-                    if (provinceVal) locationParts.push(provinceVal);
-                    document.getElementById('summaryLocation').textContent = locationParts.join(', ');
-                } else {
-                    document.getElementById('summaryLocation').textContent = '-';
-                }
-                
-                // Calculate prices
-                const basePrice = packageOption.dataset.price ? parseInt(packageOption.dataset.price) : 0;
-                
-                // Calculate add-ons
-                let addonsTotal = 0;
-                let addonsHTML = '';
-                addonCheckboxes.forEach(checkbox => {
-                    if (checkbox.checked) {
-                        const price = parseInt(checkbox.dataset.price);
-                        addonsTotal += price;
-                        
-                        // Get label text
-                        const label = checkbox.nextElementSibling.textContent.split(' - ')[0];
-                        addonsHTML += `
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>${label}:</span>
-                                <span class="fw-medium">₱${price.toLocaleString()}</span>
-                            </div>
-                        `;
-                    }
-                });
-                
-                // Calculate travel fee (example: if outside Dasmariñas)
-                const travelFeeRow = document.getElementById('travelFeeRow');
-                let travelFee = 0;
-                const currentCity = city.value.toLowerCase();
-                if (currentCity && !currentCity.includes('dasmariñas') && !currentCity.includes('dasmariÃ±as')) {
-                    travelFee = 2000;
-                    travelFeeRow.style.display = 'flex';
-                } else {
-                    travelFeeRow.style.display = 'none';
-                }
-                
-                // Update prices
-                document.getElementById('packagePrice').textContent = `₱${basePrice.toLocaleString()}`;
-                document.getElementById('addonsList').innerHTML = addonsHTML;
-                document.getElementById('travelFee').textContent = `₱${travelFee.toLocaleString()}`;
-                
-                const total = basePrice + addonsTotal + travelFee;
-                document.getElementById('totalPrice').textContent = `₱${total.toLocaleString()}`;
-                
-                const downPayment = Math.round(total * 0.3);
-                const remainingBalance = total - downPayment;
-                
-                document.getElementById('downPayment').textContent = `₱${downPayment.toLocaleString()}`;
-                document.getElementById('remainingBalance').textContent = `₱${remainingBalance.toLocaleString()}`;
+                // Show packages for selected category
+                $(`.package-category[data-category="${categoryId}"]`).show();
             }
+            
+            // Initial state - show all packages
+            filterPackages('');
+            
+            // Filter on dropdown change
+            $('#packageCategory').on('change', function() {
+                const categoryId = $(this).val();
+                filterPackages(categoryId);
+            });
         });
-
-        function validateBooking() {
-            // Simple validation
-            const requiredFields = [
-                'venueName', 'street', 'barangay', 'city', 'province'
-            ];
-            
-            let isValid = true;
-            
-            // Check required fields
-            requiredFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    isValid = false;
-                    field.classList.add('is-invalid');
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-            
-            // Check package selection
-            const packageSelect = document.getElementById('packageSelect');
-            if (!packageSelect.value) {
-                isValid = false;
-                packageSelect.classList.add('is-invalid');
-            } else {
-                packageSelect.classList.remove('is-invalid');
-            }
-            
-            // Check date and time
-            const eventDate = document.getElementById('eventDate');
-            const startTime = document.getElementById('startTime');
-            const endTime = document.getElementById('endTime');
-            
-            if (!eventDate.value || !startTime.value || !endTime.value) {
-                isValid = false;
-                if (!eventDate.value) eventDate.classList.add('is-invalid');
-                if (!startTime.value) startTime.classList.add('is-invalid');
-                if (!endTime.value) endTime.classList.add('is-invalid');
-            } else {
-                eventDate.classList.remove('is-invalid');
-                startTime.classList.remove('is-invalid');
-                endTime.classList.remove('is-invalid');
-            }
-            
-            // Check terms
-            const termsCheck = document.getElementById('termsCheck');
-            const cancellationCheck = document.getElementById('cancellationCheck');
-            
-            if (!termsCheck.checked || !cancellationCheck.checked) {
-                isValid = false;
-                alert('Please agree to the terms and conditions');
-            }
-            
-            if (isValid) {
-                // Show payment modal
-                const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
-                paymentModal.show();
-            } else {
-                alert('Please fill in all required fields marked with *');
-            }
-        }
     </script>
 @endsection

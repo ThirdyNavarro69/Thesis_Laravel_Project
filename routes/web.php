@@ -165,11 +165,12 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('client')->middleware([ClientMiddleware::class])->group(function () {
 
         // Dashboard
-        Route::get('/dashboard',                [\App\Http\Controllers\Client\DashboardController::class, 'index'])->name('client.dashboard');
+        Route::get('/dashboard',                        [\App\Http\Controllers\Client\DashboardController::class, 'index'])->name('client.dashboard');
+        Route::post('/dashboard/filter',                [\App\Http\Controllers\Client\DashboardController::class, 'filter'])->name('client.dashboard.filter');
 
         // Booking Details
-        Route::get('/booking-details',          [\App\Http\Controllers\Client\BookingDetailsController::class, 'index'])->name('client.booking-details');
-        Route::get('/booking-form',             [\App\Http\Controllers\Client\BookingDetailsController::class, 'book'])->name('client.booking-forms');
+        Route::get('/booking-details/{type}/{id}',      [\App\Http\Controllers\Client\BookingDetailsController::class, 'index'])->name('client.booking-details');
+        Route::get('/booking-form/{type}/{id}',         [\App\Http\Controllers\Client\BookingDetailsController::class, 'book'])->name('client.booking-forms');
 
     });
 
