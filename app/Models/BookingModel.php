@@ -18,6 +18,13 @@ class BookingModel extends Model
     protected $table = 'tbl_bookings';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -43,7 +50,7 @@ class BookingModel extends Model
         'down_payment',
         'remaining_balance',
         'deposit_policy',
-        'payment_type', // Added
+        'payment_type',
         'status',
         'payment_status',
     ];
@@ -60,6 +67,7 @@ class BookingModel extends Model
         'remaining_balance' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**
@@ -75,9 +83,10 @@ class BookingModel extends Model
      */
     public function studio()
     {
-        return $this->booking_type === 'studio' 
-            ? $this->belongsTo(\App\Models\StudioOwner\StudiosModel::class, 'provider_id')
-            : null;
+        if ($this->booking_type === 'studio') {
+            return $this->belongsTo(\App\Models\StudioOwner\StudiosModel::class, 'provider_id');
+        }
+        return null;
     }
 
     /**
@@ -85,9 +94,10 @@ class BookingModel extends Model
      */
     public function freelancer()
     {
-        return $this->booking_type === 'freelancer'
-            ? $this->belongsTo(\App\Models\Freelancer\ProfileModel::class, 'provider_id', 'user_id')
-            : null;
+        if ($this->booking_type === 'freelancer') {
+            return $this->belongsTo(\App\Models\Freelancer\ProfileModel::class, 'provider_id', 'user_id');
+        }
+        return null;
     }
 
     /**
@@ -112,6 +122,27 @@ class BookingModel extends Model
     public function payments()
     {
         return $this->hasMany(PaymentModel::class, 'booking_id');
+    }
+
+    /**
+     * Get assigned photographers for this booking.
+     */
+    public function assignedPhotographers()
+    {
+        return $this->hasMany(BookingAssignedPhotographerModel::class, 'booking_id');
+    }
+
+    /**
+     * Get the provider based on booking type.
+     */
+    public function provider()
+    {
+        if ($this->booking_type === 'studio') {
+            return $this->studio();
+        } elseif ($this->booking_type === 'freelancer') {
+            return $this->freelancer();
+        }
+        return null;
     }
 
     /**
@@ -156,5 +187,37 @@ class BookingModel extends Model
     public function isFullPayment()
     {
         return $this->payment_type === 'full_payment';
+    }
+
+    /**
+     * Get booking status badge class.
+     */
+    public function getStatusBadgeClass()
+    {
+        $classes = [
+            'pending' => 'badge-soft-warning',
+            'confirmed' => 'badge-soft-success',
+            'in_progress' => 'badge-soft-info',
+            'completed' => 'badge-soft-secondary',
+            'cancelled' => 'badge-soft-danger'
+        ];
+        
+        return $classes[$this->status] ?? 'badge-soft-secondary';
+    }
+
+    /**
+     * Get payment status badge class.
+     */
+    public function getPaymentStatusBadgeClass()
+    {
+        $classes = [
+            'pending' => 'badge-soft-warning',
+            'partially_paid' => 'badge-soft-info',
+            'paid' => 'badge-soft-success',
+            'failed' => 'badge-soft-danger',
+            'refunded' => 'badge-soft-secondary'
+        ];
+        
+        return $classes[$this->payment_status] ?? 'badge-soft-secondary';
     }
 }

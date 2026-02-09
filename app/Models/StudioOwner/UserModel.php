@@ -18,6 +18,13 @@ class UserModel extends Authenticatable
     protected $table = 'tbl_users';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -33,6 +40,7 @@ class UserModel extends Authenticatable
         'mobile_number',
         'password',
         'profile_photo',
+        'location_id',
         'status',
         'email_verified',
         'verification_token',
@@ -61,15 +69,9 @@ class UserModel extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'token_expiry' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Get the studios owned by the user.
-     */
-    public function studios()
-    {
-        return $this->hasMany(StudiosModel::class, 'user_id');
     }
 
     /**
@@ -79,7 +81,79 @@ class UserModel extends Authenticatable
      */
     public function getFullNameAttribute()
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get the studios owned by the user.
+     */
+    public function studios()
+    {
+        return $this->hasMany(\App\Models\StudioOwner\StudiosModel::class, 'user_id');
+    }
+
+    /**
+     * Get the studio owned by the user (if studio owner).
+     */
+    public function studio()
+    {
+        return $this->hasOne(\App\Models\StudioOwner\StudiosModel::class, 'user_id');
+    }
+
+    /**
+     * Get the freelancer profile if user is a freelancer.
+     */
+    public function freelancerProfile()
+    {
+        return $this->hasOne(\App\Models\Freelancer\ProfileModel::class, 'user_id');
+    }
+
+    /**
+     * Get bookings where this user is the client.
+     */
+    public function clientBookings()
+    {
+        return $this->hasMany(\App\Models\BookingModel::class, 'client_id');
+    }
+
+    /**
+     * Get bookings where this user is the provider.
+     */
+    public function providerBookings()
+    {
+        return $this->hasMany(\App\Models\BookingModel::class, 'provider_id');
+    }
+
+    /**
+     * Get photographer assignments.
+     */
+    public function photographerAssignments()
+    {
+        return $this->hasMany(\App\Models\BookingAssignedPhotographerModel::class, 'photographer_id');
+    }
+
+    /**
+     * Get assignments made by this user.
+     */
+    public function assignedPhotographers()
+    {
+        return $this->hasMany(\App\Models\BookingAssignedPhotographerModel::class, 'assigned_by');
+    }
+
+    /**
+     * Get studio photographer profile.
+     */
+    public function studioPhotographerProfile()
+    {
+        return $this->hasOne(\App\Models\StudioOwner\StudioPhotographersModel::class, 'photographer_id');
+    }
+
+    /**
+     * Get the location associated with the user.
+     */
+    public function location()
+    {
+        return $this->belongsTo(\App\Models\Admin\LocationModel::class, 'location_id');
     }
 
     /**
@@ -93,18 +167,58 @@ class UserModel extends Authenticatable
     }
 
     /**
-     * Get the freelancer profile if user is a freelancer.
+     * Check if user is a freelancer.
+     *
+     * @return bool
      */
-    public function freelancerProfile()
+    public function isFreelancer()
     {
-        return $this->hasOne(\App\Models\Freelancer\ProfileModel::class, 'user_id');
+        return $this->role === 'freelancer';
     }
 
     /**
-     * Get the studio profile if user is a studio owner.
+     * Check if user is a client.
+     *
+     * @return bool
      */
-    public function studio()
+    public function isClient()
     {
-        return $this->hasOne(\App\Models\StudioOwner\StudiosModel::class, 'user_id');
+        return $this->role === 'client';
+    }
+
+    /**
+     * Check if user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is a studio photographer.
+     *
+     * @return bool
+     */
+    public function isStudioPhotographer()
+    {
+        return $this->role === 'studio-photographer';
+    }
+
+    /**
+     * Scope to filter by role.
+     */
+    public function scopeByRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    /**
+     * Scope to filter active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
     }
 }
