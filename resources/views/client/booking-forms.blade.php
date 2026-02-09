@@ -167,14 +167,17 @@
                                                     min="{{ date('Y-m-d') }}"
                                                     max="{{ date('Y-m-d', strtotime('+60 days')) }}"
                                                     placeholder="Select event date" required>
-                                                <button class="btn btn-outline-primary" type="button" id="viewCalendarBtn">
-                                                    <i class="ti ti-calendar me-1"></i> Check Available Dates
+                                                <button class="btn btn-outline-primary" type="button" id="checkDateBtn">
+                                                    <i class="ti ti-calendar me-1"></i> Check Availability
                                                 </button>
                                             </div>
                                             <div class="invalid-feedback">
                                                 Please select a valid event date.
                                             </div>
-                                            <small class="text-muted" id="dateAvailabilityStatus"></small>
+                                            <small class="text-muted mt-1" id="dateAvailabilityStatus">
+                                                <span id="dateStatusIcon" class="me-1"></span>
+                                                <span id="dateStatusText">Select a date to check availability</span>
+                                            </small>
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">Start Time</label>
@@ -430,6 +433,34 @@
             let bookingData = null;
             let bookingId = null;
 
+            // Debug function to check available categories and packages
+            function debugFreelancerPackages() {
+                const type = $('#bookingType').val();
+                const providerId = $('#providerId').val();
+                
+                console.log('Debug Info:', {
+                    type: type,
+                    providerId: providerId,
+                    categories: $('#serviceCategory').html()
+                });
+                
+                if (type === 'freelancer') {
+                    $.ajax({
+                        url: '{{ route("client.bookings.packages") }}',
+                        type: 'POST',
+                        data: {
+                            type: type,
+                            provider_id: providerId,
+                            category_id: 1, // Test with first category
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            console.log('Debug Package Response:', response);
+                        }
+                    });
+                }
+            }
+
             // Handle payment option selection
             $('input[name="payment_type"]').on('change', function() {
                 const paymentType = $(this).val();
@@ -464,11 +495,11 @@
                 
                 // Show loading
                 $('#packagesContainer').html(`
-                    <div class="text-center py-3">
+                    <div class="text-center py-4">
                         <div class="spinner-border spinner-border-sm text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <span class="ms-2">Loading packages...</span>
+                        <span class="ms-2 text-muted">Loading packages...</span>
                     </div>
                 `);
                 
@@ -482,13 +513,29 @@
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
-                        if (response.success && response.packages.length > 0) {
+                        console.log('Packages response:', response); // Debug log
+                        
+                        if (response.success && response.packages && response.packages.length > 0) {
                             let packagesHtml = '<div class="btn-group w-100" role="group" aria-label="Package selection">';
                             
                             response.packages.forEach(function(package, index) {
                                 // Format duration hours
                                 const durationText = package.duration === 1 ? '1 Hour' : `${package.duration} Hours`;
                                 const priceText = `₱${parseFloat(package.package_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                
+                                // Parse inclusions if it's a JSON string
+                                let inclusions = [];
+                                if (typeof package.package_inclusions === 'string') {
+                                    try {
+                                        inclusions = JSON.parse(package.package_inclusions);
+                                    } catch (e) {
+                                        inclusions = [package.package_inclusions];
+                                    }
+                                } else if (Array.isArray(package.package_inclusions)) {
+                                    inclusions = package.package_inclusions;
+                                }
+                                
+                                const firstInclusion = inclusions.length > 0 ? inclusions[0] : 'No inclusions specified';
                                 
                                 packagesHtml += `
                                     <input type="radio" class="btn-check package-radio" 
@@ -504,6 +551,10 @@
                                             <i class="ti ti-photo text-muted me-1"></i>
                                             <small class="text-muted">${package.maximum_edited_photos} Photos</small>
                                         </div>
+                                        <div class="mb-1">
+                                            <i class="ti ti-list text-muted me-1"></i>
+                                            <small class="text-muted">${firstInclusion.substring(0, 30)}${firstInclusion.length > 30 ? '...' : ''}</small>
+                                        </div>
                                         <div class="mt-2">
                                             <h4 class="text-success fw-bold mb-0">${priceText}</h4>
                                         </div>
@@ -513,20 +564,49 @@
                             
                             packagesHtml += '</div>';
                             $('#packagesContainer').html(packagesHtml);
+                            
+                            // Clear any previous package selection
+                            selectedPackageId = null;
+                            
                         } else {
+                            // Show alert message when no packages found
+                            let message = 'No packages available for this service/category.';
+                            if (response.message) {
+                                message = response.message;
+                            }
+                            
                             $('#packagesContainer').html(`
-                                <div class="alert alert-info">
-                                    <i class="ti ti-info-circle me-2"></i> No packages available for this category.
+                                <div class="alert alert-warning">
+                                    <i class="ti ti-package-off me-2"></i> ${message}
                                 </div>
                             `);
+                            
+                            // Show SweetAlert notification only if it's not a simple "no packages" case
+                            if (response.success === false && response.message && !response.message.includes('No packages')) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error Loading Packages',
+                                    text: response.message,
+                                    confirmButtonColor: '#3475db'
+                                });
+                            }
                         }
                     },
                     error: function(xhr) {
+                        console.error('Packages AJAX error:', xhr);
+                        
                         $('#packagesContainer').html(`
                             <div class="alert alert-danger">
                                 <i class="ti ti-alert-circle me-2"></i> Failed to load packages. Please try again.
                             </div>
                         `);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Loading Error',
+                            text: 'Failed to load packages. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
                     }
                 });
             });
@@ -553,12 +633,24 @@
             });
             
             // Check date availability
-            $('#eventDate').on('change', function() {
-                const selectedDate = $(this).val();
+            $('#checkDateBtn').on('click', function() {
+                const selectedDate = $('#eventDate').val();
                 const type = $('#bookingType').val();
                 const providerId = $('#providerId').val();
                 
-                if (!selectedDate) return;
+                if (!selectedDate) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Date Selected',
+                        text: 'Please select a date first.',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                // Show checking status
+                $('#dateStatusIcon').html('<i class="ti ti-clock text-info"></i>');
+                $('#dateStatusText').text('Checking availability...');
                 
                 $.ajax({
                     url: '{{ route("client.bookings.check-availability") }}',
@@ -572,24 +664,78 @@
                     success: function(response) {
                         if (response.success) {
                             if (response.available) {
-                                $('#dateAvailabilityStatus').html(`
-                                    <span class="text-success">
-                                        <i class="ti ti-check me-1"></i> Available (${response.existing_bookings}/${response.max_bookings} bookings)
-                                    </span>
+                                // Date is available - Green indicator
+                                $('#dateStatusIcon').html('<i class="ti ti-circle-check text-success"></i>');
+                                $('#dateStatusText').html(`
+                                    <span class="text-success fw-medium">Available</span> 
+                                    <span class="text-muted">(${response.existing_bookings}/${response.max_bookings} bookings)</span>
                                 `);
+                                
+                                // Enable submit button if date is available
+                                $('#submitBookingBtn').prop('disabled', false);
                             } else {
-                                $('#dateAvailabilityStatus').html(`
-                                    <span class="text-danger">
-                                        <i class="ti ti-x me-1"></i> Fully booked (${response.existing_bookings}/${response.max_bookings} bookings)
-                                    </span>
+                                // Date is not available - Red indicator
+                                $('#dateStatusIcon').html('<i class="ti ti-circle-x text-danger"></i>');
+                                $('#dateStatusText').html(`
+                                    <span class="text-danger fw-medium">Fully Booked</span> 
+                                    <span class="text-muted">(${response.existing_bookings}/${response.max_bookings} bookings)</span>
                                 `);
+                                
+                                // Disable submit button if date is not available
+                                $('#submitBookingBtn').prop('disabled', true);
+                                
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Date Not Available',
+                                    text: response.message || 'This date is fully booked.',
+                                    confirmButtonColor: '#3475db'
+                                });
+                            }
+                        } else {
+                            // Error or not available
+                            $('#dateStatusIcon').html('<i class="ti ti-alert-circle text-danger"></i>');
+                            $('#dateStatusText').html(`<span class="text-danger fw-medium">${response.message || 'Not Available'}</span>`);
+                            
+                            // Disable submit button on error
+                            $('#submitBookingBtn').prop('disabled', true);
+                            
+                            if (response.message) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Availability Check Failed',
+                                    text: response.message,
+                                    confirmButtonColor: '#3475db'
+                                });
                             }
                         }
                     },
                     error: function(xhr) {
-                        $('#dateAvailabilityStatus').html('');
+                        $('#dateStatusIcon').html('<i class="ti ti-alert-circle text-danger"></i>');
+                        $('#dateStatusText').html('<span class="text-danger fw-medium">Error checking availability</span>');
+                        
+                        // Disable submit button on error
+                        $('#submitBookingBtn').prop('disabled', true);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to check date availability. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
                     }
                 });
+            });
+
+            // Auto-check when date changes
+            $('#eventDate').on('change', function() {
+                const selectedDate = $(this).val();
+                if (selectedDate) {
+                    $('#checkDateBtn').trigger('click');
+                } else {
+                    $('#dateStatusIcon').empty();
+                    $('#dateStatusText').text('Select a date to check availability');
+                    $('#submitBookingBtn').prop('disabled', false);
+                }
             });
             
             // View calendar modal
@@ -671,6 +817,31 @@
                 const form = document.getElementById('bookingForm');
                 if (!form.checkValidity()) {
                     form.classList.add('was-validated');
+                    return false;
+                }
+                
+                // Check date availability status
+                const dateStatusText = $('#dateStatusText').text().toLowerCase();
+                if (dateStatusText.includes('fully booked') || 
+                    dateStatusText.includes('not available') || 
+                    dateStatusText.includes('error')) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Date Not Available',
+                        text: 'Please select an available date before proceeding.',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return false;
+                }
+                
+                // Check if date has been checked
+                if ($('#dateStatusText').text() === 'Select a date to check availability') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Date Not Checked',
+                        text: 'Please check the availability of your selected date first.',
+                        confirmButtonColor: '#3475db'
+                    });
                     return false;
                 }
                 

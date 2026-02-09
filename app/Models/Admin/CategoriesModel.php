@@ -38,6 +38,22 @@ class CategoriesModel extends Model
     ];
 
     /**
+     * Get the studio packages for this category.
+     */
+    public function packages()
+    {
+        return $this->hasMany(\App\Models\StudioOwner\PackagesModel::class, 'category_id');
+    }
+
+    /**
+     * Get the freelancer packages for this category.
+     */
+    public function freelancerPackages()
+    {
+        return $this->hasMany(\App\Models\Freelancer\PackagesModel::class, 'category_id');
+    }
+
+    /**
      * Validation rules for category creation.
      *
      * @var array

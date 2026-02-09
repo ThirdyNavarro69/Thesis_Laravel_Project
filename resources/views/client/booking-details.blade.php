@@ -70,7 +70,7 @@
                                                 @endif
                                             </h3>
                                         </div>
-                                        <a href="{{ route('client.booking-forms', ['type' => $type, 'id' => $type === 'studio' ? $studio->id : $freelancer->id]) }}" class="btn btn-primary w-md-auto">
+                                        <a href="{{ route('client.booking-forms', ['type' => $type, 'id' => $type === 'studio' ? $studio->id : $freelancer->user_id]) }}" class="btn btn-primary w-md-auto">
                                             <i class="ti ti-calendar-check me-2"></i> Book Now
                                         </a>
                                     </div>
