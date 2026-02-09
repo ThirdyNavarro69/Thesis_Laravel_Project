@@ -129,7 +129,7 @@ class BookingModel extends Model
      */
     public function assignedPhotographers()
     {
-        return $this->hasMany(BookingAssignedPhotographerModel::class, 'booking_id');
+        return $this->hasMany(\App\Models\StudioOwner\BookingAssignedPhotographerModel::class, 'booking_id');
     }
 
     /**

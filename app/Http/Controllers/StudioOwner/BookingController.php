@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BookingModel;
 use App\Models\BookingPackageModel;
 use App\Models\PaymentModel;
-use App\Models\BookingAssignedPhotographerModel;
+use App\Models\StudioOwner\BookingAssignedPhotographerModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\StudioPhotographersModel;
 use App\Models\UserModel;

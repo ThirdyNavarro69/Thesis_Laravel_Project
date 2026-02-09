@@ -129,7 +129,7 @@ class UserModel extends Authenticatable
      */
     public function photographerAssignments()
     {
-        return $this->hasMany(\App\Models\BookingAssignedPhotographerModel::class, 'photographer_id');
+        return $this->hasMany(\App\Models\StudioOwner\BookingAssignedPhotographerModel::class, 'photographer_id');
     }
 
     /**
@@ -137,7 +137,7 @@ class UserModel extends Authenticatable
      */
     public function assignedPhotographers()
     {
-        return $this->hasMany(\App\Models\BookingAssignedPhotographerModel::class, 'assigned_by');
+        return $this->hasMany(\App\Models\StudioOwner\BookingAssignedPhotographerModel::class, 'assigned_by');
     }
 
     /**

@@ -1,5 +1,5 @@
 @extends('layouts.owner.app')
-@section('title', 'Bookings')
+@section('title', 'Client Bookings')
 
 {{-- CONTENTS --}}
 @section('content')
@@ -101,7 +101,7 @@
                                             <td>
                                                 @php
                                                     // Get assigned photographers for this booking
-                                                    $assignedPhotographers = \App\Models\BookingAssignedPhotographerModel::where('booking_id', $booking->id)
+                                                    $assignedPhotographers = \App\Models\StudioOwner\BookingAssignedPhotographerModel::where('booking_id', $booking->id)
                                                         ->whereIn('status', ['assigned', 'confirmed'])
                                                         ->with(['photographer:id,first_name,last_name'])
                                                         ->get();

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\StudioOwner;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -61,7 +61,7 @@ class BookingAssignedPhotographerModel extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(BookingModel::class, 'booking_id');
+        return $this->belongsTo(\App\Models\BookingModel::class, 'booking_id');
     }
 
     /**
@@ -69,7 +69,7 @@ class BookingAssignedPhotographerModel extends Model
      */
     public function studio()
     {
-        return $this->belongsTo(\App\Models\StudioOwner\StudiosModel::class, 'studio_id');
+        return $this->belongsTo(StudiosModel::class, 'studio_id');
     }
 
     /**
@@ -77,7 +77,7 @@ class BookingAssignedPhotographerModel extends Model
      */
     public function photographer()
     {
-        return $this->belongsTo(UserModel::class, 'photographer_id');
+        return $this->belongsTo(\App\Models\UserModel::class, 'photographer_id');
     }
 
     /**
@@ -85,7 +85,7 @@ class BookingAssignedPhotographerModel extends Model
      */
     public function assigner()
     {
-        return $this->belongsTo(UserModel::class, 'assigned_by');
+        return $this->belongsTo(\App\Models\UserModel::class, 'assigned_by');
     }
 
     /**

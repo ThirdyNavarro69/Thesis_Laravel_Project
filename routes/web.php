@@ -70,15 +70,14 @@ Route::middleware(['auth'])->group(function () {
 
         // Dashboard
         Route::get('/dashboard',                                [\App\Http\Controllers\StudioOwner\DashboardController::class, 'index'])->name('owner.dashboard');
-    
+
         // Manage Studio                            
         Route::get('/view/studio',                              [\App\Http\Controllers\StudioOwner\StudioController::class, 'index'])->name('owner.studio.index');
         Route::get('/create/studio',                            [\App\Http\Controllers\StudioOwner\StudioController::class, 'create'])->name('owner.studio.create');
         Route::post('/studio',                                  [\App\Http\Controllers\StudioOwner\StudioController::class, 'store'])->name('owner.studio.store');
         Route::get('/studio/barangays/{municipality}',          [\App\Http\Controllers\StudioOwner\StudioController::class, 'getBarangays'])->name('owner.studio.get-barangays');
         Route::delete('/studio/{id}',                           [\App\Http\Controllers\StudioOwner\StudioController::class, 'destroy'])->name('owner.studio.destroy');
-    
-    
+
         // Manage Bookings                          
         Route::get('/view/bookings',                            [\App\Http\Controllers\StudioOwner\BookingController::class, 'index'])->name('owner.booking.index');
         Route::get('/booking/history',                          [\App\Http\Controllers\StudioOwner\BookingController::class, 'history'])->name('owner.booking.history');
@@ -87,13 +86,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/bookings/{id}/assign-photographers',      [\App\Http\Controllers\StudioOwner\BookingController::class, 'assignPhotographers'])->name('owner.booking.assign.photographers');
         Route::delete('/assignments/{id}',                      [\App\Http\Controllers\StudioOwner\BookingController::class, 'removePhotographerAssignment'])->name('owner.booking.remove.assignment');
         Route::put('/assignments/{id}/status',                  [\App\Http\Controllers\StudioOwner\BookingController::class, 'updateAssignmentStatus'])->name('owner.booking.update.assignment.status');
-    
+
         // Manage Studio Schedule                       
         Route::get('/view/schedules',                           [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'index'])->name('owner.studio-schedule.index');
         Route::get('/setup/studio-schedules',                   [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'setupStudioSchedule'])->name('owner.setup-studio-schedules');
         Route::post('/store/studio-schedules',                  [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'store'])->name('owner.studio-schedule.store');
         Route::delete('/delete/studio-schedules/{id}',          [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'destroy'])->name('owner.studio-schedule.destroy');
-    
+
         // Studio Members                           
         Route::get('/view/members',                             [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'index'])->name('owner.members.index');
         Route::get('/invite/members',                           [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'invite'])->name('owner.members.invite');
@@ -101,14 +100,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/members/invite',                          [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'store'])->name('owner.members.invite.store');
         Route::post('/members/{id}/cancel',                     [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'cancel'])->name('owner.members.cancel');
         Route::get('/members/freelancer/{id}/details',          [\App\Http\Controllers\StudioOwner\StudioMemberController::class, 'getFreelancerDetails'])->name('owner.members.freelancer.details');
-    
+
         // Studio Photographers 
         Route::get('/view/studio-photographers',                [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'index'])->name('owner.studio-photographers.index');
         Route::get('/create/studio-photographers',              [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'create'])->name('owner.studio-photographers.create');
         Route::post('/studio-photographers',                    [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'store'])->name('owner.studio-photographers.store');
         Route::get('/studio-photographers/{id}',                [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'show'])->name('owner.studio-photographers.show');
         Route::get('/studio/{id}/services',                     [\App\Http\Controllers\StudioOwner\StudioPhotographersController::class, 'getStudioServices'])->name('owner.studio.services');
-    
+
         // Manage Category Services                         
         Route::get('/view/services',                            [\App\Http\Controllers\StudioOwner\ServicesController::class, 'index'])->name('owner.services.index');
         Route::get('/create/services',                          [\App\Http\Controllers\StudioOwner\ServicesController::class, 'create'])->name('owner.services.create');
@@ -118,7 +117,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/services/{id}',                            [\App\Http\Controllers\StudioOwner\ServicesController::class, 'update'])->name('owner.services.update');
         Route::delete('/services/{id}',                         [\App\Http\Controllers\StudioOwner\ServicesController::class, 'destroy'])->name('owner.services.destroy');
         Route::get('/services/data/get',                        [\App\Http\Controllers\StudioOwner\ServicesController::class, 'getServices'])->name('owner.services.data');
-    
+
         // Manage Packages  
         Route::get('/view/packages',                            [\App\Http\Controllers\StudioOwner\PackagesController::class, 'index'])->name('owner.packages.index');
         Route::get('/create/packages',                          [\App\Http\Controllers\StudioOwner\PackagesController::class, 'create'])->name('owner.packages.create');
