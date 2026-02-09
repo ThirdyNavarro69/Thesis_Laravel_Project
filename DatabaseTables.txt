@@ -1,0 +1,265 @@
+Database Tables
+
+pvt_freelancer_categories
+	- id
+	- user_id                  FK → tbl_users.id
+	- category_id              FK → tbl_categories.id
+	- created_at
+	- updated_at
+
+pvt_studio_categories
+	- id
+	- user_id                  FK → tbl_users.id
+	- studio_id                FK → tbl_studios.id
+	- category_id              FK → tbl_categories.id
+	- created_at
+	- updated_at
+
+pvt_studio_photographers
+	- id
+	- studio_id 			   FK → tbl_studios.id
+	- owner_id                 FK → tbl_users.id
+	- photographer_id		   FK → tbl_users.id
+	- services_id
+	- created_at
+	- updated_at
+
+tbl_categories
+	- id
+	- category_name
+	- description
+	- status
+	- created_at
+	- updated_at
+
+tbl_freelancers
+	- id
+	- user_id                  FK → tbl_users.id
+	- location_id              FK → tbl_locations.id
+	- brand_name
+	- tagline
+	- bio
+	- years_experience
+	- brand_logo
+	- street
+	- barangay
+	- service_area
+	- starting_price
+	- deposit_policy
+	- portfolio_works
+	- facebook_url
+	- instagram_url
+	- website_url
+	- valid_id
+	- created_at
+	- updated_at
+
+tbl_freelancer_packages
+	- id
+	- user_id                  FK → tbl_users.id
+	- category_id              FK → tbl_categories.id
+	- package_name
+	- package_description
+	- package_inclusions
+	- duration
+	- maximum_edited_photos
+	- coverage_scope
+	- package_price
+	- status
+	- created_at
+	- updated_at
+
+tbl_freelancer_schedules
+	- id
+	- user_id                  FK → tbl_users.id
+	- operating_days
+	- start_time
+	- end_time
+	- booking_limit
+	- advance_booking
+	- created_at
+	- updated_at
+
+tbl_freelancer_services
+	- id
+	- user_id                  FK → tbl_users.id
+	- category_id              FK → tbl_categories.id
+	- services_name
+	- created_at
+	- updated_at
+
+tbl_locations
+	- id
+	- province
+	- municipality
+	- barangay
+	- zip_code
+	- status
+	- created_at
+	- updated_at
+
+tbl_packages
+	- id
+	- studio_id                FK → tbl_studios.id
+	- category_id              FK → tbl_categories.id
+	- package_name
+	- package_description
+	- package_inclusions
+	- duration
+	- maximum_edited_photos
+	- coverage_scope
+	- package_price
+	- status
+	- created_at
+	- updated_at
+
+tbl_services
+	- id
+	- studio_id                FK → tbl_studios.id
+	- category_id              FK → tbl_categories.id
+	- service_name
+	- created_at
+	- updated_at
+
+tbl_studios
+	- id
+	- user_id                  FK → tbl_users.id
+	- category_id              FK → tbl_categories.id     (nullable)
+	- location_id              FK → tbl_locations.id      (nullable)
+	- street
+	- barangay
+	- contact_number
+	- studio_email
+	- facebook_url
+	- instagram_url
+	- website_url
+	- studio_name
+	- studio_type
+	- year_established
+	- studio_description
+	- studio_logo
+	- starting_price
+	- operating_days
+	- start_time
+	- end_time
+	- max_clients_per_day
+	- advance_booking_days
+	- business_permit
+	- owner_id_document
+	- status
+	- rejection_note
+	- created_at
+	- updated_at
+
+tbl_studio_schedules
+	- id
+	- studio_id                FK → tbl_studios.id
+	- location_id              FK → tbl_locations.id
+	- operating_days
+	- opening_time
+	- closing_time
+	- booking_limit
+	- advance_booking
+	- created_at
+	- updated_at
+
+tbl_studio_members
+	- id
+	- studio_id                FK → tbl_studios.id
+	- freelancer_id			   FK → tbl_users.id
+	- invited_by               FK → tbl_users.id
+	- invitation_message
+	- status
+	- response_message
+	- invited_at
+	- responded_at
+	- created_at
+	- updated_at
+
+tbl_studio_photographers
+	- id
+	- studio_id 			  FK → tbl_studios.id
+	- owner_id 			      FK → tbl_users.id
+	- photographer_id 		  FK → tbl_users.id
+	- position
+	- specialization
+	- years_of_experience
+	- status
+	- created_at
+	- updated_at
+
+tbl_users
+	- id
+	- uuid
+	- location_id
+	- role
+	- first_name
+	- middle_name
+	- last_name
+	- user_type
+	- email
+	- mobile_number
+	- password
+	- profile_photo
+	- location_id			    FK → tbl_locations.id
+	- status
+	- email_verified
+	- verification_token
+	- token_expiry
+	- created_at
+	- updated_at
+
+tbl_bookings
+	- id	
+	- booking_reference	
+	- client_id				FK → tbl_users.id
+	- booking_type	
+	- provider_id	
+	- category_id			FK → tbl_categories.id
+	- event_name	
+	- event_date	
+	- start_time	
+	- end_time	
+	- location_type	
+	- venue_name	
+	- street	
+	- barangay	
+	- city	
+	- province	
+	- special_requests	
+	- total_amount	
+	- down_payment	
+	- remaining_balance	
+	- deposit_policy
+	- payment_type	
+	- status	
+	- payment_status	
+	- created_at
+
+tbl_booking_packages
+	- id	
+	- booking_id		  FK → tbl_bookings.id
+	- package_id	
+	- package_type	
+	- package_name	
+	- package_price	
+	- package_inclusions	
+	- duration	
+	- maximum_edited_photos	
+	- coverage_scope	
+	- created_at	
+	- updated_at
+
+tbl_payments
+	- id	
+	- booking_id				FK → tbl_bookings.id
+	- payment_reference	
+	- stripe_payment_intent_id
+	- stripe_session_id	
+	- amount	
+	- payment_method	
+	- status	
+	- payment_details	
+	- paid_at	
+	- created_at	
+	- updated_at
