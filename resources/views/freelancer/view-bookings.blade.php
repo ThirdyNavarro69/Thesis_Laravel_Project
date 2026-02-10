@@ -75,9 +75,9 @@
                                                 @php
                                                     $statusBadge = [
                                                         'pending' => 'badge-soft-warning',
-                                                        'confirmed' => 'badge-soft-success',
-                                                        'in_progress' => 'badge-soft-info',
-                                                        'completed' => 'badge-soft-secondary',
+                                                        'confirmed' => 'badge-soft-primary',
+                                                        'in_progress' => 'badge-soft-warning',
+                                                        'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
                                                     ][$booking->status] ?? 'badge-soft-secondary';
                                                 @endphp
@@ -87,10 +87,10 @@
                                                 @php
                                                     $paymentBadge = [
                                                         'pending' => 'badge-soft-warning',
-                                                        'partially_paid' => 'badge-soft-info',
+                                                        'partially_paid' => 'badge-soft-primary',
                                                         'paid' => 'badge-soft-success',
                                                         'failed' => 'badge-soft-danger',
-                                                        'refunded' => 'badge-soft-secondary'
+                                                        'refunded' => 'badge-soft-info'
                                                     ][$booking->payment_status] ?? 'badge-soft-secondary';
                                                 @endphp
                                                 <span class="badge {{ $paymentBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
@@ -152,6 +152,92 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer" id="bookingModalFooter" style="display: none;">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+                    <div id="bookingActionButtons">
+                        <!-- Action buttons will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- STATUS UPDATE MODAL --}}
+    <div class="modal fade" id="statusUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Booking Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusUpdateForm">
+                        <input type="hidden" id="statusBookingId" name="booking_id">
+                        <div class="mb-3">
+                            <label for="statusSelect" class="form-label">New Status</label>
+                            <select class="form-control" id="statusSelect" name="status" required>
+                                <option value="">Select Status</option>
+                                <option value="confirmed">Confirm Booking</option>
+                                <option value="rejected">Reject Booking</option>
+                                <option value="in_progress">Mark as In Progress</option>
+                                <option value="completed">Mark as Completed</option>
+                                <option value="cancelled">Cancel Booking</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="reasonField" style="display: none;">
+                            <label for="reasonText" class="form-label">Reason</label>
+                            <textarea class="form-control" id="reasonText" name="reason" rows="3" placeholder="Please provide a reason..."></textarea>
+                            <small class="text-muted">Required for rejection or cancellation</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitStatusUpdate">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- PAYMENT UPDATE MODAL --}}
+    <div class="modal fade" id="paymentUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Payment Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentUpdateForm">
+                        <input type="hidden" id="paymentBookingId" name="booking_id">
+                        <div class="mb-3">
+                            <label for="paymentStatusSelect" class="form-label">Payment Status</label>
+                            <select class="form-control" id="paymentStatusSelect" name="payment_status" required>
+                                <option value="">Select Status</option>
+                                <option value="paid">Fully Paid</option>
+                                <option value="partially_paid">Partially Paid</option>
+                                <option value="failed">Payment Failed</option>
+                                <option value="refunded">Refunded</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="amountField" style="display: none;">
+                            <label for="amountPaid" class="form-label">Amount Paid</label>
+                            <div class="input-group">
+                                <span class="input-group-text">PHP</span>
+                                <input type="number" class="form-control" id="amountPaid" name="amount_paid" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <small class="text-muted">Enter the amount received</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paymentNotes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="paymentNotes" name="notes" rows="2" placeholder="Add any payment notes..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="submitPaymentUpdate">Update Payment</button>
+                </div>
             </div>
         </div>
     </div>
@@ -162,9 +248,12 @@
     <script>
         $(document).ready(function() {
             let currentBookingId = null;
+            let currentBookingData = null;
             
-            // Initialize Bootstrap modal
+            // Initialize Bootstrap modals
             const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            const statusUpdateModal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
+            const paymentUpdateModal = new bootstrap.Modal(document.getElementById('paymentUpdateModal'));
 
             // View booking details
             $(document).on('click', '.view-booking-btn', function() {
@@ -185,10 +274,13 @@
                                 <p class="mt-3">Loading booking details...</p>
                             </div>
                         `);
+                        $('#bookingModalFooter').hide();
                     },
                     success: function(response) {
                         if (response.success) {
+                            currentBookingData = response;
                             renderBookingDetails(response);
+                            renderActionButtons(response.booking);
                         } else {
                             showError('Error loading booking details');
                         }
@@ -524,7 +616,344 @@
 
                 $('#bookingReference').text(booking.booking_reference);
                 $('#bookingModalBody').html(modalContent);
+                $('#bookingModalFooter').show();
                 loadIcons();
+            }
+
+            // Render action buttons based on booking status
+            function renderActionButtons(booking) {
+                let buttonsHtml = '';
+                
+                // Show different buttons based on current status
+                switch(booking.status) {
+                    case 'pending':
+                        buttonsHtml = `
+                            <button class="btn btn-success" id="confirmBookingBtn">
+                                <i data-lucide="check-circle" class="me-1"></i> Confirm Booking
+                            </button>
+                            <button class="btn btn-danger" id="rejectBookingBtn">
+                                <i data-lucide="x-circle" class="me-1"></i> Reject Booking
+                            </button>
+                        `;
+                        break;
+                        
+                    case 'confirmed':
+                        buttonsHtml = `
+                            <button class="btn btn-danger" id="cancelBookingBtn">
+                                <i data-lucide="x-circle" class="me-1"></i> Cancel Booking
+                            </button>
+                            <button class="btn btn-soft-primary" id="updatePaymentBtn">
+                                <i data-lucide="credit-card" class="me-1"></i> Update Payment
+                            </button>
+                            <button class="btn btn-primary" id="markInProgressBtn">
+                                <i data-lucide="play-circle" class="me-1"></i> Mark as In Progress
+                            </button>
+                        `;
+                        break;
+                        
+                    case 'in_progress':
+                        buttonsHtml = `
+                            <button class="btn btn-soft-primary" id="updatePaymentBtn">
+                                <i data-lucide="credit-card" class="me-1"></i> Update Payment
+                            </button>
+                            <button class="btn btn-success" id="markCompletedBtn">
+                                <i data-lucide="check-circle" class="me-1"></i> Mark as Completed
+                            </button>
+                        `;
+                        break;
+                        
+                    default:
+                        buttonsHtml = `
+                            <button class="btn btn-soft-primary" id="updatePaymentBtn">
+                                <i data-lucide="credit-card" class="me-1"></i> Update Payment
+                            </button>
+                        `;
+                }
+                
+                $('#bookingActionButtons').html(buttonsHtml);
+                loadIcons();
+                bindActionButtons(booking);
+            }
+
+            // Bind action button events
+            function bindActionButtons(booking) {
+                // Confirm booking
+                $('#confirmBookingBtn').off('click').on('click', function() {
+                    updateBookingStatus('confirmed');
+                });
+                
+                // Reject booking
+                $('#rejectBookingBtn').off('click').on('click', function() {
+                    $('#statusSelect').val('rejected');
+                    $('#statusBookingId').val(currentBookingId);
+                    statusUpdateModal.show();
+                });
+                
+                // Mark in progress
+                $('#markInProgressBtn').off('click').on('click', function() {
+                    updateBookingStatus('in_progress');
+                });
+                
+                // Mark completed
+                $('#markCompletedBtn').off('click').on('click', function() {
+                    updateBookingStatus('completed');
+                });
+                
+                // Cancel booking
+                $('#cancelBookingBtn').off('click').on('click', function() {
+                    $('#statusSelect').val('cancelled');
+                    $('#statusBookingId').val(currentBookingId);
+                    statusUpdateModal.show();
+                });
+                
+                // Update payment
+                $('#updatePaymentBtn').off('click').on('click', function() {
+                    $('#paymentBookingId').val(currentBookingId);
+                    paymentUpdateModal.show();
+                });
+            }
+
+            // Update booking status (without reason)
+            function updateBookingStatus(status) {
+                Swal.fire({
+                    title: 'Confirm Action',
+                    text: `Are you sure you want to ${status.replace('_', ' ')} this booking?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3475db',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, proceed',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        submitStatusUpdate(status, '');
+                    }
+                });
+            }
+
+            // Status select change
+            $('#statusSelect').change(function() {
+                const status = $(this).val();
+                if (status === 'rejected' || status === 'cancelled') {
+                    $('#reasonField').show();
+                } else {
+                    $('#reasonField').hide();
+                }
+            });
+
+            // Payment status select change
+            $('#paymentStatusSelect').change(function() {
+                const status = $(this).val();
+                if (status === 'partially_paid') {
+                    $('#amountField').show();
+                } else {
+                    $('#amountField').hide();
+                }
+            });
+
+            // Submit status update
+            $('#submitStatusUpdate').click(function() {
+                const status = $('#statusSelect').val();
+                const reason = $('#reasonText').val();
+                
+                if (!status) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: 'Please select a status',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                if ((status === 'rejected' || status === 'cancelled') && !reason.trim()) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Reason Required',
+                        text: 'Please provide a reason for rejection or cancellation',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                submitStatusUpdate(status, reason);
+            });
+
+            // Submit payment update
+            $('#submitPaymentUpdate').click(function() {
+                const paymentStatus = $('#paymentStatusSelect').val();
+                const amountPaid = $('#amountPaid').val();
+                const notes = $('#paymentNotes').val();
+                
+                if (!paymentStatus) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Missing Information',
+                        text: 'Please select a payment status',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                if (paymentStatus === 'partially_paid' && (!amountPaid || parseFloat(amountPaid) <= 0)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Amount Required',
+                        text: 'Please enter the amount paid',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                submitPaymentUpdate(paymentStatus, amountPaid, notes);
+            });
+
+            // Submit status update to server
+            function submitStatusUpdate(status, reason) {
+                $.ajax({
+                    url: '{{ route("freelancer.booking.update.status", ":id") }}'.replace(':id', currentBookingId),
+                    type: 'PUT',
+                    data: {
+                        status: status,
+                        reason: reason,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    beforeSend: function() {
+                        $('#submitStatusUpdate').prop('disabled', true).html('<span class="loading-spinner"></span> Updating...');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            statusUpdateModal.hide();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            }).then(() => {
+                                // Refresh booking details
+                                loadBookingDetails(currentBookingId);
+                                // Refresh table row
+                                updateTableRow(response.booking);
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to update status. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
+                    },
+                    complete: function() {
+                        $('#submitStatusUpdate').prop('disabled', false).text('Update Status');
+                        $('#statusUpdateForm')[0].reset();
+                        $('#reasonField').hide();
+                    }
+                });
+            }
+
+            // Submit payment update to server
+            function submitPaymentUpdate(paymentStatus, amountPaid, notes) {
+                $.ajax({
+                    url: '{{ route("freelancer.booking.update.payment.status", ":id") }}'.replace(':id', currentBookingId),
+                    type: 'PUT',
+                    data: {
+                        payment_status: paymentStatus,
+                        amount_paid: amountPaid,
+                        notes: notes,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    beforeSend: function() {
+                        $('#submitPaymentUpdate').prop('disabled', true).html('<span class="loading-spinner"></span> Updating...');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            paymentUpdateModal.hide();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true
+                            }).then(() => {
+                                // Refresh booking details
+                                loadBookingDetails(currentBookingId);
+                                // Refresh table row
+                                updateTableRow(response.booking);
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to update payment status. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
+                    },
+                    complete: function() {
+                        $('#submitPaymentUpdate').prop('disabled', false).text('Update Payment');
+                        $('#paymentUpdateForm')[0].reset();
+                        $('#amountField').hide();
+                    }
+                });
+            }
+
+            // Update table row with new data
+            function updateTableRow(booking) {
+                const row = $(`tr[data-booking-id="${booking.id}"]`);
+                
+                // Update status badge
+                const statusBadge = {
+                    'pending': 'badge-soft-warning',
+                    'confirmed': 'badge-soft-success',
+                    'in_progress': 'badge-soft-info',
+                    'completed': 'badge-soft-secondary',
+                    'cancelled': 'badge-soft-danger',
+                    'rejected': 'badge-soft-danger'
+                }[booking.status] || 'badge-soft-secondary';
+                
+                row.find('td:nth-child(5)').html(`
+                    <span class="badge ${statusBadge} fs-8 px-1 w-100 text-uppercase">
+                        ${booking.status.replace('_', ' ')}
+                    </span>
+                `);
+                
+                // Update payment status badge
+                const paymentBadge = {
+                    'pending': 'badge-soft-warning',
+                    'partially_paid': 'badge-soft-info',
+                    'paid': 'badge-soft-success',
+                    'failed': 'badge-soft-danger',
+                    'refunded': 'badge-soft-secondary'
+                }[booking.payment_status] || 'badge-soft-secondary';
+                
+                row.find('td:nth-child(6)').html(`
+                    <span class="badge ${paymentBadge} fs-8 px-1 w-100 text-uppercase">
+                        ${booking.payment_status.replace('_', ' ')}
+                    </span>
+                `);
+                
+                // Update remaining balance
+                row.find('td:nth-child(7)').text(`PHP ${parseFloat(booking.remaining_balance).toFixed(2)}`);
             }
 
             // Helper functions
@@ -534,7 +963,8 @@
                     'confirmed': 'text-success',
                     'in_progress': 'text-info',
                     'completed': 'text-secondary',
-                    'cancelled': 'text-danger'
+                    'cancelled': 'text-danger',
+                    'rejected': 'text-danger'
                 };
                 return textClasses[status] || 'text-secondary';
             }

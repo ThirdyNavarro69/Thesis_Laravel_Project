@@ -168,6 +168,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/view/bookings',                        [\App\Http\Controllers\Freelancer\BookingController::class, 'index'])->name('freelancer.booking.index');
         Route::get('/booking/history',                      [\App\Http\Controllers\Freelancer\BookingController::class, 'history'])->name('freelancer.booking.history');
         Route::get('/bookings/{id}/details',                [\App\Http\Controllers\Freelancer\BookingController::class, 'getBookingDetails'])->name('freelancer.booking.details');
+        Route::put('/bookings/{id}/status',                 [\App\Http\Controllers\Freelancer\BookingController::class, 'updateStatus'])->name('freelancer.booking.update.status');
+        Route::put('/bookings/{id}/payment-status',         [\App\Http\Controllers\Freelancer\BookingController::class, 'updatePaymentStatus'])->name('freelancer.booking.update.payment.status');
     });
 
     // Client Routes =======================================================================================================================================================
