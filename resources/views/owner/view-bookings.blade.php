@@ -229,7 +229,6 @@
             </div>
         </div>
     </div>
-
 @endsection
 
 {{-- SCRIPTS --}}
@@ -306,7 +305,9 @@
                         assignedPhotographersHtml += `
                             <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
                                 <div class="d-flex align-items-center">
-                                    <div class="photographer-avatar me-2">${initials}</div>
+                                    <div class="avatar-xl me-2">
+                                        <span class="photographer-avatar avatar-title bg-info-subtle text-info rounded-circle me-2">${initials}</span>
+                                    </div>
                                     <div>
                                         <h6 class="mb-0">${photographer.first_name} ${photographer.last_name}</h6>
                                         <small class="text-muted">${studioPhotographer ? studioPhotographer.position : 'Photographer'}</small>

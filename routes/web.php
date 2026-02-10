@@ -195,11 +195,16 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('studio-photographer')->middleware([StudioPhotographerMiddleware::class])->group(function () {
 
         // Dashboard
-        Route::get('/dashboard',                [\App\Http\Controllers\StudioPhotographer\DashboardController::class, 'index'])->name('studio-photographer.dashboard');
+        Route::get('/dashboard',                        [\App\Http\Controllers\StudioPhotographer\DashboardController::class, 'index'])->name('studio-photographer.dashboard');
 
         // Assigned Studio
-        Route::get('/view/studio',              [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'index'])->name('studio-photographer.studio.index');
-        Route::get('/studio/{id}/details',      [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'getStudioDetails'])->name('studio-photographer.studio.details');
+        Route::get('/view/studio',                      [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'index'])->name('studio-photographer.studio.index');
+        Route::get('/studio/{id}/details',              [\App\Http\Controllers\StudioPhotographer\AssignedStudioController::class, 'getStudioDetails'])->name('studio-photographer.studio.details');
+
+        // Assigned Studio
+        Route::get('/assigned-bookings',                [\App\Http\Controllers\StudioPhotographer\AssignedBookingController::class, 'index'])->name('assigned.bookings');
+        Route::get('/assignment/{id}/details',          [\App\Http\Controllers\StudioPhotographer\AssignedBookingController::class, 'getBookingDetails'])->name('assignment.details');
+        Route::post('/assignment/{id}/update-status',   [\App\Http\Controllers\StudioPhotographer\AssignedBookingController::class, 'updateAssignmentStatus'])->name('assignment.update-status');
 
     });
 

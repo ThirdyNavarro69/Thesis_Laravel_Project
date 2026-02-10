@@ -60,6 +60,28 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Assigned Booking --}}
+            @php
+                $assignedBookingRoutes = Route::is('assigned.bookings');
+            @endphp
+
+            <li class="side-nav-item {{ $assignedBookingRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageAssignedBooking" aria-expanded="{{ $assignedBookingRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageAssignedBooking" class="side-nav-link {{ $assignedBookingRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="calendar-check"></i></span>
+                    <span class="menu-text" data-lang="assigned-booking">Assigned Booking</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $assignedBookingRoutes ? 'show' : '' }}" id="sidebarManageAssignedBooking">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('assigned.bookings') }}" class="side-nav-link {{ $assignedBookingRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="assigned-booking">Assigned Booking</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 </div>

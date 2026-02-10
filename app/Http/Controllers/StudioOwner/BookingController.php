@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\BookingModel;
 use App\Models\BookingPackageModel;
 use App\Models\PaymentModel;
+use App\Models\UserModel;
+use App\Models\Admin\CategoriesModel;
 use App\Models\StudioOwner\BookingAssignedPhotographerModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\StudioPhotographersModel;
-use App\Models\UserModel;
-use App\Models\Admin\CategoriesModel;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
