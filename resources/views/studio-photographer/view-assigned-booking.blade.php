@@ -183,19 +183,17 @@
                 </div>
                 
                 <div class="modal-body p-4">
-                    <div id="statusModalAlert" class="alert alert-light border mb-4">
-                        <div class="row align-items-center g-0">
-                            <div class="col-md-8">
-                                <div class="d-flex align-items-center">
-                                    <div>
-                                        <h6 class="mb-1 fw-semibold" id="statusBookingInfo">Loading...</h6>
-                                        <p class="mb-0 text-muted small" id="statusBookingDetails">Loading booking details...</p>
-                                    </div>
+                    <div class="row align-items-center g-0">
+                        <div class="col-md-8 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-semibold" id="statusBookingInfo">Loading...</h6>
+                                    <p class="mb-0 text-muted small" id="statusBookingDetails">Loading booking details...</p>
                                 </div>
                             </div>
-                            <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                                <span class="badge badge-soft-warning" id="statusCurrentStatus">Loading...</span>
-                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                            <span class="badge badge-soft-warning" id="statusCurrentStatus">Loading...</span>
                         </div>
                     </div>
 
@@ -634,23 +632,54 @@
             function bindStatusUpdateButtons() {
                 // Confirm Assignment
                 $(document).off('click', '#confirmAssignmentBtn').on('click', '#confirmAssignmentBtn', function() {
-                    showStatusUpdateModal('confirmed');
+                    Swal.fire({
+                        title: 'Confirm Assignment',
+                        text: 'Are you sure you want to confirm this assignment?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3475db',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, confirm it',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateAssignmentStatus('confirmed');
+                        }
+                    });
                 });
                 
                 // Complete Assignment
                 $(document).off('click', '#completeAssignmentBtn').on('click', '#completeAssignmentBtn', function() {
-                    showStatusUpdateModal('completed');
+                    Swal.fire({
+                        title: 'Mark as Completed',
+                        text: 'Are you sure you want to mark this assignment as completed?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3475db',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, mark as completed',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateAssignmentStatus('completed');
+                        }
+                    });
                 });
                 
-                // Cancel Assignment
+                // Cancel Assignment - Show modal for cancellation reason
                 $(document).off('click', '#cancelAssignmentBtn').on('click', '#cancelAssignmentBtn', function() {
                     showStatusUpdateModal('cancelled');
                 });
             }
             
-            // Show status update modal
+            // Show status update modal (Only for cancellation)
             function showStatusUpdateModal(status) {
                 currentStatusAction = status;
+                
+                // Only show modal for cancellation
+                if (status !== 'cancelled') {
+                    return;
+                }
                 
                 // Load assignment details for the modal header
                 $.ajax({
@@ -666,7 +695,7 @@
                             $('#statusBookingDetails').text(`${new Date(booking.event_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} • ${booking.start_time} - ${booking.end_time}`);
                             $('#statusCurrentStatus').text(assignment.status.toUpperCase());
                             
-                            // Load appropriate content based on status
+                            // Load cancellation content
                             loadStatusUpdateContent(status, assignment);
                         }
                     },
@@ -686,88 +715,29 @@
                 }, 300);
             }
             
-            // Load status update content
+            // Load status update content (Only for cancellation)
             function loadStatusUpdateContent(status, assignment) {
                 let content = '';
                 
-                switch (status) {
-                    case 'confirmed':
-                        content = `
-                            <div class="alert alert-info border mb-4">
-                                <div class="d-flex align-items-center">
-                                    <i data-lucide="info" class="fs-20 text-info me-2"></i>
-                                    <div>
-                                        <h6 class="mb-1">Confirm Assignment</h6>
-                                        <p class="mb-0 text-muted">You are about to confirm this assignment. This action cannot be undone.</p>
-                                    </div>
+                // Only show form for cancellation
+                if (status === 'cancelled') {
+                    content = `
+                        <div class="alert alert-danger mb-4">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="alert-circle" class="fs-20 text-danger me-2"></i>
+                                <div>
+                                    <h6 class="mb-1">Cancel Assignment</h6>
+                                    <p class="mb-0 text-muted">You are about to cancel this assignment. Please provide a reason for cancellation.</p>
                                 </div>
                             </div>
-                            
-                            <div class="text-center py-4">
-                                <div class="avatar-xl mb-3">
-                                    <span class="avatar-title bg-success-subtle text-success rounded-circle">
-                                        <i data-lucide="check" class="fs-20"></i>
-                                    </span>
-                                </div>
-                                <h5 class="mb-2">Ready to Confirm?</h5>
-                                <p class="text-muted">Once confirmed, you'll be committed to this booking.</p>
-                            </div>
-                        `;
-                        break;
+                        </div>
                         
-                    case 'completed':
-                        content = `
-                            <div class="alert alert-success border mb-4">
-                                <div class="d-flex align-items-center">
-                                    <i data-lucide="check-circle" class="fs-20 text-success me-2"></i>
-                                    <div>
-                                        <h6 class="mb-1">Mark as Completed</h6>
-                                        <p class="mb-0 text-muted">You are about to mark this assignment as completed. Please ensure the booking has been fully served.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center py-4">
-                                <div class="avatar-xl mb-3">
-                                    <span class="avatar-title bg-success-subtle text-success rounded-circle">
-                                        <i data-lucide="check-circle" class="fs-20"></i>
-                                    </span>
-                                </div>
-                                <h5 class="mb-2">Booking Completed?</h5>
-                                <p class="text-muted">Mark this assignment as completed once all services have been delivered.</p>
-                            </div>
-                        `;
-                        break;
-                        
-                    case 'cancelled':
-                        content = `
-                            <div class="alert alert-danger border mb-4">
-                                <div class="d-flex align-items-center">
-                                    <i data-lucide="alert-circle" class="fs-20 text-danger me-2"></i>
-                                    <div>
-                                        <h6 class="mb-1">Cancel Assignment</h6>
-                                        <p class="mb-0 text-muted">You are about to cancel this assignment. Please provide a reason for cancellation.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="cancellationReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
-                                <textarea class="form-control" id="cancellationReason" rows="4" placeholder="Please explain why you need to cancel this assignment..." maxlength="500" required></textarea>
-                                <small class="text-muted">Maximum 500 characters</small>
-                            </div>
-                            
-                            <div class="text-center py-3">
-                                <div class="avatar-xl mb-3">
-                                    <span class="avatar-title bg-danger-subtle text-danger rounded-circle">
-                                        <i data-lucide="x" class="fs-20"></i>
-                                    </span>
-                                </div>
-                                <h5 class="mb-2">Cancel Assignment?</h5>
-                                <p class="text-muted">This action cannot be undone. The studio owner will be notified.</p>
-                            </div>
-                        `;
-                        break;
+                        <div class="mb-3">
+                            <label for="cancellationReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="cancellationReason" rows="4" placeholder="Please explain why you need to cancel this assignment..." maxlength="500" required></textarea>
+                            <small class="text-muted">Maximum 500 characters</small>
+                        </div>
+                    `;
                 }
                 
                 $('#statusUpdateContent').html(content);

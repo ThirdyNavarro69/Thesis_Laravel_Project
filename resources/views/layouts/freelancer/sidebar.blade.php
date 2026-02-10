@@ -48,7 +48,7 @@
             <li class="side-nav-item {{ $manageProfileRoutes || $setupProfileRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageProfile" aria-expanded="{{ $manageProfileRoutes || $setupProfileRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageProfile" class="side-nav-link {{ $manageProfileRoutes || $setupProfileRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="file-user"></i></span>
-                    <span class="menu-text" data-lang="manage-profile">Manage Profile</span>
+                    <span class="menu-text" data-lang="manage-profile">Profile</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageProfileRoutes || $setupProfileRoutes ? 'show' : '' }}" id="sidebarManageProfile">
@@ -61,6 +61,34 @@
                         <li class="side-nav-item">
                             <a href="{{ route('freelancer.profile.setup') }}" class="side-nav-link {{ $setupProfileRoutes ? 'active' : '' }}">
                                 <span class="menu-text" data-lang="setup-profile">Setup Profile</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            {{-- Manage Bookings --}}
+            @php
+                $manageBookingsRoutes = Route::is('freelancer.booking.index');
+                $bookingHistoryRoutes = Route::is('freelancer.booking.history');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageBookings" aria-expanded="{{ $manageBookingsRoutes || $bookingHistoryRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageBookings" class="side-nav-link {{ $manageBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
+                    <span class="menu-text" data-lang="manage-bookings">Bookings</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $manageBookingsRoutes || $bookingHistoryRoutes ? 'show' : '' }}" id="sidebarManageBookings">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('freelancer.booking.index') }}" class="side-nav-link {{ $manageBookingsRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="view-bookings">View Bookings</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('freelancer.booking.history') }}" class="side-nav-link {{ $bookingHistoryRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="booking-history">Booking History</span>
                             </a>
                         </li>
                     </ul>
@@ -98,7 +126,7 @@
             <li class="side-nav-item {{ $manageServicesRoutes || $createServicesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageServices" aria-expanded="{{ $manageServicesRoutes || $createServicesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageServices" class="side-nav-link {{ $manageServicesRoutes || $createServicesRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="list-tree"></i></span>
-                    <span class="menu-text" data-lang="manage-category-services">Manage Services</span>
+                    <span class="menu-text" data-lang="manage-category-services">Services</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $manageServicesRoutes || $createServicesRoutes ? 'show' : '' }}" id="sidebarManageServices">
@@ -127,7 +155,7 @@
             <li class="side-nav-item {{ $viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManagePackages" aria-expanded="{{ $viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManagePackages" class="side-nav-link {{ $viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="package-check"></i></span>
-                    <span class="menu-text" data-lang="manage-packages">Manage Packages</span>
+                    <span class="menu-text" data-lang="manage-packages">Packages</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $viewPackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'show' : '' }}" id="sidebarManagePackages">

@@ -163,6 +163,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('invitation/{id}/details',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'getInvitationDetails'])->name('freelancer.invitation.details');
         Route::post('invitation/{id}/accept',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'accept'])->name('freelancer.invitation.accept');
         Route::post('invitation/{id}/reject',               [\App\Http\Controllers\Freelancer\MemberInvitationController::class, 'reject'])->name('freelancer.invitation.reject');
+
+        // Manage Bookings                          
+        Route::get('/view/bookings',                        [\App\Http\Controllers\Freelancer\BookingController::class, 'index'])->name('freelancer.booking.index');
+        Route::get('/booking/history',                      [\App\Http\Controllers\Freelancer\BookingController::class, 'history'])->name('freelancer.booking.history');
+        Route::get('/bookings/{id}/details',                [\App\Http\Controllers\Freelancer\BookingController::class, 'getBookingDetails'])->name('freelancer.booking.details');
     });
 
     // Client Routes =======================================================================================================================================================

@@ -52,29 +52,12 @@
     {{-- CUSTOM TABLE --}}
     <script src="{{ asset('assets/js/pages/custom-table.js') }}"></script>
 
-    {{-- DASHBOARD PAGE JS --}}
-    <script src="{{ asset('assets/js/pages/dashboard.js') }}"></script>
-
-    {{-- CUSTOM TABLE --}}
-    <script src="{{ asset('assets/js/pages/custom-table.js') }}"></script>
-
     {{-- SWEETALERT2 JS --}}
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
     <script src="{{ asset('assets/js/pages/misc-sweetalerts.js') }}"></script>
 
-    {{-- INPUT MASK --}}
+    {{-- JQUERY --}}
     <script src="{{ asset('assets/plugins/jquery/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/inputmask/inputmask.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/handlebars/handlebars.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/typeahead/typeahead.bundle.min.js') }}"></script>
-    <script src="{{ asset('assets/js/pages/form-inputmask.js') }}"></script>
-    <script src="{{ asset('assets/js/pages/form-typehead.js') }}"></script>
-
-    {{-- CHOICES JS --}}
-    <script src="{{ asset('assets/plugins/choices/choices.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/select2/select2.min.js') }}"></script>
-    <script src="{{ asset('assets/js/pages/form-choice.js') }}"></script>
-    <script src="{{ asset('assets/js/pages/form-select2.js') }}"></script>
 
     {{-- YIELD SCRIPT --}}
     @yield('scripts')
