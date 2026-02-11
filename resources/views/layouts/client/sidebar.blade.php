@@ -38,6 +38,34 @@
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
+
+            {{-- My Bookings --}}
+            @php
+                $myBookingsRoutes = Route::is('client.my-bookings.index');
+                $bookingHistoryRoutes = Route::is('client.my-bookings.history');
+            @endphp
+            
+            <li class="side-nav-item {{ $myBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarMyBookings" aria-expanded="{{ $myBookingsRoutes || $bookingHistoryRoutes ? 'true' : 'false' }}" aria-controls="sidebarMyBookings" class="side-nav-link {{ $myBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
+                    <span class="menu-text" data-lang="manage-bookings">My Bookings</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $myBookingsRoutes || $bookingHistoryRoutes ? 'show' : '' }}" id="sidebarMyBookings">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('client.my-bookings.index') }}" class="side-nav-link {{ $myBookingsRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="view-bookings">View Bookings</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('client.my-bookings.history') }}" class="side-nav-link {{ $bookingHistoryRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="booking-history">Booking History</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 </div>

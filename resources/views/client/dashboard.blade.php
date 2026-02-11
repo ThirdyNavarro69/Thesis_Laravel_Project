@@ -118,7 +118,7 @@
                 </div>
 
                 <div class="col-xl-9">
-                    <div class="row" id="photographer-cards-container">
+                    <div class="row g-2" id="photographer-cards-container">
                         {{-- STUDIOS --}}
                         @foreach($studios as $studio)
                         <div class="col">

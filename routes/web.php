@@ -181,9 +181,15 @@ Route::middleware(['auth'])->group(function () {
 
         // Booking Details
         Route::get('/booking-details/{type}/{id}',      [\App\Http\Controllers\Client\BookingDetailsController::class, 'index'])->name('client.booking-details');
-        Route::get('/booking-form/{type}/{id}',         [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');
+
+        // Client Bookings
+        Route::get('/view/my-bookings',                 [\App\Http\Controllers\Client\MyBookingsController::class, 'index'])->name('client.my-bookings.index');
+        Route::get('/view/bookings-history',            [\App\Http\Controllers\Client\MyBookingsController::class, 'history'])->name('client.my-bookings.history');
+        Route::get('/bookings/{id}/details',            [\App\Http\Controllers\Client\MyBookingsController::class, 'getBookingDetails'])->name('client.booking.details');
+        Route::post('/bookings/{id}/cancel',            [\App\Http\Controllers\Client\MyBookingsController::class, 'cancelBooking'])->name('client.booking.cancel');
 
         // Booking Process
+        Route::get('/booking-form/{type}/{id}',         [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');
         Route::post('/bookings',                        [\App\Http\Controllers\Client\BookingController::class, 'store'])->name('client.bookings.store');
         Route::post('/bookings/packages',               [\App\Http\Controllers\Client\BookingController::class, 'getPackages'])->name('client.bookings.packages');
         Route::post('/bookings/check-availability',     [\App\Http\Controllers\Client\BookingController::class, 'checkAvailability'])->name('client.bookings.check-availability');
