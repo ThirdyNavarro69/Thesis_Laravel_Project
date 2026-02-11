@@ -12,6 +12,7 @@ use App\Models\Admin\CategoriesModel;
 use App\Models\StudioOwner\BookingAssignedPhotographerModel;
 use App\Models\StudioOwner\StudiosModel;
 use App\Models\StudioOwner\StudioPhotographersModel;
+use App\Http\Requests\StudioOwner\UpdateBookingStatusRequest;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -45,6 +46,9 @@ class BookingController extends Controller
         return view('owner.view-bookings', compact('bookings', 'studio'));
     }
 
+    /**
+     * Display booking history.
+     */
     public function history()
     {
         // Get the current studio owner's user ID
@@ -74,7 +78,7 @@ class BookingController extends Controller
     }
 
     /**
-     * Get booking details for modal
+     * Override getBookingDetails to include available statuses
      */
     public function getBookingDetails($id)
     {
@@ -88,7 +92,7 @@ class BookingController extends Controller
                 'assignedPhotographers.studioPhotographer:id,photographer_id,position,specialization,years_of_experience'
             ])->findOrFail($id);
             
-            // Check if booking belongs to the studio owner
+            // Check authorization
             $userId = Auth::id();
             $studio = StudiosModel::where('user_id', $userId)->first();
             
@@ -99,6 +103,9 @@ class BookingController extends Controller
                 ], 403);
             }
             
+            // Get available statuses for dropdown
+            $availableStatuses = $booking->getAvailableStatuses();
+            
             return response()->json([
                 'success' => true,
                 'booking' => $booking,
@@ -106,7 +113,10 @@ class BookingController extends Controller
                 'category' => $booking->category,
                 'packages' => $booking->packages,
                 'payments' => $booking->payments,
-                'assignedPhotographers' => $booking->assignedPhotographers
+                'assignedPhotographers' => $booking->assignedPhotographers,
+                'available_statuses' => $availableStatuses,
+                'can_mark_completed' => $booking->canMarkAsCompleted(),
+                'status_badge_class' => $booking->getStatusBadgeClass()
             ]);
             
         } catch (\Exception $e) {
@@ -316,56 +326,87 @@ class BookingController extends Controller
     }
 
     /**
-     * Update assignment status
+     * Update booking status.
      */
-    public function updateAssignmentStatus(Request $request, $assignmentId)
+    public function updateStatus(UpdateBookingStatusRequest $request, $id)
     {
         try {
-            $request->validate([
-                'status' => 'required|in:confirmed,completed,cancelled',
-                'cancellation_reason' => 'required_if:status,cancelled|nullable|string|max:500'
-            ]);
+            $booking = BookingModel::findOrFail($id);
             
-            $assignment = BookingAssignedPhotographerModel::findOrFail($assignmentId);
-            
-            // Check if assignment belongs to the studio owner
+            // Authorization check
             $userId = Auth::id();
             $studio = StudiosModel::where('user_id', $userId)->first();
             
-            if (!$studio || $assignment->studio_id != $studio->id) {
+            if (!$studio || $booking->provider_id != $studio->id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized access to this assignment.'
+                    'message' => 'Unauthorized access to this booking.'
                 ], 403);
             }
             
-            $updateData = ['status' => $request->status];
+            $newStatus = $request->status;
             
-            switch ($request->status) {
-                case 'confirmed':
-                    $updateData['confirmed_at'] = now();
-                    break;
-                case 'completed':
-                    $updateData['completed_at'] = now();
-                    break;
-                case 'cancelled':
-                    $updateData['cancelled_at'] = now();
-                    $updateData['cancellation_reason'] = $request->cancellation_reason;
-                    break;
+            // Check if status transition is allowed
+            if (!$booking->canTransitionTo($newStatus)) {
+                $errorMessage = 'Cannot change status to ' . ucwords(str_replace('_', ' ', $newStatus)) . '.';
+                
+                if ($newStatus === BookingModel::STATUS_COMPLETED) {
+                    $errorMessage .= ' Booking must be fully paid before marking as completed.';
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 422);
             }
             
-            $assignment->update($updateData);
+            // Update booking status - WITHOUT timestamp columns if they don't exist
+            $booking->status = $newStatus;
+            
+            // Only set timestamp columns if they exist in the table
+            $columns = \DB::getSchemaBuilder()->getColumnListing('tbl_bookings');
+            
+            if ($newStatus === BookingModel::STATUS_CONFIRMED && in_array('confirmed_at', $columns)) {
+                $booking->confirmed_at = now();
+            } elseif ($newStatus === BookingModel::STATUS_IN_PROGRESS && in_array('in_progress_at', $columns)) {
+                $booking->in_progress_at = now();
+            } elseif ($newStatus === BookingModel::STATUS_COMPLETED && in_array('completed_at', $columns)) {
+                $booking->completed_at = now();
+            } elseif ($newStatus === BookingModel::STATUS_CANCELLED) {
+                if (in_array('cancelled_at', $columns)) {
+                    $booking->cancelled_at = now();
+                }
+                if (in_array('cancellation_reason', $columns)) {
+                    $booking->cancellation_reason = $request->cancellation_reason;
+                }
+                
+                // Also cancel any assigned photographers
+                BookingAssignedPhotographerModel::where('booking_id', $booking->id)
+                    ->whereIn('status', ['assigned', 'confirmed'])
+                    ->update([
+                        'status' => 'cancelled',
+                        'cancellation_reason' => 'Booking cancelled: ' . ($request->cancellation_reason ?? 'No reason provided'),
+                        'cancelled_at' => now()
+                    ]);
+            }
+            
+            $booking->save();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Assignment status updated successfully.',
-                'assignment' => $assignment
+                'message' => 'Booking status updated to ' . ucwords(str_replace('_', ' ', $newStatus)) . ' successfully.',
+                'booking' => [
+                    'id' => $booking->id,
+                    'status' => $booking->status,
+                    'status_badge' => $booking->getStatusBadgeClass(),
+                    'status_display' => ucwords(str_replace('_', ' ', $booking->status))
+                ]
             ]);
             
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating assignment status: ' . $e->getMessage()
+                'message' => 'Error updating booking status: ' . $e->getMessage()
             ], 500);
         }
     }

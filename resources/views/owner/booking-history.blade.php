@@ -38,42 +38,77 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex">
-                                                <div>
-                                                    <h5 class="mb-1">
-                                                        <div class="link-reset">Maria Josefina Santos</div>
-                                                    </h5>
-                                                    <p class="mb-0 fs-xxs">
-                                                        <span class="fw-medium">Booking ID:</span>
-                                                        <span class="text-muted">BK-00123</span>
-                                                    </p>
+                                    @forelse($bookings as $booking)
+                                        <tr data-booking-id="{{ $booking->id }}">
+                                            <td>
+                                                <div class="d-flex">
+                                                    <div>
+                                                        <h5 class="mb-1">
+                                                            <div class="link-reset">{{ $booking->client->first_name }} {{ $booking->client->last_name }}</div>
+                                                        </h5>
+                                                        <p class="mb-0 fs-xxs">
+                                                            <span class="fw-medium">Booking ID:</span>
+                                                            <span class="text-muted">{{ $booking->booking_reference }}</span>
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>Wedding Photography</td>
-                                        <td>Full Wedding Day Coverage</td>
-                                        <td>Basic</td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <div>
-                                                    <p class="mb-1">November 22, 2022</p>
-                                                    <p class="mb-0 fs-xxs">
-                                                        <span class="text-muted">11:00 AM</span>
-                                                    </p>
+                                            </td>
+                                            <td>{{ $booking->category->category_name ?? 'N/A' }}</td>
+                                            <td>
+                                                @if($booking->packages->count() > 0)
+                                                    {{ $booking->packages->first()->package_name }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($booking->packages->count() > 0)
+                                                    {{ $booking->packages->first()->package_name }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div class="d-flex">
+                                                    <div>
+                                                        <p class="mb-1">{{ \Carbon\Carbon::parse($booking->event_date)->format('F d, Y') }}</p>
+                                                        <p class="mb-0 fs-xxs">
+                                                            <span class="text-muted">{{ $booking->start_time }}</span>
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-soft-success fs-8 px-1 w-100">FINISHED</span></td>
-                                        <td>PHP 25,000</td>
-                                        <td>
-                                            <div class="d-flex justify-content-center gap-1">
-                                                <a href="#" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#bookingModal"><i class="ti ti-edit fs-lg"></i></a>
-                                                <a href="#" class="btn btn-sm"><i class="ti ti-trash fs-lg"></i></a>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $statusBadge = [
+                                                        'pending' => 'badge-soft-warning',
+                                                        'confirmed' => 'badge-soft-success',
+                                                        'in_progress' => 'badge-soft-info',
+                                                        'completed' => 'badge-soft-secondary',
+                                                        'cancelled' => 'badge-soft-danger'
+                                                    ][$booking->status] ?? 'badge-soft-secondary';
+                                                @endphp
+                                                <span class="badge {{ $statusBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->status) }}</span>
+                                            </td>
+                                            <td>PHP {{ number_format($booking->total_amount, 2) }}</td>
+                                            <td>
+                                                <div class="d-flex justify-content-center gap-1">
+                                                    <a href="#" class="btn btn-sm view-booking-history-btn" data-booking-id="{{ $booking->id }}" data-bs-toggle="modal" data-bs-target="#bookingHistoryModal">
+                                                        <i class="ti ti-eye fs-lg"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i data-lucide="archive-x" class="fs-20 mb-2"></i>
+                                                    <p class="mb-0">No booking history found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -89,4 +124,289 @@
             </div>
         </div>
     </div>
+
+    {{-- BOOKING HISTORY DETAILS MODAL --}}
+    <div class="modal fade" id="bookingHistoryModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold" id="bookingHistoryModalLabel">
+                        Booking Details - <span id="historyBookingReference">Loading...</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="bookingHistoryModalBody">
+                        <div class="text-center py-5">
+                            <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                            <p class="mt-3">Loading booking details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+{{-- SCRIPTS --}}
+@section('scripts')
+    <script>
+        $(document).ready(function() {
+            let currentHistoryBookingId = null;
+            const historyModal = new bootstrap.Modal(document.getElementById('bookingHistoryModal'));
+
+            // View booking history details
+            $(document).on('click', '.view-booking-history-btn', function() {
+                currentHistoryBookingId = $(this).data('booking-id');
+                loadHistoryBookingDetails(currentHistoryBookingId);
+                historyModal.show();
+            });
+
+            // Load booking history details
+            function loadHistoryBookingDetails(bookingId) {
+                $.ajax({
+                    url: '{{ route("owner.booking.details", ":id") }}'.replace(':id', bookingId),
+                    type: 'GET',
+                    beforeSend: function() {
+                        $('#bookingHistoryModalBody').html(`
+                            <div class="text-center py-5">
+                                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                                <p class="mt-3">Loading booking details...</p>
+                            </div>
+                        `);
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            renderHistoryBookingDetails(response);
+                        } else {
+                            showHistoryError('Error loading booking details');
+                        }
+                    },
+                    error: function(xhr) {
+                        showHistoryError('Error loading booking details. Please try again.');
+                    }
+                });
+            }
+
+            // Render history booking details (simplified read-only version)
+            function renderHistoryBookingDetails(data) {
+                const booking = data.booking;
+                const client = data.client;
+                const category = data.category;
+                const packages = data.packages;
+                const payments = data.payments;
+
+                let packagesHtml = '';
+                if (packages && packages.length > 0) {
+                    packages.forEach(pkg => {
+                        packagesHtml += `
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">${pkg.package_name}:</span>
+                                <span class="fw-medium">PHP ${parseFloat(pkg.package_price).toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                const totalPaid = payments ? payments.reduce((sum, payment) => {
+                    return payment.status === 'succeeded' ? sum + parseFloat(payment.amount) : sum;
+                }, 0) : 0;
+
+                const modalContent = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <h6 class="fw-semibold text-primary mb-3">Booking Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="receipt" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Booking Reference</label>
+                                                <p class="mb-0 fw-medium">${booking.booking_reference}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="calendar" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Booking Date</label>
+                                                <p class="mb-0 fw-medium">${new Date(booking.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="tag" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Final Status</label>
+                                                <div>
+                                                    <span class="badge ${data.status_badge_class} fs-7 px-3 py-2">
+                                                        ${booking.status.replace('_', ' ').toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="fw-semibold text-primary mb-3">Client Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="user" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Client Name</label>
+                                                <p class="mb-0 fw-medium">${client.first_name} ${client.last_name}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="phone" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Contact Number</label>
+                                                <p class="mb-0 fw-medium">${client.mobile_number || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="mail" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Email Address</label>
+                                                <p class="mb-0 fw-medium">${client.email}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <h6 class="fw-semibold text-primary mb-3">Event Details</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="calendar-heart" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Event Date</label>
+                                                <p class="mb-0 fw-medium">${new Date(booking.event_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="clock" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Event Time</label>
+                                                <p class="mb-0 fw-medium">${booking.start_time} - ${booking.end_time}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="map-pin" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Event Location</label>
+                                                <p class="mb-0 fw-medium">${booking.venue_name || booking.street || 'N/A'}, ${booking.city || 'N/A'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="fw-semibold text-primary mb-3">Payment Summary</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Total Amount:</span>
+                                        <span class="fw-bold">PHP ${parseFloat(booking.total_amount).toFixed(2)}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Amount Paid:</span>
+                                        <span class="fw-medium text-success">PHP ${totalPaid.toFixed(2)}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between pt-2 border-top">
+                                        <span class="fw-semibold">Remaining Balance:</span>
+                                        <span class="fw-bold ${(parseFloat(booking.total_amount) - totalPaid) > 0 ? 'text-danger' : 'text-success'}">
+                                            PHP ${(parseFloat(booking.total_amount) - totalPaid).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="fw-semibold text-primary mb-3">Package Details</h6>
+                                ${packagesHtml || '<p class="text-muted">No packages available</p>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                $('#historyBookingReference').text(booking.booking_reference);
+                $('#bookingHistoryModalBody').html(modalContent);
+                loadIcons();
+            }
+
+            function showHistoryError(message) {
+                $('#bookingHistoryModalBody').html(`
+                    <div class="text-center py-5">
+                        <i data-lucide="alert-circle" class="fs-20 text-danger mb-3"></i>
+                        <p class="text-danger">${message}</p>
+                        <button class="btn btn-sm btn-primary mt-2" data-bs-dismiss="modal">Close</button>
+                    </div>
+                `);
+                loadIcons();
+            }
+
+            function loadIcons() {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            loadIcons();
+        });
+    </script>
 @endsection

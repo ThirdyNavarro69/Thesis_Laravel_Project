@@ -76,11 +76,11 @@
                                                 @php
                                                     $statusBadge = [
                                                         'pending' => 'badge-soft-warning',
-                                                        'confirmed' => 'badge-soft-success',
-                                                        'in_progress' => 'badge-soft-info',
-                                                        'completed' => 'badge-soft-secondary',
+                                                        'confirmed' => 'badge-soft-primary',
+                                                        'in_progress' => 'badge-soft-warning',
+                                                        'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
-                                                    ][$booking->status] ?? 'badge-soft-secondary';
+                                                    ][$booking->status] ?? 'badge-soft-primary';
                                                 @endphp
                                                 <span class="badge {{ $statusBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->status) }}</span>
                                             </td>
@@ -88,11 +88,11 @@
                                                 @php
                                                     $paymentBadge = [
                                                         'pending' => 'badge-soft-warning',
-                                                        'partially_paid' => 'badge-soft-info',
+                                                        'partially_paid' => 'badge-soft-primary',
                                                         'paid' => 'badge-soft-success',
                                                         'failed' => 'badge-soft-danger',
-                                                        'refunded' => 'badge-soft-secondary'
-                                                    ][$booking->payment_status] ?? 'badge-soft-secondary';
+                                                        'refunded' => 'badge-soft-danger'
+                                                    ][$booking->payment_status] ?? 'badge-soft-primary';
                                                 @endphp
                                                 <span class="badge {{ $paymentBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
                                             </td>
@@ -178,6 +178,62 @@
         </div>
     </div>
 
+    {{-- UPDATE STATUS MODAL --}}
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold" id="updateStatusModalLabel">Update Booking Status</h5>
+                    <button type="button" class="btn-close" id="closeUpdateStatusModal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <div id="statusUpdateAlert" class="alert alert-light border mb-4">
+                        <div class="row align-items-center g-0">
+                            <div class="col-md-12">
+                                <div class="d-flex align-items-center">
+                                    <div>
+                                        <h6 class="mb-1 fw-semibold" id="statusBookingInfo">Loading...</h6>
+                                        <p class="mb-0 text-muted small" id="statusBookingDetails">Loading booking details...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="bookingStatus" class="form-label fw-semibold">Booking Status <span class="text-danger">*</span></label>
+                        <select class="form-select" id="bookingStatus" name="status">
+                            <option value="">Select Status</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 d-none" id="cancellationReasonGroup">
+                        <label for="cancellationReason" class="form-label fw-semibold">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancellationReason" rows="3" placeholder="Please provide the reason for cancellation..."></textarea>
+                    </div>
+
+                    <div class="alert alert-warning d-none" id="paymentWarningAlert">
+                        <div class="d-flex">
+                            <i data-lucide="alert-triangle" class="me-2"></i>
+                            <div>
+                                <strong>Cannot mark as completed</strong>
+                                <p class="mb-0 small" id="paymentWarningMessage">
+                                    This booking must be fully paid before marking as completed.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" id="cancelUpdateStatusModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmStatusUpdate">Update Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ASSIGN MODAL (Nested inside booking modal) --}}
     <div class="modal fade" id="assignPhotographerModal" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -237,19 +293,235 @@
         $(document).ready(function() {
             let currentBookingId = null;
             let selectedPhotographers = [];
+            let currentBookingData = null;
             
             // Initialize Bootstrap modal instances
             const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
             const assignModal = new bootstrap.Modal(document.getElementById('assignPhotographerModal'));
+            const updateStatusModal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
 
-            // View booking details
+            function getStatusBadgeClass(status) {
+                const badgeClasses = {
+                    'assigned': 'badge-soft-info',
+                    'confirmed': 'badge-soft-success',
+                    'completed': 'badge-soft-secondary',
+                    'cancelled': 'badge-soft-danger'
+                };
+                return badgeClasses[status] || 'badge-soft-secondary';
+            }
+
+            function getStatusTextClass(status) {
+                const textClasses = {
+                    'pending': 'text-warning',
+                    'confirmed': 'text-success',
+                    'in_progress': 'text-info',
+                    'completed': 'text-secondary',
+                    'cancelled': 'text-danger'
+                };
+                return textClasses[status] || 'text-secondary';
+            }
+
+            function loadIcons() {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            function showError(message) {
+                $('#bookingModalBody').html(`
+                    <div class="text-center py-5">
+                        <i data-lucide="alert-circle" class="fs-20 text-danger mb-3"></i>
+                        <p class="text-danger">${message}</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="location.reload()">
+                            <i data-lucide="refresh-cw" class="me-1"></i> Retry
+                        </button>
+                    </div>
+                `);
+                loadIcons();
+            }
+
+            function openUpdateStatusModal(bookingId, data) {
+                const booking = data.booking;
+                const availableStatuses = data.available_statuses || {};
+                const canMarkCompleted = data.can_mark_completed || false;
+                
+                // Set booking info
+                $('#statusBookingInfo').text(`${booking.booking_reference} - ${data.category ? data.category.category_name : 'N/A'}`);
+                $('#statusBookingDetails').text(`${new Date(booking.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} • ${booking.start_time}`);
+                
+                // Populate status dropdown
+                const $statusSelect = $('#bookingStatus');
+                $statusSelect.empty().append('<option value="">Select Status</option>');
+                
+                $.each(availableStatuses, function(value, label) {
+                    const isCompleted = value === 'completed';
+                    const isDisabled = isCompleted && !canMarkCompleted;
+                    
+                    $statusSelect.append($('<option>', {
+                        value: value,
+                        text: label + (isDisabled ? ' (Requires Full Payment)' : ''),
+                        disabled: isDisabled
+                    }));
+                });
+                
+                // Reset form
+                $('#cancellationReasonGroup').addClass('d-none');
+                $('#paymentWarningAlert').addClass('d-none');
+                $('#cancellationReason').val('');
+                
+                // Handle status change
+                $statusSelect.off('change').on('change', function() {
+                    const selectedStatus = $(this).val();
+                    
+                    if (selectedStatus === 'cancelled') {
+                        $('#cancellationReasonGroup').removeClass('d-none');
+                    } else {
+                        $('#cancellationReasonGroup').addClass('d-none');
+                    }
+                    
+                    if (selectedStatus === 'completed' && !canMarkCompleted) {
+                        $('#paymentWarningAlert').removeClass('d-none');
+                    } else {
+                        $('#paymentWarningAlert').addClass('d-none');
+                    }
+                });
+                
+                // Hide booking modal and show status modal
+                bookingModal.hide();
+                setTimeout(() => {
+                    updateStatusModal.show();
+                }, 300);
+            }
+
+            // Update Status button click handler
+            $(document).on('click', '.update-status-btn', function() {
+                const bookingId = $(this).data('booking-id');
+                
+                if (currentBookingData) {
+                    openUpdateStatusModal(bookingId, currentBookingData);
+                } else {
+                    $.ajax({
+                        url: '{{ route("owner.booking.details", ":id") }}'.replace(':id', bookingId),
+                        type: 'GET',
+                        success: function(response) {
+                            if (response.success) {
+                                currentBookingData = response;
+                                openUpdateStatusModal(bookingId, response);
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Confirm Status Update
+            $('#confirmStatusUpdate').click(function() {
+                const status = $('#bookingStatus').val();
+                
+                if (!status) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Status Selected',
+                        text: 'Please select a booking status.',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                const cancellationReason = $('#cancellationReason').val();
+                
+                Swal.fire({
+                    title: 'Update Booking Status',
+                    text: `Are you sure you want to mark this booking as ${status.replace('_', ' ')}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3475db',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, update status',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '{{ route("owner.booking.update.status", ":id") }}'.replace(':id', currentBookingId),
+                            type: 'PUT',
+                            data: {
+                                status: status,
+                                cancellation_reason: cancellationReason,
+                                _token: '{{ csrf_token() }}'
+                            },
+                            beforeSend: function() {
+                                $('#confirmStatusUpdate').prop('disabled', true).html('<span class="loading-spinner"></span> Updating...');
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Success!',
+                                        text: response.message,
+                                        showConfirmButton: false,
+                                        timer: 2000,
+                                        timerProgressBar: true
+                                    }).then(() => {
+                                        updateStatusModal.hide();
+                                        setTimeout(() => {
+                                            bookingModal.show();
+                                            loadBookingDetails(currentBookingId);
+                                        }, 300);
+                                        
+                                        // Update table row status
+                                        const $row = $(`tr[data-booking-id="${response.booking.id}"]`);
+                                        if ($row.length) {
+                                            const $statusCell = $row.find('td:eq(4)');
+                                            $statusCell.html(`
+                                                <span class="badge ${response.booking.status_badge} fs-8 px-1 w-100 text-uppercase">
+                                                    ${response.booking.status_display}
+                                                </span>
+                                            `);
+                                        }
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: response.message,
+                                        confirmButtonColor: '#3475db'
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                let message = 'Failed to update booking status. Please try again.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    message = xhr.responseJSON.message;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: message,
+                                    confirmButtonColor: '#3475db'
+                                });
+                            },
+                            complete: function() {
+                                $('#confirmStatusUpdate').prop('disabled', false).text('Update Status');
+                                loadIcons();
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Close status modal handlers
+            $('#closeUpdateStatusModal, #cancelUpdateStatusModal').click(function() {
+                updateStatusModal.hide();
+                setTimeout(() => {
+                    bookingModal.show();
+                }, 300);
+            });
+
             $(document).on('click', '.view-booking-btn', function() {
                 currentBookingId = $(this).data('booking-id');
                 loadBookingDetails(currentBookingId);
                 bookingModal.show();
             });
 
-            // Load booking details
             function loadBookingDetails(bookingId) {
                 $.ajax({
                     url: '{{ route("owner.booking.details", ":id") }}'.replace(':id', bookingId),
@@ -264,6 +536,7 @@
                     },
                     success: function(response) {
                         if (response.success) {
+                            currentBookingData = response; // ← FIXED: Store the data
                             renderBookingDetails(response);
                         } else {
                             showError('Error loading booking details');
@@ -283,6 +556,7 @@
                 const packages = data.packages;
                 const payments = data.payments;
                 const assignedPhotographers = data.assignedPhotographers;
+                const availableStatuses = data.available_statuses || {}; // ← FIXED: Define variable
 
                 let packagesHtml = '';
                 if (packages && packages.length > 0) {
@@ -326,7 +600,9 @@
                     `;
                 }
 
-                const totalPaid = payments ? payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0) : 0;
+                const totalPaid = payments ? payments.reduce((sum, payment) => {
+                    return payment.status === 'succeeded' ? sum + parseFloat(payment.amount) : sum;
+                }, 0) : 0;
                 const remainingBalance = parseFloat(booking.total_amount) - totalPaid;
 
                 const modalContent = `
@@ -378,7 +654,16 @@
                                                 </div>
                                                 <div class="flex-grow-1 ms-3">
                                                     <label class="text-muted small mb-1">Booking Status</label>
-                                                    <p class="mb-0 fw-medium ${getStatusTextClass(booking.status)}">${booking.status.replace('_', ' ').toUpperCase()}</p>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge ${data.status_badge_class} fs-7 me-2">
+                                                            ${booking.status.replace('_', ' ').toUpperCase()}
+                                                        </span>
+                                                        ${Object.keys(availableStatuses).length > 0 ? `
+                                                            <button class="btn btn-sm update-status-btn" data-booking-id="${booking.id}">
+                                                                <i data-lucide="edit" class="me-1"></i>Update
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -905,22 +1190,11 @@
             function getStatusBadgeClass(status) {
                 const badgeClasses = {
                     'assigned': 'badge-soft-info',
-                    'confirmed': 'badge-soft-success',
-                    'completed': 'badge-soft-secondary',
+                    'confirmed': 'badge-soft-primary',
+                    'completed': 'badge-soft-success',
                     'cancelled': 'badge-soft-danger'
                 };
-                return badgeClasses[status] || 'badge-soft-secondary';
-            }
-
-            function getStatusTextClass(status) {
-                const textClasses = {
-                    'pending': 'text-warning',
-                    'confirmed': 'text-success',
-                    'in_progress': 'text-info',
-                    'completed': 'text-secondary',
-                    'cancelled': 'text-danger'
-                };
-                return textClasses[status] || 'text-secondary';
+                return badgeClasses[status] || 'badge-soft-primary';
             }
 
             function showError(message) {

@@ -11,6 +11,116 @@ class BookingModel extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * Booking Status Constants
+     */
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_CONFIRMED = 'confirmed';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Payment Status Constants
+     */
+    public const PAYMENT_PENDING = 'pending';
+    public const PAYMENT_PARTIALLY_PAID = 'partially_paid';
+    public const PAYMENT_PAID = 'paid';
+    public const PAYMENT_FAILED = 'failed';
+    public const PAYMENT_REFUNDED = 'refunded';
+
+    /**
+     * Allowed status transitions
+     */
+    public const STATUS_TRANSITIONS = [
+        self::STATUS_PENDING => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
+        self::STATUS_CONFIRMED => [self::STATUS_IN_PROGRESS, self::STATUS_CANCELLED],
+        self::STATUS_IN_PROGRESS => [self::STATUS_COMPLETED, self::STATUS_CANCELLED],
+        self::STATUS_COMPLETED => [],
+        self::STATUS_CANCELLED => [],
+    ];
+
+    /**
+     * Check if booking can be marked as completed.
+     * Only allowed if payment is fully paid.
+     */
+    public function canMarkAsCompleted(): bool
+    {
+        return $this->payment_status === self::PAYMENT_PAID && 
+               $this->status === self::STATUS_IN_PROGRESS;
+    }
+
+    /**
+     * Check if status transition is allowed.
+     */
+    public function canTransitionTo(string $newStatus): bool
+    {
+        // Check if transition is allowed
+        $allowedTransitions = self::STATUS_TRANSITIONS[$this->status] ?? [];
+        
+        if (!in_array($newStatus, $allowedTransitions)) {
+            return false;
+        }
+
+        // Special rule: Completed status requires full payment
+        if ($newStatus === self::STATUS_COMPLETED) {
+            return $this->canMarkAsCompleted();
+        }
+
+        return true;
+    }
+
+    /**
+     * Get available next statuses for dropdown.
+     */
+    public function getAvailableStatuses(): array
+    {
+        $statuses = [];
+        $allowedTransitions = self::STATUS_TRANSITIONS[$this->status] ?? [];
+        
+        foreach ($allowedTransitions as $status) {
+            if ($status === self::STATUS_COMPLETED && !$this->canMarkAsCompleted()) {
+                continue; // Skip completed if not fully paid
+            }
+            
+            $statuses[$status] = ucwords(str_replace('_', ' ', $status));
+        }
+        
+        return $statuses;
+    }
+
+    /**
+     * Get status badge class.
+     */
+    public function getStatusBadgeClass(): string
+    {
+        $classes = [
+            self::STATUS_PENDING => 'badge-soft-warning',
+            self::STATUS_CONFIRMED => 'badge-soft-success',
+            self::STATUS_IN_PROGRESS => 'badge-soft-info',
+            self::STATUS_COMPLETED => 'badge-soft-secondary',
+            self::STATUS_CANCELLED => 'badge-soft-danger'
+        ];
+        
+        return $classes[$this->status] ?? 'badge-soft-secondary';
+    }
+
+    /**
+     * Get payment status badge class.
+     */
+    public function getPaymentStatusBadgeClass(): string
+    {
+        $classes = [
+            self::PAYMENT_PENDING => 'badge-soft-warning',
+            self::PAYMENT_PARTIALLY_PAID => 'badge-soft-info',
+            self::PAYMENT_PAID => 'badge-soft-success',
+            self::PAYMENT_FAILED => 'badge-soft-danger',
+            self::PAYMENT_REFUNDED => 'badge-soft-secondary'
+        ];
+        
+        return $classes[$this->payment_status] ?? 'badge-soft-secondary';
+    }
+
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -187,37 +297,5 @@ class BookingModel extends Model
     public function isFullPayment()
     {
         return $this->payment_type === 'full_payment';
-    }
-
-    /**
-     * Get booking status badge class.
-     */
-    public function getStatusBadgeClass()
-    {
-        $classes = [
-            'pending' => 'badge-soft-warning',
-            'confirmed' => 'badge-soft-success',
-            'in_progress' => 'badge-soft-info',
-            'completed' => 'badge-soft-secondary',
-            'cancelled' => 'badge-soft-danger'
-        ];
-        
-        return $classes[$this->status] ?? 'badge-soft-secondary';
-    }
-
-    /**
-     * Get payment status badge class.
-     */
-    public function getPaymentStatusBadgeClass()
-    {
-        $classes = [
-            'pending' => 'badge-soft-warning',
-            'partially_paid' => 'badge-soft-info',
-            'paid' => 'badge-soft-success',
-            'failed' => 'badge-soft-danger',
-            'refunded' => 'badge-soft-secondary'
-        ];
-        
-        return $classes[$this->payment_status] ?? 'badge-soft-secondary';
     }
 }
