@@ -15,6 +15,7 @@ use App\Models\Admin\CategoriesModel;
 use App\Models\BookingModel;
 use App\Models\PaymentModel;
 use App\Models\BookingPackageModel;
+use App\Models\SystemRevenueModel;
 use App\Services\StripeService;
 use Carbon\Carbon;
 
@@ -722,6 +723,9 @@ class BookingController extends Controller
                     'status' => 'confirmed',
                 ]);
 
+                // ADD THIS NEW CODE FOR REVENUE SPLIT
+                $this->createRevenueRecord($booking, $payment);
+                
                 Log::info('Stripe payment verified successfully', [
                     'payment_id' => $payment->id,
                     'booking_id' => $booking->id,
@@ -833,6 +837,9 @@ class BookingController extends Controller
                                 'payment_status' => $paymentStatus,
                                 'status' => 'confirmed',
                             ]);
+                            
+                            // ADD THIS LINE FOR REVENUE SPLIT IN WEBHOOK
+                            $this->createRevenueRecord($booking, $payment);
                         }
                         
                         Log::info('Payment updated via Stripe webhook', [
@@ -1627,6 +1634,67 @@ class BookingController extends Controller
                 'success' => false,
                 'message' => 'Payment processing error: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Create system revenue record for successful payment.
+     */
+    private function createRevenueRecord($booking, $payment)
+    {
+        try {
+            // Calculate revenue split (10% platform fee)
+            $revenueSplit = SystemRevenueModel::calculateRevenueSplit($payment->amount, 10.00);
+            
+            // Determine provider type and ID
+            if ($booking->booking_type === 'studio') {
+                $providerType = 'studio';
+                $providerId = $booking->provider_id; // This is studio_id
+            } else {
+                $providerType = 'freelancer';
+                $providerId = $booking->provider_id; // This is user_id for freelancer
+            }
+            
+            // Create revenue record
+            $revenue = SystemRevenueModel::create([
+                'transaction_reference' => SystemRevenueModel::generateTransactionReference(),
+                'booking_id' => $booking->id,
+                'payment_id' => $payment->id,
+                'total_amount' => $revenueSplit['total_amount'],
+                'platform_fee_percentage' => $revenueSplit['platform_fee_percentage'],
+                'platform_fee_amount' => $revenueSplit['platform_fee_amount'],
+                'provider_amount' => $revenueSplit['provider_amount'],
+                'provider_type' => $providerType,
+                'provider_id' => $providerId,
+                'client_id' => $booking->client_id,
+                'status' => 'completed',
+                'breakdown' => [
+                    'booking_reference' => $booking->booking_reference,
+                    'payment_reference' => $payment->payment_reference,
+                    'payment_type' => $booking->payment_type,
+                    'platform_fee_percentage' => '10%',
+                    'calculation' => [
+                        'total_payment' => $payment->amount,
+                        'platform_fee' => $revenueSplit['platform_fee_amount'],
+                        'provider_earnings' => $revenueSplit['provider_amount'],
+                    ],
+                ],
+                'settled_at' => now(),
+            ]);
+            
+            Log::info('System revenue record created', [
+                'revenue_id' => $revenue->id,
+                'booking_id' => $booking->id,
+                'payment_id' => $payment->id,
+                'platform_fee' => $revenueSplit['platform_fee_amount'],
+                'provider_amount' => $revenueSplit['provider_amount'],
+            ]);
+            
+            return $revenue;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to create revenue record: ' . $e->getMessage());
+            return null;
         }
     }
 }

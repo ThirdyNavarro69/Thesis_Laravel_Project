@@ -136,4 +136,20 @@ class PaymentModel extends Model
     {
         return $value;
     }
+
+    /**
+     * Get the system revenue records for this payment.
+     */
+    public function revenueRecords()
+    {
+        return $this->hasMany(SystemRevenueModel::class, 'payment_id');
+    }
+
+    /**
+     * Check if payment has been processed for revenue.
+     */
+    public function hasRevenueRecord()
+    {
+        return $this->revenueRecords()->exists();
+    }
 }

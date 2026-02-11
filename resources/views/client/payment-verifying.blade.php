@@ -1,6 +1,7 @@
 @extends('layouts.client.app')
 @section('title', 'Verifying Payment')
 
+{{-- CONTENTS --}}
 @section('content')
     <div class="content-page">
         <div class="container-fluid">
@@ -83,6 +84,7 @@
     </div>
 @endsection
 
+{{-- SCRIPTS --}}
 @section('scripts')
     <script>
         $(document).ready(function() {
