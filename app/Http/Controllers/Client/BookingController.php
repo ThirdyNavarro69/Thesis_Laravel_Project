@@ -52,7 +52,7 @@ class BookingController extends Controller
                 ->whereHas('user', function($query) {
                     $query->where('status', 'active');
                 })
-                ->where('user_id', $id) // This expects user_id
+                ->where('user_id', $id)
                 ->firstOrFail();
             
             // Get freelancer categories - only categories with active packages
@@ -64,10 +64,26 @@ class BookingController extends Controller
                 ->get();
         }
 
+        // Get all active municipalities for dropdown
+        $municipalities = \App\Models\Admin\LocationModel::where('status', 'active')
+            ->whereNotNull('municipality')
+            ->orderBy('municipality', 'asc')
+            ->pluck('municipality')
+            ->unique()
+            ->values();
+
         // Get available dates for the next 60 days
         $availableDates = $this->getAvailableDates($type, $id);
         
-        return view('client.booking-forms', compact('type', 'id', 'provider', 'categories', 'user', 'availableDates'));
+        return view('client.booking-forms', compact(
+            'type', 
+            'id', 
+            'provider', 
+            'categories', 
+            'user', 
+            'availableDates',
+            'municipalities'
+        ));
     }
 
     /**
@@ -1695,6 +1711,44 @@ class BookingController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to create revenue record: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Get barangays for selected municipality
+     */
+    public function getBarangays(Request $request)
+    {
+        $request->validate([
+            'municipality' => 'required|string'
+        ]);
+
+        try {
+            $location = \App\Models\Admin\LocationModel::where('municipality', $request->municipality)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$location) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Location not found',
+                    'barangays' => []
+                ]);
+            }
+
+            $barangays = $location->barangays;
+
+            return response()->json([
+                'success' => true,
+                'barangays' => $barangays
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load barangays: ' . $e->getMessage(),
+                'barangays' => []
+            ], 500);
         }
     }
 }

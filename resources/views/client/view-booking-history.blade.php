@@ -63,40 +63,38 @@
                                                     ][$booking->status] ?? 'badge-soft-secondary';
                                                     $statusText = $booking->status === 'completed' ? 'Completed' : 'Cancelled';
                                                 @endphp
-                                                <span class="badge {{ $statusBadge }} fs-8 px-2 w-100">{{ $statusText }}</span>
+                                                <span class="badge {{ $statusBadge }} fs-8 px-2 w-100 text-uppercase">{{ strtoupper($statusText) }}</span>
                                             </td>
                                             <td>
                                                 @php
                                                     $paymentBadge = [
                                                         'paid' => 'badge-soft-success',
-                                                        'partially_paid' => 'badge-soft-info',
+                                                        'partially_paid' => 'badge-soft-primary',
                                                         'refunded' => 'badge-soft-secondary',
                                                         'cancelled' => 'badge-soft-danger'
-                                                    ][$booking->payment_status] ?? 'badge-soft-secondary';
+                                                    ][$booking->payment_status] ?? 'badge-soft-primary';
                                                 @endphp
-                                                <span class="badge {{ $paymentBadge }} fs-8 px-2 w-100">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
+                                                <span class="badge {{ $paymentBadge }} fs-8 px-2 w-100 text-uppercase">{{ strtoupper(str_replace('_', ' ', $booking->payment_status)) }}</span>
                                                 @php
                                                     $totalPaid = $booking->payments->where('status', 'succeeded')->sum('amount');
-                                                $refunded = $booking->payments->where('status', 'refunded')->sum('amount');
-                                                $finalAmount = $booking->payment_status === 'refunded' ? $refunded : $totalPaid;
-                                                $paymentText = $booking->payment_status === 'refunded' ? 'Refunded' : 'Paid';
-                                                $paymentClass = $booking->payment_status === 'refunded' ? 'text-warning' : 'text-success';
+                                                    $refunded = $booking->payments->where('status', 'refunded')->sum('amount');
+                                                    $finalAmount = $booking->payment_status === 'refunded' ? $refunded : $totalPaid;
+                                                    $paymentText = $booking->payment_status === 'refunded' ? 'REFUNDED' : 'PAID';
+                                                    $paymentClass = $booking->payment_status === 'refunded' ? 'text-warning' : 'text-success';
                                                 @endphp
-                                                <small class="{{ $paymentClass }} d-block mt-1">
-                                                    ${paymentText}: ₱{{ number_format($finalAmount, 2) }}
+                                                <small class="{{ $paymentClass }} d-block mt-1 text-center">
+                                                    ₱{{ strtoupper(number_format($finalAmount, 2)) }}
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="text-end">
-                                                    <span class="fw-semibold">₱{{ number_format($booking->total_amount, 2) }}</span>
-                                                    @if($booking->payment_status === 'refunded')
+                                                <span class="fw-semibold">₱{{ number_format($booking->total_amount, 2) }}</span>
+                                                @if($booking->payment_status === 'refunded')
                                                     <small class="text-warning d-block">Fully refunded</small>
-                                                    @endif
-                                                </div>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="d-flex justify-content-center gap-1">
-                                                    <button class="btn btn-sm btn-outline-primary view-booking-btn" 
+                                                    <button class="btn btn-sm view-booking-btn" 
                                                             data-booking-id="{{ $booking->id }}" 
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#bookingModal"
@@ -104,7 +102,7 @@
                                                         <i class="ti ti-eye fs-lg"></i>
                                                     </button>
                                                     @if($booking->status === 'completed')
-                                                    <button class="btn btn-sm btn-outline-info review-booking-btn" 
+                                                    <button class="btn btn-sm review-booking-btn" 
                                                             data-booking-id="{{ $booking->id }}"
                                                             data-booking-reference="{{ $booking->booking_reference }}"
                                                             title="Leave Review">
@@ -650,18 +648,4 @@
             $('[data-filter="all"]').addClass('active');
         });
     </script>
-    <style>
-        .rating-star {
-            cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
-        .rating-star:hover,
-        .rating-star.filled {
-            opacity: 1;
-        }
-        .rating-star.filled::before {
-            content: "\\eb1a"; /* ti-star-filled */
-        }
-    </style>
 @endsection

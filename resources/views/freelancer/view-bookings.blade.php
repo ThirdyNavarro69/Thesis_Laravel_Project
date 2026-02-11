@@ -79,7 +79,7 @@
                                                         'in_progress' => 'badge-soft-warning',
                                                         'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
-                                                    ][$booking->status] ?? 'badge-soft-secondary';
+                                                    ][$booking->status] ?? 'badge-soft-primary';
                                                 @endphp
                                                 <span class="badge {{ $statusBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->status) }}</span>
                                             </td>
@@ -90,8 +90,8 @@
                                                         'partially_paid' => 'badge-soft-primary',
                                                         'paid' => 'badge-soft-success',
                                                         'failed' => 'badge-soft-danger',
-                                                        'refunded' => 'badge-soft-info'
-                                                    ][$booking->payment_status] ?? 'badge-soft-secondary';
+                                                        'refunded' => 'badge-soft-danger'
+                                                    ][$booking->payment_status] ?? 'badge-soft-primary';
                                                 @endphp
                                                 <span class="badge {{ $paymentBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
                                             </td>
@@ -153,7 +153,6 @@
                     </div>
                 </div>
                 <div class="modal-footer" id="bookingModalFooter" style="display: none;">
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
                     <div id="bookingActionButtons">
                         <!-- Action buttons will be dynamically added here -->
                     </div>
@@ -210,24 +209,32 @@
                 <div class="modal-body">
                     <form id="paymentUpdateForm">
                         <input type="hidden" id="paymentBookingId" name="booking_id">
-                        <div class="mb-3">
-                            <label for="paymentStatusSelect" class="form-label">Payment Status</label>
-                            <select class="form-control" id="paymentStatusSelect" name="payment_status" required>
-                                <option value="">Select Status</option>
-                                <option value="paid">Fully Paid</option>
-                                <option value="partially_paid">Partially Paid</option>
-                                <option value="failed">Payment Failed</option>
-                                <option value="refunded">Refunded</option>
-                            </select>
-                        </div>
-                        <div class="mb-3" id="amountField" style="display: none;">
-                            <label for="amountPaid" class="form-label">Amount Paid</label>
-                            <div class="input-group">
-                                <span class="input-group-text">PHP</span>
-                                <input type="number" class="form-control" id="amountPaid" name="amount_paid" step="0.01" min="0" placeholder="0.00">
+                        
+                        {{-- CURRENT PAYMENT STATUS DISPLAY --}}
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Current Payment Status:</span>
+                                <span id="currentPaymentStatus" class="fw-medium text-primary">Loading...</span>
                             </div>
-                            <small class="text-muted">Enter the amount received</small>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-muted">Remaining Balance:</span>
+                                <span id="currentRemainingBalance" class="fw-medium text-danger">PHP 0.00</span>
+                            </div>
                         </div>
+                        
+                        <div class="mb-3">
+                            <label for="paymentStatusSelect" class="form-label fw-semibold">Update Payment Status</label>
+                            <select class="form-control" id="paymentStatusSelect" name="payment_status" required>
+                                <option value="">-- Select Status --</option>
+                                <option value="paid">Mark as Fully Paid</option>
+                                <option value="refunded">Refund Payment</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                • <strong>Fully Paid:</strong> Client has paid the remaining balance<br>
+                                • <strong>Refunded:</strong> Only available for fully paid bookings
+                            </small>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="paymentNotes" class="form-label">Notes (Optional)</label>
                             <textarea class="form-control" id="paymentNotes" name="notes" rows="2" placeholder="Add any payment notes..."></textarea>
@@ -236,7 +243,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="submitPaymentUpdate">Update Payment</button>
+                    <button type="button" class="btn btn-primary" id="submitPaymentUpdate">Update Payment</button>
                 </div>
             </div>
         </div>
@@ -254,6 +261,25 @@
             const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
             const statusUpdateModal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
             const paymentUpdateModal = new bootstrap.Modal(document.getElementById('paymentUpdateModal'));
+
+            // Payment modal show event - populate current status
+            $('#paymentUpdateModal').on('show.bs.modal', function() {
+                if (window.currentBookingPaymentStatus && window.currentBookingRemainingBalance !== undefined) {
+                    $('#currentPaymentStatus').text(window.currentBookingPaymentStatus.replace('_', ' ').toUpperCase());
+                    $('#currentRemainingBalance').text(`PHP ${parseFloat(window.currentBookingRemainingBalance).toFixed(2)}`);
+                }
+            });
+
+            // Clear payment data when main modal closes
+            $('#bookingModal').on('hidden.bs.modal', function() {
+                window.currentBookingPaymentStatus = null;
+                window.currentBookingRemainingBalance = null;
+            });
+
+            // Reset form when modal is hidden
+            $('#paymentUpdateModal').on('hidden.bs.modal', function() {
+                $('#paymentUpdateForm')[0].reset();
+            });
 
             // View booking details
             $(document).on('click', '.view-booking-btn', function() {
@@ -313,6 +339,9 @@
 
                 const totalPaid = payments ? payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0) : 0;
                 const remainingBalance = parseFloat(booking.total_amount) - totalPaid;
+
+                window.currentBookingPaymentStatus = booking.payment_status;
+                window.currentBookingRemainingBalance = remainingBalance;
 
                 const modalContent = `
                     <div class="row g-4">
@@ -620,7 +649,7 @@
                 loadIcons();
             }
 
-            // Render action buttons based on booking status
+            // Render action buttons based on booking status and payment status
             function renderActionButtons(booking) {
                 let buttonsHtml = '';
                 
@@ -652,14 +681,32 @@
                         break;
                         
                     case 'in_progress':
+                        // Check if payment is fully paid before allowing completion
+                        const canComplete = booking.payment_status === 'paid';
+                        const completeButtonClass = canComplete ? 'btn btn-success' : 'btn btn-danger';
+                        const completeDisabled = canComplete ? '' : 'disabled';
+                        const completeTitle = canComplete ? '' : 'title="Cannot complete: Payment not fully paid"';
+                        
                         buttonsHtml = `
                             <button class="btn btn-soft-primary" id="updatePaymentBtn">
                                 <i data-lucide="credit-card" class="me-1"></i> Update Payment
                             </button>
-                            <button class="btn btn-success" id="markCompletedBtn">
+                            <button class="${completeButtonClass}" id="markCompletedBtn" ${completeDisabled} ${completeTitle}>
                                 <i data-lucide="check-circle" class="me-1"></i> Mark as Completed
                             </button>
                         `;
+                        
+                        // Add payment warning if not fully paid
+                        if (!canComplete) {
+                            buttonsHtml += `
+                                <div class="mt-2 p-2 bg-light-warning rounded">
+                                    <small class="text-warning">
+                                        <i data-lucide="alert-triangle" class="me-1" style="width: 14px;"></i>
+                                        Payment must be fully paid before marking as completed.
+                                    </small>
+                                </div>
+                            `;
+                        }
                         break;
                         
                     default:
@@ -863,13 +910,49 @@
             }
 
             // Submit payment update to server
-            function submitPaymentUpdate(paymentStatus, amountPaid, notes) {
+            function submitPaymentUpdate(paymentStatus, notes) {
+                // Confirm for refund
+                if (paymentStatus === 'refunded') {
+                    Swal.fire({
+                        title: 'Confirm Refund',
+                        text: 'Are you sure you want to refund this payment? This action cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, refund payment',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            sendPaymentUpdate(paymentStatus, notes);
+                        }
+                    });
+                } else {
+                    // Normal payment update (fully paid)
+                    Swal.fire({
+                        title: 'Confirm Payment',
+                        text: 'Mark this booking as fully paid?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3475db',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, mark as paid',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            sendPaymentUpdate(paymentStatus, notes);
+                        }
+                    });
+                }
+            }
+
+            // Submit payment update to server
+            function sendPaymentUpdate(paymentStatus, notes) {
                 $.ajax({
                     url: '{{ route("freelancer.booking.update.payment.status", ":id") }}'.replace(':id', currentBookingId),
                     type: 'PUT',
                     data: {
                         payment_status: paymentStatus,
-                        amount_paid: amountPaid,
                         notes: notes,
                         _token: '{{ csrf_token() }}'
                     },
@@ -887,7 +970,7 @@
                                 timer: 2000,
                                 timerProgressBar: true
                             }).then(() => {
-                                // Refresh booking details
+                                // ✅ FIX: Refresh booking details to show updated remaining balance
                                 loadBookingDetails(currentBookingId);
                                 // Refresh table row
                                 updateTableRow(response.booking);
@@ -902,17 +985,20 @@
                         }
                     },
                     error: function(xhr) {
+                        let errorMessage = 'Failed to update payment status. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Failed to update payment status. Please try again.',
+                            text: errorMessage,
                             confirmButtonColor: '#3475db'
                         });
                     },
                     complete: function() {
                         $('#submitPaymentUpdate').prop('disabled', false).text('Update Payment');
                         $('#paymentUpdateForm')[0].reset();
-                        $('#amountField').hide();
                     }
                 });
             }
@@ -952,8 +1038,9 @@
                     </span>
                 `);
                 
-                // Update remaining balance
-                row.find('td:nth-child(7)').text(`PHP ${parseFloat(booking.remaining_balance).toFixed(2)}`);
+                // ✅ FIX: Update remaining balance - use the value from the response
+                const remainingBalance = parseFloat(booking.remaining_balance || 0).toFixed(2);
+                row.find('td:nth-child(7)').text(`PHP ${remainingBalance}`);
             }
 
             // Helper functions

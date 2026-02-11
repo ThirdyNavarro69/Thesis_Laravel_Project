@@ -196,6 +196,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/bookings/check-availability',     [\App\Http\Controllers\Client\BookingController::class, 'checkAvailability'])->name('client.bookings.check-availability');
         Route::post('/bookings/calendar-availability',  [\App\Http\Controllers\Client\BookingController::class, 'getCalendarAvailability'])->name('client.bookings.calendar-availability');
         Route::post('/bookings/summary',                [\App\Http\Controllers\Client\BookingController::class, 'getSummary'])->name('client.bookings.summary');
+        Route::post('/locations/barangays',             [\App\Http\Controllers\Client\BookingController::class, 'getBarangays'])->name('client.locations.barangays');
         
         // Payment
         Route::post('/payments/initialize',             [\App\Http\Controllers\Client\BookingController::class, 'initializePayment'])->name('client.payments.initialize');

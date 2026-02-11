@@ -249,29 +249,37 @@
                                         <div id="locationDetails" style="display: none;">
                                             <div class="col-12 mb-3">
                                                 <label class="form-label">Venue Name</label>
-                                                <input type="text" class="form-control" id="venueName"
-                                                    name="venue_name" placeholder="Enter venue name" required>
+                                                <input type="text" class="form-control" id="venueName" name="venue_name" 
+                                                    placeholder="Enter venue name (e.g., Hotel, Resort, Event Hall)">
                                             </div>
-                                            <div class="col-12 mb-3">
-                                                <label class="form-label">Street</label>
-                                                <input type="text" class="form-control" id="street" name="street"
-                                                    placeholder="Enter street name">
-                                            </div>
+                                            
                                             <div class="col-12 mb-3">
                                                 <label class="form-label">City/Municipality</label>
-                                                <input type="text" class="form-control" id="city" name="city"
-                                                    placeholder="Enter city/municipality name">
+                                                <select class="form-select" id="city" name="city" required>
+                                                    <option value="">Select City/Municipality</option>
+                                                    @foreach($municipalities as $municipality)
+                                                        <option value="{{ $municipality }}">{{ $municipality }}</option>
+                                                    @endforeach
+                                                </select>
                                             </div>
+                                            
                                             <div class="col-12 mb-3">
                                                 <label class="form-label">Barangay</label>
-                                                <input type="text" class="form-control" id="barangay"
-                                                    name="barangay" placeholder="Enter barangay name">
+                                                <select class="form-select" id="barangay" name="barangay" required disabled>
+                                                    <option value="">Select Barangay</option>
+                                                </select>
                                             </div>
+                                            
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label">Street / Building / Unit No.</label>
+                                                <input type="text" class="form-control" id="street" name="street" 
+                                                    placeholder="Enter street name, building, unit number (optional)">
+                                            </div>
+                                            
                                             <div class="col-12 mb-3">
                                                 <label class="form-label">Province</label>
-                                                <input type="text" class="form-control" id="province"
-                                                    name="province" value="Cavite" placeholder="Enter province name"
-                                                    readonly>
+                                                <input type="text" class="form-control" id="province" name="province" 
+                                                    value="Cavite" readonly>
                                             </div>
                                         </div>
                                     </div>
@@ -626,9 +634,17 @@
                 if ($(this).val() === 'on-location') {
                     $('#locationDetails').show();
                     $('#venueName').prop('required', true);
+                    $('#city').prop('required', true);
+                    $('#barangay').prop('required', true);
                 } else {
                     $('#locationDetails').hide();
                     $('#venueName').prop('required', false);
+                    $('#city').prop('required', false);
+                    $('#barangay').prop('required', false);
+                    
+                    // Reset dropdowns
+                    $('#city').val('').trigger('change');
+                    $('#barangay').prop('disabled', true).html('<option value="">Select Barangay</option>');
                 }
             });
             
@@ -779,6 +795,63 @@
             $('#proceedToPaymentBtn').on('click', function() {
                 processBooking();
             });
+
+            // City/Municipality change handler - Load Barangays
+            $(document).on('change', '#city', function() {
+                const municipality = $(this).val();
+                const barangaySelect = $('#barangay');
+                
+                if (!municipality) {
+                    barangaySelect.prop('disabled', true).html('<option value="">Select Barangay</option>');
+                    return;
+                }
+                
+                // Show loading
+                barangaySelect.prop('disabled', true).html('<option value="">Loading barangays...</option>');
+                
+                $.ajax({
+                    url: '{{ route("client.locations.barangays") }}',
+                    type: 'POST',
+                    data: {
+                        municipality: municipality,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success && response.barangays && response.barangays.length > 0) {
+                            let options = '<option value="">Select Barangay</option>';
+                            
+                            // Sort barangays alphabetically
+                            const sortedBarangays = response.barangays.sort();
+                            
+                            sortedBarangays.forEach(function(barangay) {
+                                options += `<option value="${barangay}">${barangay}</option>`;
+                            });
+                            
+                            barangaySelect.html(options).prop('disabled', false);
+                        } else {
+                            barangaySelect.html('<option value="">No barangays available</option>').prop('disabled', true);
+                            
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'No Barangays Found',
+                                text: 'No barangay data available for this municipality.',
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Barangay load error:', xhr);
+                        barangaySelect.html('<option value="">Error loading barangays</option>').prop('disabled', true);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load barangays. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
+                    }
+                });
+            });
             
             // Functions
             function getBookingSummaryWithPaymentType(packageData, paymentType) {
@@ -867,6 +940,29 @@
                     return false;
                 }
                 
+                // For on-location bookings, validate city and barangay
+                if ($('#locationType').val() === 'on-location') {
+                    if (!$('#city').val()) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'City/Municipality Required',
+                            text: 'Please select a city/municipality.',
+                            confirmButtonColor: '#3475db'
+                        });
+                        return false;
+                    }
+                    
+                    if (!$('#barangay').val()) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Barangay Required',
+                            text: 'Please select a barangay.',
+                            confirmButtonColor: '#3475db'
+                        });
+                        return false;
+                    }
+                }
+                
                 return true;
             }
             
@@ -898,7 +994,7 @@
                 $('#summaryEmailAddress').text(bookingData.email);
                 
                 // Get package name from selected radio button
-                const packageName = $(`.package-radio[value="${selectedPackageId}"]`).siblings('label').find('h6').text();
+                const packageName = $(`.package-radio[value="${selectedPackageId}"]`).siblings('label').find('strong').text();
                 $('#summaryPackage').text(packageName);
                 
                 // Format date and time
@@ -920,14 +1016,27 @@
                 // Location details
                 if (bookingData.location_type === 'on-location') {
                     let locationText = '';
-                    if (bookingData.venue_name) locationText += bookingData.venue_name + '<br>';
-                    if (bookingData.street) locationText += bookingData.street + ', ';
-                    if (bookingData.barangay) locationText += bookingData.barangay + ', ';
-                    if (bookingData.city) locationText += bookingData.city + ', ';
+                    
+                    if (bookingData.venue_name) {
+                        locationText += `<strong>${bookingData.venue_name}</strong><br>`;
+                    }
+                    
+                    if (bookingData.street) {
+                        locationText += bookingData.street + ', ';
+                    }
+                    
+                    if (bookingData.barangay) {
+                        locationText += 'Brgy. ' + bookingData.barangay + ', ';
+                    }
+                    
+                    if (bookingData.city) {
+                        locationText += bookingData.city + ', ';
+                    }
+                    
                     locationText += 'Cavite';
                     
                     $('#summaryLocationDetails').html(`
-                        <p class="text-muted small mb-1">Location Details:</p>
+                        <p class="text-muted small mb-1 mt-2">Location Details:</p>
                         <p class="fw-medium mb-2">${locationText}</p>
                     `).show();
                 } else {

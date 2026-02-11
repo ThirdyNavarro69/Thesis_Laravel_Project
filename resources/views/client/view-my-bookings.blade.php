@@ -16,7 +16,7 @@
                         <div class="card-header border-light justify-content-between">
                             <div class="d-flex gap-2">
                                 <div class="app-search">
-                                    <input data-table-search type="search" class="form-control" placeholder="Search by booking ID, provider name, or category...">
+                                    <input data-table-search type="search" class="form-control" placeholder="Search...">
                                     <i data-lucide="search" class="app-search-icon text-muted"></i>
                                 </div>
                             </div>
