@@ -3,7 +3,7 @@
 namespace App\Http\Requests\StudioOwner;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Models\StudioOwner\PackagesModel;
+use Illuminate\Validation\Rule;
 
 class PackageStoreRequest extends FormRequest
 {
@@ -22,7 +22,29 @@ class PackageStoreRequest extends FormRequest
      */
     public function rules(): array
     {
-        return PackagesModel::rules();
+        $id = $this->route('package');
+        
+        return [
+            'studio_id' => 'required|exists:tbl_studios,id',
+            'category_id' => 'required|exists:tbl_categories,id',
+            'package_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('tbl_packages', 'package_name')
+                    ->ignore($id)
+                    ->where('studio_id', $this->studio_id)
+            ],
+            'package_description' => 'required|string|min:10|max:1000',
+            'package_inclusions' => 'required|string|min:1',
+            'duration' => 'required|integer|min:1|max:24',
+            'maximum_edited_photos' => 'required|integer|min:1|max:1000',
+            'coverage_scope' => 'nullable|string|max:500',
+            'package_price' => 'required|numeric|min:0',
+            'online_gallery' => 'required|boolean',              // Added
+            'photographer_count' => 'required|integer|min:0|max:10', // Added
+            'status' => 'required|in:active,inactive',
+        ];
     }
 
     /**
@@ -32,31 +54,27 @@ class PackageStoreRequest extends FormRequest
      */
     public function messages(): array
     {
-        return PackagesModel::messages();
-    }
-
-    protected function prepareForValidation()
-    {
-        // Convert Choices.js comma-separated inclusions to array
-        if ($this->has('package_inclusions') && is_string($this->package_inclusions)) {
-            $inclusions = array_map('trim', explode(',', $this->package_inclusions));
-            $this->merge([
-                'package_inclusions' => array_filter($inclusions)
-            ]);
-        }
-
-        // Keep coverage scope as string (simple text field)
-        if ($this->has('coverage_scope') && is_string($this->coverage_scope)) {
-            $this->merge([
-                'coverage_scope' => trim($this->coverage_scope)
-            ]);
-        }
-
-        // Convert price to decimal
-        if ($this->has('package_price')) {
-            $this->merge([
-                'package_price' => (float) str_replace(['PHP', ','], '', $this->package_price)
-            ]);
-        }
+        return [
+            'studio_id.required' => 'Please select a studio.',
+            'studio_id.exists' => 'Selected studio does not exist.',
+            'category_id.required' => 'Please select a category.',
+            'category_id.exists' => 'Selected category does not exist.',
+            'package_name.required' => 'Package name is required.',
+            'package_name.unique' => 'A package with this name already exists for this studio.',
+            'package_description.required' => 'Package description is required.',
+            'package_description.min' => 'Package description must be at least 10 characters.',
+            'package_inclusions.required' => 'At least one inclusion is required.',
+            'duration.min' => 'Duration must be at least 1 hour.',
+            'duration.max' => 'Duration cannot exceed 24 hours.',
+            'maximum_edited_photos.min' => 'Minimum edited photos must be at least 1.',
+            'maximum_edited_photos.max' => 'Maximum edited photos cannot exceed 1000.',
+            'package_price.min' => 'Package price cannot be negative.',
+            'package_price.required' => 'Package price is required.',
+            'online_gallery.required' => 'Please select if online gallery is included.',     // Added
+            'online_gallery.boolean' => 'Invalid selection for online gallery.',             // Added
+            'photographer_count.required' => 'Please specify number of photographers.',      // Added
+            'photographer_count.min' => 'Photographer count cannot be negative.',            // Added
+            'photographer_count.max' => 'Maximum of 10 photographers allowed.',              // Added
+        ];
     }
 }

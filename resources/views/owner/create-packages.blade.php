@@ -96,6 +96,37 @@
                                     </div>
 
                                     <div class="col-12 mb-3">
+                                        <label class="form-label d-block">Online Gallery</label>
+                                        <div class="btn-group w-100 mb-1" role="group" aria-label="Online Gallery Toggle">
+                                            <input type="radio" class="btn-check" name="online_gallery" id="galleryYes" value="1" required>
+                                            <label class="btn btn-outline-primary" for="galleryYes">
+                                                <i class="ti ti-check me-1"></i> Yes, include online gallery
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="online_gallery" id="galleryNo" value="0" checked required>
+                                            <label class="btn btn-outline-primary" for="galleryNo">
+                                                <i class="ti ti-x me-1"></i> No, exclude online gallery
+                                            </label>
+                                        </div>
+                                        <div class="invalid-feedback">Please select if online gallery is included.</div>
+                                        <small class="text-muted">Online gallery allows clients to view and download photos online.</small>
+                                    </div>
+
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Number of Photographers</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="ti ti-camera"></i>
+                                            </span>
+                                            <input type="number" class="form-control" name="photographer_count" 
+                                                placeholder="Enter number of photographers" 
+                                                min="0" max="10" step="1" value="1" required>
+                                        </div>
+                                        <div class="invalid-feedback">Please enter valid number of photographers (0-10).</div>
+                                        <small class="text-muted">Maximum of 10 photographers can be assigned to this package.</small>
+                                    </div>
+
+                                    <div class="col-12 mb-3">
                                         <label class="form-label">Status</label>
                                         <select class="form-select" name="status" required>
                                             <option value="">Select Status</option>
@@ -198,6 +229,10 @@
                 formData.delete('package_inclusions[]');
                 formData.append('package_inclusions', inclusions.join(','));
                 
+                // ========== ENSURE ONLINE GALLERY VALUE IS PROPERLY SET ==========
+                // Radio buttons already send correct values (1 or 0)
+                // No additional handling needed
+                
                 // Show loading state
                 const submitBtn = $(this).find('button[type="submit"]');
                 const originalText = submitBtn.html();
@@ -239,7 +274,12 @@
                                 inclusionCount = 1;
                                 updateInclusionCounter();
                                 updateRemoveButtons();
-
+                                
+                                // Uncheck all first
+                                $('input[name="online_gallery"]').prop('checked', false);
+                                // Set default checked to "No" (value 0)
+                                $('#galleryNo').prop('checked', true);
+                                
                                 window.location.href = "{{ route('owner.packages.index') }}";
                             }, 1500);
                         }
@@ -258,6 +298,7 @@
                                 icon: 'error',
                                 title: 'Validation Error',
                                 html: errorMessages,
+                                confirmButtonColor: '#3475db',
                                 confirmButtonText: 'OK'
                             });
                         } else {
@@ -265,6 +306,7 @@
                                 icon: 'error',
                                 title: 'Error',
                                 text: 'Failed to create package. Please try again.',
+                                confirmButtonColor: '#3475db',
                                 confirmButtonText: 'OK'
                             });
                         }

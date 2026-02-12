@@ -71,6 +71,8 @@ class PackagesController extends Controller
                 'maximum_edited_photos' => $request->maximum_edited_photos,
                 'coverage_scope' => $request->coverage_scope ?? '',
                 'package_price' => $request->package_price,
+                'online_gallery' => $request->online_gallery,          // Added
+                'photographer_count' => $request->photographer_count,  // Added
                 'status' => $request->status,
             ]);
 

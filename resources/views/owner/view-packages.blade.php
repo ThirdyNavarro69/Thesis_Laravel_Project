@@ -43,6 +43,8 @@
                                         <th data-table-sort>Category</th>
                                         <th data-table-sort>Package Name</th>
                                         <th data-table-sort>Price</th>
+                                        <th data-table-sort>Online Gallery</th>
+                                        <th data-table-sort>Photographers</th>
                                         <th data-table-sort>Duration</th>
                                         <th data-table-sort>Max Photos</th>
                                         <th data-table-sort data-column="status">Status</th>
@@ -56,6 +58,21 @@
                                             <td>{{ $package->category->category_name ?? 'N/A' }}</td>
                                             <td>{{ $package->package_name }}</td>
                                             <td>PHP {{ number_format($package->package_price, 2) }}</td>
+                                            <td>
+                                                @if($package->online_gallery)
+                                                    <span class="badge badge-soft-success fs-8 px-1 w-100">
+                                                        <i class="ti ti-check me-1"></i> Yes
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-soft-secondary fs-8 px-1 w-100">
+                                                        <i class="ti ti-x me-1"></i> No
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="fw-semibold">{{ $package->photographer_count ?? 0 }}</span>
+                                                <small class="text-muted d-block">photographer(s)</small>
+                                            </td>
                                             <td>{{ $package->duration }} hours</td>
                                             <td>{{ $package->maximum_edited_photos }}</td>
                                             <td>

@@ -31,6 +31,8 @@ class PackagesModel extends Model
         'maximum_edited_photos',
         'coverage_scope',
         'package_price',
+        'online_gallery',
+        'photographer_count',
         'status',
     ];
 
@@ -43,6 +45,8 @@ class PackagesModel extends Model
         'package_inclusions' => 'array',
         'coverage_scope' => 'array',
         'package_price' => 'decimal:2',
+        'online_gallery' => 'boolean',
+        'photographer_count' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
