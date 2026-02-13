@@ -87,6 +87,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/assignments/{id}',                      [\App\Http\Controllers\StudioOwner\BookingController::class, 'removePhotographerAssignment'])->name('owner.booking.remove.assignment');
         Route::put('/assignments/{id}/status',                  [\App\Http\Controllers\StudioOwner\BookingController::class, 'updateAssignmentStatus'])->name('owner.booking.update.assignment.status');
         Route::put('/bookings/{id}/status',                     [\App\Http\Controllers\StudioOwner\BookingController::class, 'updateStatus'])->name('owner.booking.update.status');
+        Route::put('/bookings/{id}/complete',                   [\App\Http\Controllers\StudioOwner\BookingController::class, 'completeBooking'])->name('owner.booking.complete');
         
         // Manage Studio Schedule                       
         Route::get('/view/schedules',                           [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'index'])->name('owner.studio-schedule.index');

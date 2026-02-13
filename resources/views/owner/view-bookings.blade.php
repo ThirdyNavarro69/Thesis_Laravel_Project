@@ -303,22 +303,22 @@
             function getStatusBadgeClass(status) {
                 const badgeClasses = {
                     'assigned': 'badge-soft-info',
-                    'confirmed': 'badge-soft-success',
-                    'completed': 'badge-soft-secondary',
+                    'confirmed': 'badge-soft-primary',
+                    'completed': 'badge-soft-success',
                     'cancelled': 'badge-soft-danger'
                 };
-                return badgeClasses[status] || 'badge-soft-secondary';
+                return badgeClasses[status] || 'badge-soft-primary';
             }
 
             function getStatusTextClass(status) {
                 const textClasses = {
                     'pending': 'text-warning',
-                    'confirmed': 'text-success',
+                    'confirmed': 'text-primary',
                     'in_progress': 'text-info',
-                    'completed': 'text-secondary',
+                    'completed': 'text-success',
                     'cancelled': 'text-danger'
                 };
-                return textClasses[status] || 'text-secondary';
+                return textClasses[status] || 'text-primary';
             }
 
             function loadIcons() {
@@ -658,12 +658,18 @@
                                                         <span class="badge ${data.status_badge_class} fs-7 me-2">
                                                             ${booking.status.replace('_', ' ').toUpperCase()}
                                                         </span>
-                                                        ${Object.keys(availableStatuses).length > 0 ? `
-                                                            <button class="btn btn-sm update-status-btn" data-booking-id="${booking.id}">
-                                                                <i data-lucide="edit" class="me-1"></i>Update
+                                                        ${data.can_owner_complete ? `
+                                                            <button class="btn btn-sm btn-success complete-booking-btn" data-booking-id="${booking.id}">
+                                                                <i data-lucide="check-circle" class="me-1"></i>Complete Booking
                                                             </button>
                                                         ` : ''}
                                                     </div>
+                                                    ${booking.status === 'in_progress' && !data.can_owner_complete ? `
+                                                        <small class="text-muted d-block mt-1">
+                                                            <i data-lucide="info" class="me-1" style="width: 12px; height: 12px;"></i>
+                                                            Waiting for photographers to complete their assignments...
+                                                        </small>
+                                                    ` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -843,7 +849,7 @@
                                                     <label class="text-muted small mb-1">Down Payment</label>
                                                     <div class="d-flex align-items-center gap-2">
                                                         <span class="fw-medium">PHP ${parseFloat(booking.down_payment).toFixed(2)}</span>
-                                                        <span class="badge ${booking.deposit_policy ? 'badge-soft-success' : 'badge-soft-secondary'} px-2 fw-medium">${booking.deposit_policy ? 'Yes' : 'No'}</span>
+                                                        <span class="badge ${booking.deposit_policy ? 'badge-soft-primary' : 'badge-soft-success'} px-2 fw-medium">${booking.deposit_policy ? 'Yes' : 'No'}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -921,9 +927,11 @@
                                         <h6 class="card-title mb-0 fw-semibold text-uppercase small text-primary">
                                             Assigned Photographers
                                         </h6>
-                                        <button class="btn btn-primary btn-sm" id="assignPhotographerBtn">
-                                            <i data-lucide="user-plus" class="me-1"></i> Assign Photographer
-                                        </button>
+                                        ${!['in_progress', 'completed'].includes(booking.status) ? `
+                                            <button class="btn btn-primary btn-sm" id="assignPhotographerBtn">
+                                                <i data-lucide="user-plus" class="me-1"></i> Assign Photographer
+                                            </button>
+                                        ` : ''}
                                     </div>
                                     <div id="assignedPhotographersList">
                                         ${assignedPhotographersHtml}
@@ -947,6 +955,77 @@
                     }, 300);
                 });
             }
+
+            // Complete booking (owner final step)
+            $(document).on('click', '.complete-booking-btn', function() {
+                const bookingId = $(this).data('booking-id');
+                
+                Swal.fire({
+                    title: 'Complete Booking',
+                    text: 'Are you sure you want to mark this booking as completed? This action cannot be undone.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3475db',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, complete booking',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '{{ route("owner.booking.complete", ":id") }}'.replace(':id', bookingId),
+                            type: 'PUT',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Processing...',
+                                    text: 'Please wait',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Success!',
+                                        text: response.message,
+                                        showConfirmButton: false,
+                                        timer: 2000,
+                                        timerProgressBar: true
+                                    }).then(() => {
+                                        bookingModal.hide();
+                                        // Reload the page to update the table
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: response.message,
+                                        confirmButtonColor: '#3475db'
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                let message = 'Failed to complete booking. Please try again.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    message = xhr.responseJSON.message;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: message,
+                                    confirmButtonColor: '#3475db'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
 
             // Assign photographer button click handler
             $(document).on('click', '#assignPhotographerBtn', function() {

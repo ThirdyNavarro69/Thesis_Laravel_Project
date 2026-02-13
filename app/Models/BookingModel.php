@@ -298,4 +298,49 @@ class BookingModel extends Model
     {
         return $this->payment_type === 'full_payment';
     }
+
+    /**
+     * Check if all photographers have completed their assignments
+     */
+    public function allPhotographersCompleted(): bool
+    {
+        $assignments = $this->assignedPhotographers;
+        
+        if ($assignments->isEmpty()) {
+            return false;
+        }
+        
+        foreach ($assignments as $assignment) {
+            if ($assignment->status !== 'completed') {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Check if booking is fully paid
+     */
+    public function isFullyPaid(): bool
+    {
+        $totalPaid = $this->payments()->where('status', 'succeeded')->sum('amount');
+        return $totalPaid >= $this->total_amount;
+    }
+
+    /**
+     * Get total paid amount
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        return $this->payments()->where('status', 'succeeded')->sum('amount');
+    }
+
+    /**
+     * Get remaining balance
+     */
+    public function getRemainingBalanceAttribute(): float
+    {
+        return max(0, $this->total_amount - $this->total_paid);
+    }
 }

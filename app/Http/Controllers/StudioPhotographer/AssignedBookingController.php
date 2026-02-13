@@ -109,6 +109,21 @@ class AssignedBookingController extends Controller
                 ]);
             }
             
+            // For completed status, check if booking is fully paid
+            if ($request->status === 'completed') {
+                $booking = BookingModel::find($assignment->booking_id);
+                
+                // Calculate total paid
+                $totalPaid = $booking->payments()->where('status', 'succeeded')->sum('amount');
+                
+                if ($totalPaid < $booking->total_amount) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot mark assignment as completed because the booking is not fully paid. Remaining balance: PHP ' . number_format($booking->total_amount - $totalPaid, 2)
+                    ]);
+                }
+            }
+            
             $updateData = ['status' => $request->status];
             
             switch ($request->status) {
@@ -117,6 +132,13 @@ class AssignedBookingController extends Controller
                     break;
                 case 'completed':
                     $updateData['completed_at'] = now();
+                    
+                    // Also update booking status to in_progress if it's still pending/confirmed
+                    $booking = BookingModel::find($assignment->booking_id);
+                    if (in_array($booking->status, ['pending', 'confirmed'])) {
+                        $booking->status = 'in_progress';
+                        $booking->save();
+                    }
                     break;
                 case 'cancelled':
                     $updateData['cancelled_at'] = now();

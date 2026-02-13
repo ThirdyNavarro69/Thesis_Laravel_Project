@@ -99,8 +99,8 @@
                                                 @php
                                                     $statusBadge = [
                                                         'assigned' => 'badge-soft-info',
-                                                        'confirmed' => 'badge-soft-success',
-                                                        'completed' => 'badge-soft-secondary',
+                                                        'confirmed' => 'badge-soft-primary',
+                                                        'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
                                                     ][$assignment->status] ?? 'badge-soft-secondary';
                                                 @endphp
@@ -324,6 +324,11 @@
                             <i data-lucide="x-circle" class="me-1"></i> Cancelled
                         </span>
                     `;
+                }
+
+                // Add payment status indicator for completed button
+                if (assignment.status === 'confirmed') {
+                    // We'll add a check in the click handler instead
                 }
                 
                 const modalContent = `
@@ -838,8 +843,8 @@
             function getStatusTextClass(status) {
                 const textClasses = {
                     'assigned': 'text-info',
-                    'confirmed': 'text-success',
-                    'completed': 'text-secondary',
+                    'confirmed': 'text-primary',
+                    'completed': 'text-success',
                     'cancelled': 'text-danger'
                 };
                 return textClasses[status] || 'text-secondary';
@@ -848,10 +853,10 @@
             function getPaymentStatusBadgeClass(status) {
                 const badgeClasses = {
                     'pending': 'badge-soft-warning',
-                    'partially_paid': 'badge-soft-info',
+                    'partially_paid': 'badge-soft-primary',
                     'paid': 'badge-soft-success',
                     'failed': 'badge-soft-danger',
-                    'refunded': 'badge-soft-secondary'
+                    'refunded': 'badge-soft-danger'
                 };
                 return badgeClasses[status] || 'badge-soft-secondary';
             }
