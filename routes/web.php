@@ -189,6 +189,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/view/bookings-history',            [\App\Http\Controllers\Client\MyBookingsController::class, 'history'])->name('client.my-bookings.history');
         Route::get('/bookings/{id}/details',            [\App\Http\Controllers\Client\MyBookingsController::class, 'getBookingDetails'])->name('client.booking.details');
         Route::post('/bookings/{id}/cancel',            [\App\Http\Controllers\Client\MyBookingsController::class, 'cancelBooking'])->name('client.booking.cancel');
+        Route::get('/bookings/{id}/payment-details',    [\App\Http\Controllers\Client\MyBookingsController::class, 'getPaymentDetails'])->name('client.booking.payment.details');
+        Route::post('/bookings/{id}/balance-payment',   [\App\Http\Controllers\Client\MyBookingsController::class, 'initializeBalancePayment'])->name('client.booking.balance.payment');
+
+        // Booking Payment
+        Route::get('/view/booking-payment',             [\App\Http\Controllers\Client\BookingPaymentController::class, 'index'])->name('client.booking-payment.index');
 
         // Booking Process
         Route::get('/booking-form/{type}/{id}',         [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');

@@ -92,14 +92,20 @@
                                                         'refunded' => 'badge-soft-secondary',
                                                         'cancelled' => 'badge-soft-danger'
                                                     ][$booking->payment_status] ?? 'badge-soft-secondary';
+                                                    
+                                                    $totalPaid = $booking->payments->where('status', 'succeeded')->sum('amount');
+                                                    $paymentProgress = $booking->total_amount > 0 ? round(($totalPaid / $booking->total_amount) * 100) : 0;
                                                 @endphp
                                                 <span class="badge {{ $paymentBadge }} fs-8 px-2 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
                                                 <small class="text-muted d-block mt-1 text-center">
-                                                    @php
-                                                        $totalPaid = $booking->payments->where('status', 'succeeded')->sum('amount');
-                                                    @endphp
-                                                    ₱{{ number_format($totalPaid, 2) }} paid
+                                                    ₱{{ number_format($totalPaid, 2) }} / ₱{{ number_format($booking->total_amount, 2) }}
                                                 </small>
+                                                @if($booking->payment_status === 'partially_paid')
+                                                <div class="progress mt-1" style="height: 3px;">
+                                                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ $paymentProgress }}%;" 
+                                                        aria-valuenow="{{ $paymentProgress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                @endif
                                             </td>
                                             <td>
                                                 <span class="fw-semibold">₱{{ number_format($booking->total_amount, 2) }}</span>
@@ -120,6 +126,23 @@
                                                             title="View Details">
                                                         <i class="ti ti-eye fs-lg"></i>
                                                     </button>
+                                                    
+                                                    <!-- Pay Balance Button - Show for confirmed/in_progress bookings that are partially paid -->
+                                                    @if(in_array($booking->status, ['confirmed', 'in_progress']) && in_array($booking->payment_status, ['pending', 'partially_paid']))
+                                                        @php
+                                                            $totalPaid = $booking->payments->where('status', 'succeeded')->sum('amount');
+                                                            $hasRemaining = ($booking->total_amount - $totalPaid) > 0;
+                                                        @endphp
+                                                        @if($hasRemaining)
+                                                        <button class="btn btn-sm btn-success pay-balance-btn" 
+                                                                data-booking-id="{{ $booking->id }}"
+                                                                data-booking-reference="{{ $booking->booking_reference }}"
+                                                                title="Pay Remaining Balance">
+                                                            <i class="ti ti-credit-card fs-lg"></i>
+                                                        </button>
+                                                        @endif
+                                                    @endif
+                                                    
                                                     @if($booking->status === 'pending')
                                                     <button class="btn btn-sm cancel-booking-btn" 
                                                             data-booking-id="{{ $booking->id }}"
@@ -222,6 +245,252 @@
                     }
                 });
             });
+
+            // Pay Balance button click handler
+            $(document).on('click', '.pay-balance-btn', function() {
+                const bookingId = $(this).data('booking-id');
+                const bookingRef = $(this).data('booking-reference');
+                
+                // Load payment details
+                loadPaymentDetails(bookingId, bookingRef);
+            });
+
+            // Load payment details for balance payment
+            function loadPaymentDetails(bookingId, bookingRef) {
+                $.ajax({
+                    url: '{{ route("client.booking.payment.details", ":id") }}'.replace(':id', bookingId),
+                    type: 'GET',
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: 'Loading...',
+                            text: 'Please wait',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        Swal.close();
+                        
+                        if (response.success) {
+                            showBalancePaymentModal(response, bookingRef);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.close();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load payment details. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
+                    }
+                });
+            }
+
+            // Show balance payment modal
+            function showBalancePaymentModal(data, bookingRef) {
+                const booking = data.booking;
+                const remainingBalance = parseFloat(booking.remaining_balance).toFixed(2);
+                const bookingId = booking.id; // Store booking ID
+                
+                Swal.fire({
+                    title: 'Pay Remaining Balance',
+                    html: `
+                        <div class="text-start">
+                            <div class="alert alert-info mb-3">
+                                <i class="ti ti-info-circle me-2"></i>
+                                <strong>Booking:</strong> ${bookingRef}<br>
+                                <strong>Status:</strong> ${booking.booking_status.replace('_', ' ').toUpperCase()}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Amount:</span>
+                                    <span class="fw-semibold">₱${parseFloat(booking.total_amount).toFixed(2)}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Amount Paid:</span>
+                                    <span class="fw-medium text-success">₱${parseFloat(booking.total_paid).toFixed(2)}</span>
+                                </div>
+                                <div class="d-flex justify-content-between pt-2 border-top">
+                                    <span class="fw-semibold">Remaining Balance:</span>
+                                    <span class="fw-bold text-danger">₱${remainingBalance}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Payment Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₱</span>
+                                    <input type="number" class="form-control" id="balanceAmount" 
+                                        value="${remainingBalance}" min="1" max="${remainingBalance}" step="0.01">
+                                </div>
+                                <small class="text-muted">You can pay the full remaining balance or a partial amount.</small>
+                            </div>
+                            
+                            ${data.has_pending_payment ? `
+                                <div class="alert alert-warning">
+                                    <i class="ti ti-clock me-2"></i>
+                                    You have a pending payment for this booking. Please complete it or wait for it to expire.
+                                </div>
+                            ` : ''}
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Proceed to Payment',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#3475db',
+                    cancelButtonColor: '#6c757d',
+                    preConfirm: () => {
+                        const amount = $('#balanceAmount').val();
+                        
+                        if (!amount || amount <= 0) {
+                            Swal.showValidationMessage('Please enter a valid amount');
+                            return false;
+                        }
+                        
+                        if (parseFloat(amount) > parseFloat(remainingBalance)) {
+                            Swal.showValidationMessage('Amount cannot exceed remaining balance');
+                            return false;
+                        }
+                        
+                        return { 
+                            amount: amount,
+                            bookingId: bookingId 
+                        };
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Pass both bookingId and amount
+                        initializeBalancePayment(result.value.bookingId, result.value.amount);
+                    }
+                });
+            }
+
+            // Initialize balance payment
+            function initializeBalancePayment(bookingId, amount) {
+                $.ajax({
+                    url: '{{ route("client.booking.balance.payment", ":id") }}'.replace(':id', bookingId),
+                    type: 'POST',
+                    data: {
+                        amount: amount,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: 'Processing...',
+                            text: 'Please wait',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        console.log('Balance payment response:', response);
+                        
+                        if (response.success) {
+                            // Now initialize the actual payment with Stripe
+                            // Pass bookingId, payment.id, booking_reference, and amount
+                            proceedWithBalancePayment(bookingId, response.payment.id, response.booking_reference, response.amount);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Balance payment error:', xhr);
+                        let message = 'Failed to initialize payment. Please try again.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message,
+                            confirmButtonColor: '#3475db'
+                        });
+                    }
+                });
+            }
+
+            // Proceed with balance payment using existing payment method
+            function proceedWithBalancePayment(bookingId, paymentId, bookingRef, amount) {
+                console.log('Proceeding with payment:', { bookingId, paymentId, bookingRef, amount });
+                
+                $.ajax({
+                    url: '{{ route("client.payments.initialize") }}',
+                    type: 'POST',
+                    data: {
+                        booking_id: bookingId,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: 'Redirecting to Payment...',
+                            text: 'Please wait while we prepare your payment',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        console.log('Payment init response:', response);
+                        
+                        if (response.success) {
+                            if (response.redirect_url) {
+                                // Redirect to Stripe checkout
+                                window.location.href = response.redirect_url;
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No redirect URL provided',
+                                    confirmButtonColor: '#3475db'
+                                });
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Payment Failed',
+                                text: response.message || 'Failed to initialize payment',
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Payment init error:', xhr);
+                        let message = 'Failed to initialize payment. Please try again.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message,
+                            confirmButtonColor: '#3475db'
+                        });
+                    }
+                });
+            }
 
             // Load booking details
             function loadBookingDetails(bookingId) {

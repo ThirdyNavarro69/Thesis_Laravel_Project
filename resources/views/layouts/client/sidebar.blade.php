@@ -66,6 +66,18 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Booking Payment --}}
+            @php
+                $bookingPaymentRoutes = Route::is('client.booking-payment.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $bookingPaymentRoutes ? 'active' : '' }}">
+                <a href="{{ route('client.booking-payment.index') }}" class="side-nav-link {{ $bookingPaymentRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="credit-card"></i></span>
+                    <span class="menu-text" data-lang="booking-payment">Booking Payment</span>
+                </a>
+            </li>
         </ul>
     </div>
 </div>

@@ -577,7 +577,9 @@ class BookingController extends Controller
         ]);
 
         $booking = BookingModel::with('client')->findOrFail($request->booking_id);
-        $payment = $booking->payments()->where('status', 'pending')->first();
+        
+        // Get the pending payment (either for initial or balance payment)
+        $payment = $booking->payments()->where('status', 'pending')->latest()->first();
 
         if (!$payment) {
             return response()->json([
@@ -587,24 +589,32 @@ class BookingController extends Controller
         }
 
         try {
+            // Determine payment description
+            $totalPaid = $booking->payments()->where('status', 'succeeded')->sum('amount');
+            $isBalancePayment = $totalPaid > 0;
+            
+            $description = $isBalancePayment 
+                ? 'Balance Payment - ' . $booking->booking_reference 
+                : 'Booking ' . ($booking->payment_type === 'downpayment' ? 'Deposit' : 'Payment') . ' - ' . $booking->booking_reference;
+
             // Create Stripe checkout session
             $checkoutSession = $this->stripeService->createCheckoutSession(
                 $payment->amount,
                 $booking->booking_reference,
                 'PHP',
-                'Booking ' . ($booking->payment_type === 'downpayment' ? 'Deposit' : 'Payment') . ' - ' . $booking->booking_reference
+                $description
             );
 
             if ($checkoutSession) {
                 // Prepare payment details array
-                $paymentDetails = [
-                    'checkout_session_created' => true,
-                    'checkout_url' => $checkoutSession['url'],
-                    'session_id' => $checkoutSession['id'],
-                    'amount' => $payment->amount,
-                    'created_at' => now()->toDateTimeString(),
-                    'mode' => config('services.stripe.mode', 'test'),
-                ];
+                $paymentDetails = $payment->payment_details ?? [];
+                $paymentDetails['checkout_session_created'] = true;
+                $paymentDetails['checkout_url'] = $checkoutSession['url'];
+                $paymentDetails['session_id'] = $checkoutSession['id'];
+                $paymentDetails['amount'] = $payment->amount;
+                $paymentDetails['created_at'] = now()->toDateTimeString();
+                $paymentDetails['mode'] = config('services.stripe.mode', 'test');
+                $paymentDetails['is_balance_payment'] = $isBalancePayment;
                 
                 // Update payment with checkout session ID
                 $payment->update([
@@ -617,6 +627,7 @@ class BookingController extends Controller
                     'booking_id' => $booking->id,
                     'session_id' => $checkoutSession['id'],
                     'checkout_url' => $checkoutSession['url'],
+                    'is_balance_payment' => $isBalancePayment,
                 ]);
 
                 return response()->json([
@@ -626,7 +637,10 @@ class BookingController extends Controller
                     'session_id' => $checkoutSession['id'],
                     'booking_reference' => $booking->booking_reference,
                     'mode' => config('services.stripe.mode', 'test'),
-                    'note' => 'You will be redirected to Stripe for payment.',
+                    'is_balance_payment' => $isBalancePayment,
+                    'note' => $isBalancePayment 
+                        ? 'You are paying the remaining balance for your booking.' 
+                        : 'You will be redirected to Stripe for payment.',
                 ]);
             }
 
@@ -745,16 +759,45 @@ class BookingController extends Controller
                     'payment_details' => $paymentDetails,
                 ]);
 
-                // Update booking payment status based on payment type
-                if ($booking->payment_type === 'full_payment') {
+                // Check if this is a balance payment
+                $paymentDetails = $payment->payment_details ?? [];
+                $isBalancePayment = $paymentDetails['is_balance_payment'] ?? false;
+                
+                // Calculate total paid including this payment
+                $totalPaid = $booking->payments()
+                    ->where('status', 'succeeded')
+                    ->sum('amount') + $payment->amount;
+                
+                // Determine new payment status
+                if ($totalPaid >= $booking->total_amount) {
                     $paymentStatus = 'paid';
-                } else {
+                } elseif ($totalPaid > 0) {
                     $paymentStatus = 'partially_paid';
+                } else {
+                    $paymentStatus = 'pending';
                 }
                 
+                // Update booking payment status
                 $booking->update([
                     'payment_status' => $paymentStatus,
-                    'status' => 'confirmed',
+                    'remaining_balance' => max(0, $booking->total_amount - $totalPaid),
+                ]);
+                
+                // Only update booking status to confirmed if it's the first payment
+                if (!$isBalancePayment && $booking->status === 'pending') {
+                    $booking->update([
+                        'status' => 'confirmed',
+                    ]);
+                }
+                
+                // Log payment info
+                Log::info('Stripe payment verified successfully', [
+                    'payment_id' => $payment->id,
+                    'booking_id' => $booking->id,
+                    'amount' => $payment->amount,
+                    'total_paid' => $totalPaid,
+                    'payment_status' => $paymentStatus,
+                    'is_balance_payment' => $isBalancePayment,
                 ]);
 
                 // ADD THIS NEW CODE FOR REVENUE SPLIT
