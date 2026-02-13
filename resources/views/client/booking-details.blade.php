@@ -107,7 +107,7 @@
                                                 <div class="form-group mb-3">
                                                     <label class="form-label">Select Service Package</label>
                                                     <select class="form-select" id="packageCategory" aria-label="Select service category">
-                                                        <option value="">Select Service Category</option>
+                                                        <option value="">All Categories</option>
                                                         @foreach($categories as $category)
                                                         <option value="{{ $category->id }}">{{ $category->category_name }}</option>
                                                         @endforeach
@@ -122,38 +122,88 @@
                                             @endphp
                                             
                                             @foreach($packagesData as $categoryId => $packages)
-                                            <div class="package-category" data-category="{{ $categoryId }}">
-                                                @foreach($packages as $package)
-                                                <div class="row mb-3">
-                                                    <div class="col-md-12">
-                                                        <div class="card border h-100 rounded-0">
-                                                            <div class="card-body pb-0">
-                                                                <div class="mb-3">
-                                                                    <h6 class="card-title fw-bold">{{ $package->package_name }}</h6>
-                                                                    <span class="text-success fw-semibold mb-0">PHP {{ number_format($package->package_price, 2) }}</span>
-                                                                    <p class="text-muted small mt-1">{{ $package->package_description }}</p>
+                                            <div class="package-category mb-4" data-category="{{ $categoryId }}">
+                                                <h4 class="mb-2 text-primary">{{ $packages->first()->category->category_name ?? 'Packages' }}</h4>
+                                                <div class="row g-3">
+                                                    @foreach($packages as $package)
+                                                    <div class="col-md-6 col-xl-4">
+                                                        <div class="card border h-100 package-card">
+                                                            <div class="card-body">
+                                                                <!-- Package Name & Price -->
+                                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                                    <h6 class="card-title fw-bold mb-0">{{ $package->package_name }}</h6>
+                                                                    <span class="text-success fw-bold">₱{{ number_format($package->package_price, 2) }}</span>
                                                                 </div>
-                                                                <div class="list-group">
-                                                                    @if($package->package_inclusions && is_array($package->package_inclusions))
-                                                                        @foreach($package->package_inclusions as $inclusion)
-                                                                        <div class="mb-1">{{ $inclusion }}</div>
-                                                                        @endforeach
-                                                                    @endif
-                                                                    @if($package->duration)
-                                                                        <div class="mb-1">{{ $package->duration }} hours photography coverage</div>
-                                                                    @endif
-                                                                    @if($package->maximum_edited_photos)
-                                                                        <div class="mb-1">{{ $package->maximum_edited_photos }} edited photos</div>
-                                                                    @endif
-                                                                    @if($package->coverage_scope)
-                                                                        <div class="mb-1">Coverage: {{ $package->coverage_scope }}</div>
-                                                                    @endif
+                                                                
+                                                                <!-- Package Description -->
+                                                                <p class="text-muted small mb-3">{{ $package->package_description ?: 'No description available.' }}</p>
+                                                                
+                                                                @if($type === 'studio')
+                                                                    <div class="d-flex align-items-center mb-2">
+                                                                        @if($package->online_gallery)
+                                                                            <span class="p-1 badge badge-soft-success">
+                                                                                <i class="ti ti-photo me-1"></i> Online Gallery: Included
+                                                                            </span>
+                                                                        @else
+                                                                            <span class="p-1 badge badge-soft-warning">
+                                                                                <i class="ti ti-photo-off me-1"></i> Online Gallery: Not Included
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                @endif
+                                                                
+                                                                @if($type === 'studio')
+                                                                    <div class="d-flex align-items-center mb-3">
+                                                                        <span class="p-1 badge badge-soft-primary">
+                                                                            <i class="ti ti-users me-1"></i> 
+                                                                            Photographers: {{ $package->photographer_count ?? 1 }} 
+                                                                            @if(($package->photographer_count ?? 1) > 1) photographers @else photographer @endif
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                                
+                                                                <!-- Package Features -->
+                                                                <div class="col">
+                                                                    <small class="text-muted d-block mb-2"><i class="ti ti-checklist me-1"></i> Package Includes:</small>
+                                                                    <ul class="list-unstyled small mb-0">
+                                                                        @if($package->duration)
+                                                                            <li class="mb-1">
+                                                                                <i class="ti ti-clock text-primary me-2"></i> 
+                                                                                {{ $package->duration }} {{ $package->duration > 1 ? 'hours' : 'hour' }} coverage
+                                                                            </li>
+                                                                        @endif
+                                                                        @if($package->maximum_edited_photos)
+                                                                            <li class="mb-1">
+                                                                                <i class="ti ti-camera text-primary me-2"></i> 
+                                                                                {{ $package->maximum_edited_photos }} edited photos
+                                                                            </li>
+                                                                        @endif
+                                                                        @if($package->package_inclusions && is_array($package->package_inclusions))
+                                                                            @foreach(array_slice($package->package_inclusions, 0, 3) as $inclusion)
+                                                                                <li class="mb-1">
+                                                                                    <i class="ti ti-check text-success me-2"></i> 
+                                                                                    {{ $inclusion }}
+                                                                                </li>
+                                                                            @endforeach
+                                                                            @if(count($package->package_inclusions) > 3)
+                                                                                <li class="text-muted">
+                                                                                    <small>+{{ count($package->package_inclusions) - 3 }} more items</small>
+                                                                                </li>
+                                                                            @endif
+                                                                        @endif
+                                                                        @if($package->coverage_scope)
+                                                                            <li class="mb-1">
+                                                                                <i class="ti ti-map-pin text-primary me-2"></i> 
+                                                                                Coverage: {{ $package->coverage_scope }}
+                                                                            </li>
+                                                                        @endif
+                                                                    </ul>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    @endforeach
                                                 </div>
-                                                @endforeach
                                             </div>
                                             @endforeach
                                         </div>

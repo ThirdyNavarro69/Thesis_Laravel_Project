@@ -521,10 +521,10 @@
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
-                        console.log('Packages response:', response); // Debug log
+                        console.log('Packages response:', response);
                         
                         if (response.success && response.packages && response.packages.length > 0) {
-                            let packagesHtml = '<div class="btn-group w-100" role="group" aria-label="Package selection">';
+                            let packagesHtml = '<div class="row g-3">';
                             
                             response.packages.forEach(function(package, index) {
                                 // Format duration hours
@@ -543,31 +543,103 @@
                                     inclusions = package.package_inclusions;
                                 }
                                 
-                                const firstInclusion = inclusions.length > 0 ? inclusions[0] : 'No inclusions specified';
+                                // Check if this is a studio package (has online_gallery and photographer_count)
+                                const isStudio = $('#bookingType').val() === 'studio';
                                 
+                                // ========== START: REDESIGNED PACKAGE CARD - MATCHES BOOKING DETAILS ==========
                                 packagesHtml += `
-                                    <input type="radio" class="btn-check package-radio" 
-                                        name="package" value="${package.id}" 
-                                        id="package${package.id}" data-package='${JSON.stringify(package)}'>
-                                    <label class="btn btn-outline-primary d-flex flex-column justify-content-center text-start px-3 py-3" for="package${package.id}" style="flex: 1;">
-                                        <strong class="mb-2">${package.package_name}</strong>
-                                        <div class="mb-1">
-                                            <i class="ti ti-clock text-muted me-1"></i>
-                                            <small class="text-muted">${durationText}</small>
-                                        </div>
-                                        <div class="mb-2">
-                                            <i class="ti ti-photo text-muted me-1"></i>
-                                            <small class="text-muted">${package.maximum_edited_photos} Photos</small>
-                                        </div>
-                                        <div class="mb-1">
-                                            <i class="ti ti-list text-muted me-1"></i>
-                                            <small class="text-muted">${firstInclusion.substring(0, 30)}${firstInclusion.length > 30 ? '...' : ''}</small>
-                                        </div>
-                                        <div class="mt-2">
-                                            <h4 class="text-success fw-bold mb-0">${priceText}</h4>
-                                        </div>
-                                    </label>
+                                    <div class="col-md-6 col-xl-4">
+                                        <input type="radio" class="btn-check package-radio" 
+                                            name="package" value="${package.id}" 
+                                            id="package${package.id}" 
+                                            data-package='${JSON.stringify(package)}' 
+                                            style="display: none;">
+                                        
+                                        <label class="card border h-100 package-card" for="package${package.id}" style="cursor: pointer;">
+                                            <div class="card-body">
+                                                <!-- Package Name & Price -->
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title fw-bold mb-0">${package.package_name}</h6>
+                                                    <span class="text-success fw-bold">${priceText}</span>
+                                                </div>
+                                                
+                                                <!-- Package Description -->
+                                                <p class="text-muted small mb-3">${package.package_description ? package.package_description.substring(0, 80) + (package.package_description.length > 80 ? '...' : '') : 'No description available.'}</p>
+                                                
+                                                <!-- ========== ONLINE GALLERY BADGE (STUDIO ONLY) ========== -->
+                                                ${isStudio ? `
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        ${package.online_gallery ? 
+                                                            `<span class="p-1 badge badge-soft-success">
+                                                                <i class="ti ti-photo me-1"></i> Online Gallery: Included
+                                                            </span>` : 
+                                                            `<span class="p-1 badge badge-soft-secondary">
+                                                                <i class="ti ti-photo-off me-1"></i> Online Gallery: Not Included
+                                                            </span>`
+                                                        }
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                <!-- ========== PHOTOGRAPHER COUNT BADGE (STUDIO ONLY) ========== -->
+                                                ${isStudio ? `
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <span class="p-1 badge badge-soft-primary">
+                                                            <i class="ti ti-users me-1"></i> 
+                                                            Photographers: ${package.photographer_count || 1} 
+                                                            ${(package.photographer_count || 1) > 1 ? 'photographers' : 'photographer'}
+                                                        </span>
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                <!-- Package Features -->
+                                                <div class="col">
+                                                    <small class="text-muted d-block mb-2"><i class="ti ti-checklist me-1"></i> Package Includes:</small>
+                                                    <ul class="list-unstyled small mb-0">
+                                                        <!-- Duration -->
+                                                        ${package.duration ? `
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-clock text-primary me-2"></i> 
+                                                                ${package.duration} ${package.duration > 1 ? 'hours' : 'hour'} coverage
+                                                            </li>
+                                                        ` : ''}
+                                                        
+                                                        <!-- Maximum Edited Photos -->
+                                                        ${package.maximum_edited_photos ? `
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-camera text-primary me-2"></i> 
+                                                                ${package.maximum_edited_photos} edited photos
+                                                            </li>
+                                                        ` : ''}
+                                                        
+                                                        <!-- Package Inclusions (first 3 items) -->
+                                                        ${inclusions.slice(0, 3).map(inclusion => `
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-check text-success me-2"></i> 
+                                                                ${inclusion}
+                                                            </li>
+                                                        `).join('')}
+                                                        
+                                                        <!-- Show count of additional inclusions -->
+                                                        ${inclusions.length > 3 ? `
+                                                            <li class="text-muted">
+                                                                <small>+${inclusions.length - 3} more items</small>
+                                                            </li>
+                                                        ` : ''}
+                                                        
+                                                        <!-- Coverage Scope -->
+                                                        ${package.coverage_scope ? `
+                                                            <li class="mb-1">
+                                                                <i class="ti ti-map-pin text-primary me-2"></i> 
+                                                                Coverage: ${package.coverage_scope}
+                                                            </li>
+                                                        ` : ''}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 `;
+                                // ========== END: REDESIGNED PACKAGE CARD ==========
                             });
                             
                             packagesHtml += '</div>';
@@ -575,6 +647,16 @@
                             
                             // Clear any previous package selection
                             selectedPackageId = null;
+                            
+                            // ========== ADDED: Style for selected package card ==========
+                            $('<style>')
+                                .prop('type', 'text/css')
+                                .html(`
+                                    .btn-check:checked + .package-card {
+                                        border-color: #3475db !important;
+                                    }
+                                `)
+                                .appendTo('head');
                             
                         } else {
                             // Show alert message when no packages found
@@ -588,16 +670,6 @@
                                     <i class="ti ti-package-off me-2"></i> ${message}
                                 </div>
                             `);
-                            
-                            // Show SweetAlert notification only if it's not a simple "no packages" case
-                            if (response.success === false && response.message && !response.message.includes('No packages')) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error Loading Packages',
-                                    text: response.message,
-                                    confirmButtonColor: '#3475db'
-                                });
-                            }
                         }
                     },
                     error: function(xhr) {
@@ -874,6 +946,15 @@
                             // Store summary data
                             window.bookingSummary = response.summary;
                             
+                            // ========== ADDED: Log package details for debugging ==========
+                            const isStudio = $('#bookingType').val() === 'studio';
+                            if (isStudio) {
+                                console.log('Studio Package Details:', {
+                                    online_gallery: response.summary.online_gallery,
+                                    photographer_count: response.summary.photographer_count
+                                });
+                            }
+                            
                             // Update price display if summary modal is open
                             if ($('#bookingSummaryModal').hasClass('show')) {
                                 updateSummaryPriceDisplay(response.summary);
@@ -994,7 +1075,7 @@
                 $('#summaryEmailAddress').text(bookingData.email);
                 
                 // Get package name from selected radio button
-                const packageName = $(`.package-radio[value="${selectedPackageId}"]`).siblings('label').find('strong').text();
+                const packageName = $(`.package-radio[value="${selectedPackageId}"]`).data('package').package_name;
                 $('#summaryPackage').text(packageName);
                 
                 // Format date and time
@@ -1050,11 +1131,41 @@
                     $('#remainingBalance').text('₱' + window.bookingSummary.remaining_balance);
                     $('#totalAmount').text('₱' + window.bookingSummary.total_amount);
                     
+                    // ========== ADDED: Display Online Gallery and Photographer Count in Summary ==========
+                    const isStudio = $('#bookingType').val() === 'studio';
+                    
+                    if (isStudio && window.bookingSummary.online_gallery !== undefined) {
+                        // Add Online Gallery info
+                        const galleryHtml = `
+                            <p class="text-muted small mb-1 mt-2">Online Gallery:</p>
+                            <p class="fw-medium mb-2">
+                                <span class="badge badge-soft-${window.bookingSummary.online_gallery ? 'success' : 'warning'}">
+                                    <i class="${window.bookingSummary.online_gallery ? 'ti ti-photo' : 'ti ti-photo-off'} me-1"></i>
+                                    ${window.bookingSummary.gallery_status || (window.bookingSummary.online_gallery ? 'Included' : 'Not Included')}
+                                </span>
+                            </p>
+                        `;
+                        
+                        // Add Photographer Count info
+                        const photographerHtml = `
+                            <p class="text-muted small mb-1">Assigned Photographers:</p>
+                            <p class="fw-medium mb-2">
+                                <span class="badge badge-soft-primary">
+                                    <i class="ti ti-users me-1"></i>
+                                    ${window.bookingSummary.photographer_text || (window.bookingSummary.photographer_count + ' photographer' + (window.bookingSummary.photographer_count > 1 ? 's' : ''))}
+                                </span>
+                            </p>
+                        `;
+                        
+                        // Insert after package name or before price breakdown
+                        $('#summaryPackage').after(galleryHtml + photographerHtml);
+                    }
+                    
                     // Inclusions
                     let inclusionsHtml = '';
                     if (window.bookingSummary.inclusions && Array.isArray(window.bookingSummary.inclusions)) {
                         window.bookingSummary.inclusions.forEach(function(inclusion) {
-                            inclusionsHtml += `<li>${inclusion}</li>`;
+                            inclusionsHtml += `<li><i class="ti ti-check text-success me-2"></i>${inclusion}</li>`;
                         });
                     }
                     $('#summaryInclusions').html(inclusionsHtml);

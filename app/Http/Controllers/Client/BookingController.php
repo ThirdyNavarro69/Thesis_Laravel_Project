@@ -103,10 +103,28 @@ class BookingController extends Controller
                 $packages = StudioPackagesModel::where('studio_id', $request->provider_id)
                     ->where('category_id', $request->category_id)
                     ->where('status', 'active')
-                    ->get();
+                    ->get()
+                    ->map(function($package) {
+                        // Add formatted display values
+                        return [
+                            'id' => $package->id,
+                            'package_name' => $package->package_name,
+                            'package_description' => $package->package_description,
+                            'package_price' => $package->package_price,
+                            'duration' => $package->duration,
+                            'maximum_edited_photos' => $package->maximum_edited_photos,
+                            'package_inclusions' => $package->package_inclusions,
+                            'coverage_scope' => $package->coverage_scope,
+                            'online_gallery' => $package->online_gallery,                 // ADDED
+                            'photographer_count' => $package->photographer_count ?? 1,    // ADDED
+                            'gallery_badge' => $package->online_gallery ? 'Yes' : 'No',  // ADDED
+                            'gallery_icon' => $package->online_gallery ? 'ti ti-photo' : 'ti ti-photo-off', // ADDED
+                            'gallery_class' => $package->online_gallery ? 'success' : 'secondary', // ADDED
+                            'photographer_text' => $package->photographer_count . ' photographer' . ($package->photographer_count > 1 ? 's' : ''), // ADDED
+                        ];
+                    });
             } else {
                 // For freelancer, provider_id is user_id
-                // First, verify the freelancer profile exists
                 $profile = ProfileModel::where('user_id', $request->provider_id)->first();
                 
                 if (!$profile) {
@@ -1155,19 +1173,28 @@ class BookingController extends Controller
             $remainingBalance = 0;
         }
 
+        $packageData = [
+            'package_name' => $package->package_name,
+            'package_price' => number_format($package->package_price, 2),
+            'total_amount' => number_format($totalAmount, 2),
+            'down_payment' => number_format($downPayment, 2),
+            'remaining_balance' => number_format($remainingBalance, 2),
+            'inclusions' => $package->package_inclusions,
+            'duration' => $package->duration,
+            'maximum_edited_photos' => $package->maximum_edited_photos,
+            'payment_type' => $request->payment_type,
+        ];
+        
+        if ($request->type === 'studio') {
+            $packageData['online_gallery'] = $package->online_gallery ?? false;
+            $packageData['photographer_count'] = $package->photographer_count ?? 1;
+            $packageData['gallery_status'] = $package->online_gallery ? 'Included' : 'Not Included';
+            $packageData['photographer_text'] = $package->photographer_count . ' photographer' . ($package->photographer_count > 1 ? 's' : '');
+        }
+
         return response()->json([
             'success' => true,
-            'summary' => [
-                'package_name' => $package->package_name,
-                'package_price' => number_format($package->package_price, 2),
-                'total_amount' => number_format($totalAmount, 2),
-                'down_payment' => number_format($downPayment, 2),
-                'remaining_balance' => number_format($remainingBalance, 2),
-                'inclusions' => $package->package_inclusions,
-                'duration' => $package->duration,
-                'maximum_edited_photos' => $package->maximum_edited_photos,
-                'payment_type' => $request->payment_type,
-            ],
+            'summary' => $packageData,
         ]);
     }
 
