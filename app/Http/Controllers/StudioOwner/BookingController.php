@@ -15,22 +15,19 @@ use App\Http\Requests\StudioOwner\UpdateBookingStatusRequest;
 
 class BookingController extends Controller
 {
-    /**
-     * Display bookings for the studio owner
-     */
     public function index()
     {
         $userId = Auth::id();
         
-        // Get the studio owned by this user
-        $studio = StudiosModel::where('user_id', $userId)->first();
+        // Get ALL studios owned by this user
+        $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
         
-        if (!$studio) {
-            return view('studio-owner.bookings.index')->with('bookings', collect([]));
+        if (empty($studioIds)) {
+            return view('owner.view-bookings')->with('bookings', collect([]));
         }
         
-        // Get bookings for this studio
-        $bookings = BookingModel::where('provider_id', $studio->id)
+        // Get bookings for ALL studios owned by this user
+        $bookings = BookingModel::whereIn('provider_id', $studioIds)
             ->where('booking_type', 'studio')
             ->with([
                 'client:id,first_name,last_name,email,mobile_number',
@@ -53,15 +50,15 @@ class BookingController extends Controller
     {
         $userId = Auth::id();
         
-        // Get the studio owned by this user
-        $studio = StudiosModel::where('user_id', $userId)->first();
+        // Get ALL studios owned by this user
+        $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
         
-        if (!$studio) {
-            return view('studio-owner.bookings.history')->with('bookings', collect([]));
+        if (empty($studioIds)) {
+            return view('owner.booking-history')->with('bookings', collect([]));
         }
         
-        // Get completed/cancelled bookings for history
-        $bookings = BookingModel::where('provider_id', $studio->id)
+        // Get completed/cancelled bookings for ALL studios
+        $bookings = BookingModel::whereIn('provider_id', $studioIds)
             ->where('booking_type', 'studio')
             ->whereIn('status', ['completed', 'cancelled'])
             ->with([
@@ -83,19 +80,19 @@ class BookingController extends Controller
         try {
             $userId = Auth::id();
             
-            // Get the studio owned by this user
-            $studio = StudiosModel::where('user_id', $userId)->first();
+            // Get ALL studios owned by this user
+            $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
             
-            if (!$studio) {
+            if (empty($studioIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Studio not found'
+                    'message' => 'No studios found for this owner'
                 ], 404);
             }
             
-            // Get the booking
+            // Get the booking - check if it belongs to ANY of the owner's studios
             $booking = BookingModel::where('id', $id)
-                ->where('provider_id', $studio->id)
+                ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
                 ->with([
                     'client:id,first_name,last_name,email,mobile_number',
@@ -169,21 +166,24 @@ class BookingController extends Controller
         try {
             $userId = Auth::id();
             
-            // Get the studio owned by this user
-            $studio = StudiosModel::where('user_id', $userId)->first();
+            // Get ALL studios owned by this user
+            $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
             
-            if (!$studio) {
+            if (empty($studioIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Studio not found'
+                    'message' => 'No studios found for this owner'
                 ], 404);
             }
             
-            // Get the booking
+            // Get the booking - check if it belongs to ANY of the owner's studios
             $booking = BookingModel::where('id', $bookingId)
-                ->where('provider_id', $studio->id)
+                ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
                 ->firstOrFail();
+            
+            // Get the specific studio for this booking (for photographers)
+            $studio = StudiosModel::find($booking->provider_id);
             
             // Don't allow assignment if booking is in progress or completed
             if (in_array($booking->status, ['in_progress', 'completed'])) {
@@ -252,21 +252,24 @@ class BookingController extends Controller
             
             $userId = Auth::id();
             
-            // Get the studio owned by this user
-            $studio = StudiosModel::where('user_id', $userId)->first();
+            // Get ALL studios owned by this user
+            $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
             
-            if (!$studio) {
+            if (empty($studioIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Studio not found'
+                    'message' => 'No studios found for this owner'
                 ], 404);
             }
             
-            // Get the booking
+            // Get the booking - check if it belongs to ANY of the owner's studios
             $booking = BookingModel::where('id', $bookingId)
-                ->where('provider_id', $studio->id)
+                ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
                 ->firstOrFail();
+            
+            // Get the specific studio for this booking
+            $studio = StudiosModel::find($booking->provider_id);
             
             // Don't allow assignment if booking is in progress or completed
             if (in_array($booking->status, ['in_progress', 'completed'])) {
@@ -323,18 +326,18 @@ class BookingController extends Controller
         try {
             $userId = Auth::id();
             
-            // Get the studio owned by this user
-            $studio = StudiosModel::where('user_id', $userId)->first();
+            // Get ALL studios owned by this user
+            $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
             
-            if (!$studio) {
+            if (empty($studioIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Studio not found'
+                    'message' => 'No studios found for this owner'
                 ], 404);
             }
             
             $assignment = BookingAssignedPhotographerModel::where('id', $assignmentId)
-                ->where('studio_id', $studio->id)
+                ->whereIn('studio_id', $studioIds)
                 ->firstOrFail();
             
             // Don't allow removal if booking is in progress or completed
@@ -369,19 +372,19 @@ class BookingController extends Controller
         try {
             $userId = Auth::id();
             
-            // Get the studio owned by this user
-            $studio = StudiosModel::where('user_id', $userId)->first();
+            // Get ALL studios owned by this user
+            $studioIds = StudiosModel::where('user_id', $userId)->pluck('id')->toArray();
             
-            if (!$studio) {
+            if (empty($studioIds)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Studio not found'
+                    'message' => 'No studios found for this owner'
                 ], 404);
             }
             
-            // Get the booking
+            // Get the booking - check if it belongs to ANY of the owner's studios
             $booking = BookingModel::where('id', $id)
-                ->where('provider_id', $studio->id)
+                ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
                 ->firstOrFail();
             

@@ -69,7 +69,7 @@
             <li class="side-nav-item {{ $assignedBookingRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageAssignedBooking" aria-expanded="{{ $assignedBookingRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageAssignedBooking" class="side-nav-link {{ $assignedBookingRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="calendar-check"></i></span>
-                    <span class="menu-text" data-lang="assigned-booking">Assigned Booking</span>
+                    <span class="menu-text" data-lang="assigned-booking">Booking</span>
                     <span class="menu-arrow"></span>
                 </a>
                 <div class="collapse {{ $assignedBookingRoutes ? 'show' : '' }}" id="sidebarManageAssignedBooking">

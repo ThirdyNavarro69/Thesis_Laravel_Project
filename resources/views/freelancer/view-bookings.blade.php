@@ -572,7 +572,7 @@
                                                     <label class="text-muted small mb-1">Down Payment</label>
                                                     <div class="d-flex align-items-center gap-2">
                                                         <span class="fw-medium">PHP ${parseFloat(booking.down_payment).toFixed(2)}</span>
-                                                        <span class="badge ${booking.deposit_policy ? 'badge-soft-success' : 'badge-soft-secondary'} px-2 fw-medium">${booking.deposit_policy ? 'Yes' : 'No'}</span>
+                                                        <span class="badge ${booking.deposit_policy ? 'badge-soft-success' : 'badge-soft-primary'} px-2 fw-medium">${booking.deposit_policy ? 'Yes' : 'No'}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1012,10 +1012,10 @@
                     'pending': 'badge-soft-warning',
                     'confirmed': 'badge-soft-success',
                     'in_progress': 'badge-soft-info',
-                    'completed': 'badge-soft-secondary',
+                    'completed': 'badge-soft-primary',
                     'cancelled': 'badge-soft-danger',
                     'rejected': 'badge-soft-danger'
-                }[booking.status] || 'badge-soft-secondary';
+                }[booking.status] || 'badge-soft-primary';
                 
                 row.find('td:nth-child(5)').html(`
                     <span class="badge ${statusBadge} fs-8 px-1 w-100 text-uppercase">
@@ -1026,11 +1026,11 @@
                 // Update payment status badge
                 const paymentBadge = {
                     'pending': 'badge-soft-warning',
-                    'partially_paid': 'badge-soft-info',
+                    'partially_paid': 'badge-soft-primary',
                     'paid': 'badge-soft-success',
                     'failed': 'badge-soft-danger',
-                    'refunded': 'badge-soft-secondary'
-                }[booking.payment_status] || 'badge-soft-secondary';
+                    'refunded': 'badge-soft-danger'
+                }[booking.payment_status] || 'badge-soft-primary';
                 
                 row.find('td:nth-child(6)').html(`
                     <span class="badge ${paymentBadge} fs-8 px-1 w-100 text-uppercase">
@@ -1047,13 +1047,13 @@
             function getStatusTextClass(status) {
                 const textClasses = {
                     'pending': 'text-warning',
-                    'confirmed': 'text-success',
+                    'confirmed': 'text-primary',
                     'in_progress': 'text-info',
-                    'completed': 'text-secondary',
+                    'completed': 'text-success',
                     'cancelled': 'text-danger',
                     'rejected': 'text-danger'
                 };
-                return textClasses[status] || 'text-secondary';
+                return textClasses[status] || 'text-primary';
             }
 
             function showError(message) {

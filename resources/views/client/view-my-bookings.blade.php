@@ -134,7 +134,7 @@
                                                             $hasRemaining = ($booking->total_amount - $totalPaid) > 0;
                                                         @endphp
                                                         @if($hasRemaining)
-                                                        <button class="btn btn-sm btn-success pay-balance-btn" 
+                                                        <button class="btn btn-sm pay-balance-btn" 
                                                                 data-booking-id="{{ $booking->id }}"
                                                                 data-booking-reference="{{ $booking->booking_reference }}"
                                                                 title="Pay Remaining Balance">
@@ -210,6 +210,34 @@
             </div>
         </div>
     </div>
+
+    {{-- BALANCE PAYMENT MODAL --}}
+    <div class="modal fade" id="balancePaymentModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="ti ti-credit-card me-2"></i>Pay Remaining Balance
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="balancePaymentModalBody">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner" style="width: 2.5rem; height: 2.5rem; margin: 0 auto;"></div>
+                            <p class="mt-3 text-muted">Loading payment details...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="proceedBalancePayment" style="background-color: #3475db; border-color: #3475db;">
+                        <i class="ti ti-credit-card me-1"></i> Proceed to Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 {{-- SCRIPTS --}}
@@ -251,8 +279,158 @@
                 const bookingId = $(this).data('booking-id');
                 const bookingRef = $(this).data('booking-reference');
                 
-                // Load payment details
-                loadPaymentDetails(bookingId, bookingRef);
+                // Load payment details and show modal
+                loadPaymentDetailsForModal(bookingId, bookingRef);
+            });
+
+            // Load payment details for modal
+            function loadPaymentDetailsForModal(bookingId, bookingRef) {
+                $.ajax({
+                    url: '{{ route("client.booking.payment.details", ":id") }}'.replace(':id', bookingId),
+                    type: 'GET',
+                    beforeSend: function() {
+                        // Show loading state in modal
+                        $('#balancePaymentModalBody').html(`
+                            <div class="text-center py-4">
+                                <div class="loading-spinner" style="width: 2.5rem; height: 2.5rem; margin: 0 auto;"></div>
+                                <p class="mt-3 text-muted">Loading payment details...</p>
+                            </div>
+                        `);
+                        
+                        // Disable proceed button
+                        $('#proceedBalancePayment').prop('disabled', true);
+                        
+                        // Show modal with loading
+                        $('#balancePaymentModal').modal('show');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            renderBalancePaymentModal(response, bookingRef);
+                        } else {
+                            // Hide modal and show error
+                            $('#balancePaymentModal').modal('hide');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonColor: '#3475db'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#balancePaymentModal').modal('hide');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to load payment details. Please try again.',
+                            confirmButtonColor: '#3475db'
+                        });
+                    }
+                });
+            }
+
+            // Render balance payment modal content
+            function renderBalancePaymentModal(data, bookingRef) {
+                const booking = data.booking;
+                const remainingBalance = parseFloat(booking.remaining_balance).toFixed(2);
+                const bookingId = booking.id;
+                
+                let modalContent = `
+                    <div class="text-start">
+                        <div class="alert alert-info mb-3 d-flex align-items-center">
+                            <i class="ti ti-info-circle me-2 fs-16"></i>
+                            <div>
+                                <strong>Booking:</strong> ${bookingRef}<br>
+                                <strong>Status:</strong> <span class="badge bg-info-subtle text-info">${booking.booking_status.replace('_', ' ').toUpperCase()}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Total Amount:</span>
+                                <span class="fw-semibold">₱${parseFloat(booking.total_amount).toFixed(2)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Amount Paid:</span>
+                                <span class="fw-medium text-success">₱${parseFloat(booking.total_paid).toFixed(2)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2 border-top">
+                                <span class="fw-semibold">Remaining Balance:</span>
+                                <span class="fw-bold text-danger">₱${remainingBalance}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Payment Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">₱</span>
+                                <input type="number" class="form-control" id="modalBalanceAmount" 
+                                    value="${remainingBalance}" min="1" max="${remainingBalance}" step="0.01">
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="ti ti-info-circle me-1"></i>You can pay the full remaining balance or a partial amount.
+                            </small>
+                        </div>
+                `;
+                
+                if (data.has_pending_payment) {
+                    modalContent += `
+                        <div class="alert alert-warning mt-3">
+                            <i class="ti ti-clock me-2"></i>
+                            You have a pending payment for this booking. Please complete it or wait for it to expire.
+                        </div>
+                    `;
+                }
+                
+                modalContent += `</div>`;
+                
+                $('#balancePaymentModalBody').html(modalContent);
+                
+                // Store booking data for proceed button
+                $('#proceedBalancePayment').data('booking-id', bookingId);
+                $('#proceedBalancePayment').data('booking-ref', bookingRef);
+                $('#proceedBalancePayment').data('remaining-balance', remainingBalance);
+                
+                // Enable proceed button
+                $('#proceedBalancePayment').prop('disabled', data.has_pending_payment);
+                
+                // Reinitialize icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+
+            // Proceed button click handler
+            $('#proceedBalancePayment').on('click', function() {
+                const bookingId = $(this).data('booking-id');
+                const bookingRef = $(this).data('booking-ref');
+                const remainingBalance = $(this).data('remaining-balance');
+                const amount = $('#modalBalanceAmount').val();
+                
+                // Validate amount
+                if (!amount || amount <= 0) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: 'Please enter a valid amount',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                if (parseFloat(amount) > parseFloat(remainingBalance)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: 'Amount cannot exceed remaining balance',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+                
+                // Close modal and proceed with payment
+                $('#balancePaymentModal').modal('hide');
+                initializeBalancePayment(bookingId, amount);
             });
 
             // Load payment details for balance payment
@@ -396,11 +574,7 @@
                         });
                     },
                     success: function(response) {
-                        console.log('Balance payment response:', response);
-                        
                         if (response.success) {
-                            // Now initialize the actual payment with Stripe
-                            // Pass bookingId, payment.id, booking_reference, and amount
                             proceedWithBalancePayment(bookingId, response.payment.id, response.booking_reference, response.amount);
                         } else {
                             Swal.fire({
@@ -412,9 +586,7 @@
                         }
                     },
                     error: function(xhr) {
-                        console.error('Balance payment error:', xhr);
                         let message = 'Failed to initialize payment. Please try again.';
-                        
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             message = xhr.responseJSON.message;
                         }
@@ -431,8 +603,6 @@
 
             // Proceed with balance payment using existing payment method
             function proceedWithBalancePayment(bookingId, paymentId, bookingRef, amount) {
-                console.log('Proceeding with payment:', { bookingId, paymentId, bookingRef, amount });
-                
                 $.ajax({
                     url: '{{ route("client.payments.initialize") }}',
                     type: 'POST',
@@ -451,20 +621,9 @@
                         });
                     },
                     success: function(response) {
-                        console.log('Payment init response:', response);
-                        
-                        if (response.success) {
-                            if (response.redirect_url) {
-                                // Redirect to Stripe checkout
-                                window.location.href = response.redirect_url;
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: 'No redirect URL provided',
-                                    confirmButtonColor: '#3475db'
-                                });
-                            }
+                        if (response.success && response.redirect_url) {
+                            // Redirect to Stripe checkout
+                            window.location.href = response.redirect_url;
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -475,9 +634,7 @@
                         }
                     },
                     error: function(xhr) {
-                        console.error('Payment init error:', xhr);
                         let message = 'Failed to initialize payment. Please try again.';
-                        
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             message = xhr.responseJSON.message;
                         }
@@ -491,6 +648,20 @@
                     }
                 });
             }
+
+            // Reset modal when hidden
+            $('#balancePaymentModal').on('hidden.bs.modal', function () {
+                $('#balancePaymentModalBody').html(`
+                    <div class="text-center py-4">
+                        <div class="loading-spinner" style="width: 2.5rem; height: 2.5rem; margin: 0 auto;"></div>
+                        <p class="mt-3 text-muted">Loading payment details...</p>
+                    </div>
+                `);
+                $('#proceedBalancePayment').prop('disabled', true);
+                $('#proceedBalancePayment').removeData('booking-id');
+                $('#proceedBalancePayment').removeData('booking-ref');
+                $('#proceedBalancePayment').removeData('remaining-balance');
+            });
 
             // Load booking details
             function loadBookingDetails(bookingId) {

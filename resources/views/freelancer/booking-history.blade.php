@@ -64,9 +64,9 @@
                                             <td>
                                                 @php
                                                     $statusBadge = [
-                                                        'completed' => 'badge-soft-secondary',
+                                                        'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
-                                                    ][$booking->status] ?? 'badge-soft-secondary';
+                                                    ][$booking->status] ?? 'badge-soft-success';
                                                 @endphp
                                                 <span class="badge {{ $statusBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->status) }}</span>
                                             </td>
@@ -77,8 +77,8 @@
                                                         'partially_paid' => 'badge-soft-info',
                                                         'paid' => 'badge-soft-success',
                                                         'failed' => 'badge-soft-danger',
-                                                        'refunded' => 'badge-soft-secondary'
-                                                    ][$booking->payment_status] ?? 'badge-soft-secondary';
+                                                        'refunded' => 'badge-soft-dannger'
+                                                    ][$booking->payment_status] ?? 'badge-soft-primary';
                                                 @endphp
                                                 <span class="badge {{ $paymentBadge }} fs-8 px-1 w-100 text-uppercase">{{ str_replace('_', ' ', $booking->payment_status) }}</span>
                                             </td>
