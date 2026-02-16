@@ -543,10 +543,9 @@
                                     inclusions = package.package_inclusions;
                                 }
                                 
-                                // Check if this is a studio package (has online_gallery and photographer_count)
+                                // Check if this is a studio package
                                 const isStudio = $('#bookingType').val() === 'studio';
                                 
-                                // ========== START: REDESIGNED PACKAGE CARD - MATCHES BOOKING DETAILS ==========
                                 packagesHtml += `
                                     <div class="col-md-6 col-xl-4">
                                         <input type="radio" class="btn-check package-radio" 
@@ -566,26 +565,24 @@
                                                 <!-- Package Description -->
                                                 <p class="text-muted small mb-3">${package.package_description ? package.package_description.substring(0, 80) + (package.package_description.length > 80 ? '...' : '') : 'No description available.'}</p>
                                                 
-                                                <!-- ========== ONLINE GALLERY BADGE (STUDIO ONLY) ========== -->
-                                                ${isStudio ? `
-                                                    <div class="d-flex align-items-center mb-2">
-                                                        ${package.online_gallery ? 
-                                                            `<span class="p-1 badge badge-soft-success">
-                                                                <i class="ti ti-photo me-1"></i> Online Gallery: Included
-                                                            </span>` : 
-                                                            `<span class="p-1 badge badge-soft-secondary">
-                                                                <i class="ti ti-photo-off me-1"></i> Online Gallery: Not Included
-                                                            </span>`
-                                                        }
-                                                    </div>
-                                                ` : ''}
+                                                <!-- ========== Online Gallery badge for ALL package types ========== -->
+                                                <div class="d-flex align-items-center mb-2">
+                                                    ${package.online_gallery ? 
+                                                        `<span class="p-1 badge badge-soft-success">
+                                                            <i class="ti ti-photo me-1"></i> Online Gallery: Included
+                                                        </span>` : 
+                                                        `<span class="p-1 badge badge-soft-warning">
+                                                            <i class="ti ti-photo-off me-1"></i> Online Gallery: Not Included
+                                                        </span>`
+                                                    }
+                                                </div>
                                                 
-                                                <!-- ========== PHOTOGRAPHER COUNT BADGE (STUDIO ONLY) ========== -->
+                                                <!-- ========== Only show photographer count for studio packages ========== -->
                                                 ${isStudio ? `
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="p-1 badge badge-soft-primary">
-                                                            <i class="ti ti-users me-1"></i> 
-                                                            Photographers: ${package.photographer_count || 1} 
+                                                            <i class="ti ti-users me-1"></i>
+                                                            Photographers: ${package.photographer_count || 1}
                                                             ${(package.photographer_count || 1) > 1 ? 'photographers' : 'photographer'}
                                                         </span>
                                                     </div>
@@ -639,7 +636,6 @@
                                         </label>
                                     </div>
                                 `;
-                                // ========== END: REDESIGNED PACKAGE CARD ==========
                             });
                             
                             packagesHtml += '</div>';
@@ -1131,22 +1127,25 @@
                     $('#remainingBalance').text('₱' + window.bookingSummary.remaining_balance);
                     $('#totalAmount').text('₱' + window.bookingSummary.total_amount);
                     
-                    // ========== ADDED: Display Online Gallery and Photographer Count in Summary ==========
+                    // ========== MODIFIED: Display Online Gallery for ALL package types ==========
+                    // Always show online gallery badge (for both studio and freelancer)
+                    const galleryHtml = `
+                        <p class="text-muted small mb-1 mt-2">Online Gallery:</p>
+                        <p class="fw-medium mb-2">
+                            <span class="badge badge-soft-${window.bookingSummary.online_gallery ? 'success' : 'warning'}">
+                                <i class="${window.bookingSummary.online_gallery ? 'ti ti-photo' : 'ti ti-photo-off'} me-1"></i>
+                                ${window.bookingSummary.gallery_status || (window.bookingSummary.online_gallery ? 'Included' : 'Not Included')}
+                            </span>
+                        </p>
+                    `;
+                    
+                    // Only show photographer count for studio packages
                     const isStudio = $('#bookingType').val() === 'studio';
                     
-                    if (isStudio && window.bookingSummary.online_gallery !== undefined) {
-                        // Add Online Gallery info
-                        const galleryHtml = `
-                            <p class="text-muted small mb-1 mt-2">Online Gallery:</p>
-                            <p class="fw-medium mb-2">
-                                <span class="badge badge-soft-${window.bookingSummary.online_gallery ? 'success' : 'warning'}">
-                                    <i class="${window.bookingSummary.online_gallery ? 'ti ti-photo' : 'ti ti-photo-off'} me-1"></i>
-                                    ${window.bookingSummary.gallery_status || (window.bookingSummary.online_gallery ? 'Included' : 'Not Included')}
-                                </span>
-                            </p>
-                        `;
-                        
-                        // Add Photographer Count info
+                    // Insert after package name or before price breakdown
+                    $('#summaryPackage').after(galleryHtml);
+                    
+                    if (isStudio && window.bookingSummary.photographer_count !== undefined) {
                         const photographerHtml = `
                             <p class="text-muted small mb-1">Assigned Photographers:</p>
                             <p class="fw-medium mb-2">
@@ -1156,9 +1155,7 @@
                                 </span>
                             </p>
                         `;
-                        
-                        // Insert after package name or before price breakdown
-                        $('#summaryPackage').after(galleryHtml + photographerHtml);
+                        $('#summaryPackage').after(photographerHtml);
                     }
                     
                     // Inclusions

@@ -115,12 +115,12 @@ class BookingController extends Controller
                             'maximum_edited_photos' => $package->maximum_edited_photos,
                             'package_inclusions' => $package->package_inclusions,
                             'coverage_scope' => $package->coverage_scope,
-                            'online_gallery' => $package->online_gallery,                 // ADDED
-                            'photographer_count' => $package->photographer_count ?? 1,    // ADDED
-                            'gallery_badge' => $package->online_gallery ? 'Yes' : 'No',  // ADDED
-                            'gallery_icon' => $package->online_gallery ? 'ti ti-photo' : 'ti ti-photo-off', // ADDED
-                            'gallery_class' => $package->online_gallery ? 'success' : 'secondary', // ADDED
-                            'photographer_text' => $package->photographer_count . ' photographer' . ($package->photographer_count > 1 ? 's' : ''), // ADDED
+                            'online_gallery' => $package->online_gallery,
+                            'photographer_count' => $package->photographer_count ?? 1,
+                            'gallery_badge' => $package->online_gallery ? 'Yes' : 'No',
+                            'gallery_icon' => $package->online_gallery ? 'ti ti-photo' : 'ti ti-photo-off',
+                            'gallery_class' => $package->online_gallery ? 'success' : 'secondary',
+                            'photographer_text' => $package->photographer_count . ' photographer' . ($package->photographer_count > 1 ? 's' : ''),
                         ];
                     });
             } else {
@@ -135,10 +135,27 @@ class BookingController extends Controller
                     ]);
                 }
                 
+                // ========== MODIFIED: Added online_gallery mapping for freelancer packages ==========
                 $packages = FreelancerPackagesModel::where('user_id', $request->provider_id)
                     ->where('category_id', $request->category_id)
                     ->where('status', 'active')
-                    ->get();
+                    ->get()
+                    ->map(function($package) {
+                        return [
+                            'id' => $package->id,
+                            'package_name' => $package->package_name,
+                            'package_description' => $package->package_description,
+                            'package_price' => $package->package_price,
+                            'duration' => $package->duration,
+                            'maximum_edited_photos' => $package->maximum_edited_photos,
+                            'package_inclusions' => $package->package_inclusions,
+                            'coverage_scope' => $package->coverage_scope,
+                            'online_gallery' => $package->online_gallery ?? false, // ADDED
+                            'gallery_badge' => ($package->online_gallery ?? false) ? 'Yes' : 'No', // ADDED
+                            'gallery_icon' => ($package->online_gallery ?? false) ? 'ti ti-photo' : 'ti ti-photo-off', // ADDED
+                            'gallery_class' => ($package->online_gallery ?? false) ? 'success' : 'secondary', // ADDED
+                        ];
+                    });
             }
 
             return response()->json([
@@ -1203,6 +1220,7 @@ class BookingController extends Controller
         if ($request->type === 'studio') {
             $package = StudioPackagesModel::findOrFail($request->package_id);
         } else {
+            // ========== MODIFIED: Get freelancer package ==========
             $package = FreelancerPackagesModel::findOrFail($request->package_id);
         }
 
@@ -1228,10 +1246,12 @@ class BookingController extends Controller
             'payment_type' => $request->payment_type,
         ];
         
+        // ========== MODIFIED: Added online_gallery for both studio and freelancer ==========
+        $packageData['online_gallery'] = $package->online_gallery ?? false;
+        $packageData['gallery_status'] = ($package->online_gallery ?? false) ? 'Included' : 'Not Included';
+        
         if ($request->type === 'studio') {
-            $packageData['online_gallery'] = $package->online_gallery ?? false;
             $packageData['photographer_count'] = $package->photographer_count ?? 1;
-            $packageData['gallery_status'] = $package->online_gallery ? 'Included' : 'Not Included';
             $packageData['photographer_text'] = $package->photographer_count . ' photographer' . ($package->photographer_count > 1 ? 's' : '');
         }
 
