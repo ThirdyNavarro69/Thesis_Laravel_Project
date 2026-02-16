@@ -178,37 +178,51 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('client')->middleware([ClientMiddleware::class])->group(function () {
 
         // Dashboard
-        Route::get('/dashboard',                        [\App\Http\Controllers\Client\DashboardController::class, 'index'])->name('client.dashboard');
-        Route::post('/dashboard/filter',                [\App\Http\Controllers\Client\DashboardController::class, 'filter'])->name('client.dashboard.filter');
+        Route::get('/dashboard',                                [\App\Http\Controllers\Client\DashboardController::class, 'index'])->name('client.dashboard');
+        Route::post('/dashboard/filter',                        [\App\Http\Controllers\Client\DashboardController::class, 'filter'])->name('client.dashboard.filter');
 
         // Booking Details
-        Route::get('/booking-details/{type}/{id}',      [\App\Http\Controllers\Client\BookingDetailsController::class, 'index'])->name('client.booking-details');
+        Route::get('/booking-details/{type}/{id}',              [\App\Http\Controllers\Client\BookingDetailsController::class, 'index'])->name('client.booking-details');
 
         // Client Bookings
-        Route::get('/view/my-bookings',                 [\App\Http\Controllers\Client\MyBookingsController::class, 'index'])->name('client.my-bookings.index');
-        Route::get('/view/bookings-history',            [\App\Http\Controllers\Client\MyBookingsController::class, 'history'])->name('client.my-bookings.history');
-        Route::get('/bookings/{id}/details',            [\App\Http\Controllers\Client\MyBookingsController::class, 'getBookingDetails'])->name('client.booking.details');
-        Route::post('/bookings/{id}/cancel',            [\App\Http\Controllers\Client\MyBookingsController::class, 'cancelBooking'])->name('client.booking.cancel');
-        Route::get('/bookings/{id}/payment-details',    [\App\Http\Controllers\Client\MyBookingsController::class, 'getPaymentDetails'])->name('client.booking.payment.details');
-        Route::post('/bookings/{id}/balance-payment',   [\App\Http\Controllers\Client\MyBookingsController::class, 'initializeBalancePayment'])->name('client.booking.balance.payment');
+        Route::get('/view/my-bookings',                         [\App\Http\Controllers\Client\MyBookingsController::class, 'index'])->name('client.my-bookings.index');
+        Route::get('/view/bookings-history',                    [\App\Http\Controllers\Client\MyBookingsController::class, 'history'])->name('client.my-bookings.history');
+        Route::get('/bookings/{id}/details',                    [\App\Http\Controllers\Client\MyBookingsController::class, 'getBookingDetails'])->name('client.booking.details');
+        Route::post('/bookings/{id}/cancel',                    [\App\Http\Controllers\Client\MyBookingsController::class, 'cancelBooking'])->name('client.booking.cancel');
+        Route::get('/bookings/{id}/payment-details',            [\App\Http\Controllers\Client\MyBookingsController::class, 'getPaymentDetails'])->name('client.booking.payment.details');
+        Route::post('/bookings/{id}/balance-payment',           [\App\Http\Controllers\Client\MyBookingsController::class, 'initializeBalancePayment'])->name('client.booking.balance.payment');
 
-        // Booking Payment
-        Route::get('/view/booking-payment',             [\App\Http\Controllers\Client\BookingPaymentController::class, 'index'])->name('client.booking-payment.index');
+        // Studio Reviews
+        Route::get('/reviews/create/{bookingId}',               [\App\Http\Controllers\Client\StudioRatingController::class, 'create'])->name('client.reviews.create');
+        Route::post('/reviews/preset-reviews',                  [\App\Http\Controllers\Client\StudioRatingController::class, 'getPresetReviews'])->name('client.reviews.preset');
+        Route::post('/reviews',                                 [\App\Http\Controllers\Client\StudioRatingController::class, 'store'])->name('client.reviews.store');
+        Route::get('/reviews/check/{bookingId}',                [\App\Http\Controllers\Client\StudioRatingController::class, 'checkCanReview'])->name('client.reviews.check');
+        Route::get('/studio/{studioId}/reviews',                [\App\Http\Controllers\Client\StudioRatingController::class, 'getStudioReviews'])->name('client.studio.reviews');
+
+        // Freelancer Reviews
+        Route::get('/freelancer-reviews/create/{bookingId}',    [\App\Http\Controllers\Client\FreelancerRatingController::class, 'create'])->name('client.freelancer-reviews.create');
+        Route::post('/freelancer-reviews/preset-reviews',       [\App\Http\Controllers\Client\FreelancerRatingController::class, 'getPresetReviews'])->name('client.freelancer-reviews.preset');
+        Route::post('/freelancer-reviews',                      [\App\Http\Controllers\Client\FreelancerRatingController::class, 'store'])->name('client.freelancer-reviews.store');
+        Route::get('/freelancer-reviews/check/{bookingId}',     [\App\Http\Controllers\Client\FreelancerRatingController::class, 'checkCanReview'])->name('client.freelancer-reviews.check');
+
+        // Public reviews
+        Route::get('/studio/{studioId}/reviews',                [\App\Http\Controllers\Client\StudioRatingController::class, 'getStudioReviews'])->name('client.studio.reviews');
+        Route::get('/freelancer/{freelancerId}/reviews',        [\App\Http\Controllers\Client\FreelancerRatingController::class, 'getFreelancerReviews'])->name('client.freelancer.reviews');
 
         // Booking Process
-        Route::get('/booking-form/{type}/{id}',         [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');
-        Route::post('/bookings',                        [\App\Http\Controllers\Client\BookingController::class, 'store'])->name('client.bookings.store');
-        Route::post('/bookings/packages',               [\App\Http\Controllers\Client\BookingController::class, 'getPackages'])->name('client.bookings.packages');
-        Route::post('/bookings/check-availability',     [\App\Http\Controllers\Client\BookingController::class, 'checkAvailability'])->name('client.bookings.check-availability');
-        Route::post('/bookings/calendar-availability',  [\App\Http\Controllers\Client\BookingController::class, 'getCalendarAvailability'])->name('client.bookings.calendar-availability');
-        Route::post('/bookings/summary',                [\App\Http\Controllers\Client\BookingController::class, 'getSummary'])->name('client.bookings.summary');
-        Route::post('/locations/barangays',             [\App\Http\Controllers\Client\BookingController::class, 'getBarangays'])->name('client.locations.barangays');
+        Route::get('/booking-form/{type}/{id}',                 [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');
+        Route::post('/bookings',                                [\App\Http\Controllers\Client\BookingController::class, 'store'])->name('client.bookings.store');
+        Route::post('/bookings/packages',                       [\App\Http\Controllers\Client\BookingController::class, 'getPackages'])->name('client.bookings.packages');
+        Route::post('/bookings/check-availability',             [\App\Http\Controllers\Client\BookingController::class, 'checkAvailability'])->name('client.bookings.check-availability');
+        Route::post('/bookings/calendar-availability',          [\App\Http\Controllers\Client\BookingController::class, 'getCalendarAvailability'])->name('client.bookings.calendar-availability');
+        Route::post('/bookings/summary',                        [\App\Http\Controllers\Client\BookingController::class, 'getSummary'])->name('client.bookings.summary');
+        Route::post('/locations/barangays',                     [\App\Http\Controllers\Client\BookingController::class, 'getBarangays'])->name('client.locations.barangays');
         
         // Payment
-        Route::post('/payments/initialize',             [\App\Http\Controllers\Client\BookingController::class, 'initializePayment'])->name('client.payments.initialize');
-        Route::get('/payment/verify/{reference}',       [\App\Http\Controllers\Client\BookingController::class, 'verifyPayment'])->name('client.payment.verify');
-        Route::get('/payment/success/{reference}',      [\App\Http\Controllers\Client\BookingController::class, 'paymentSuccess'])->name('client.payment.success');
-        Route::get('/payment/failed/{reference}',       [\App\Http\Controllers\Client\BookingController::class, 'paymentFailed'])->name('client.payment.failed');
+        Route::post('/payments/initialize',                     [\App\Http\Controllers\Client\BookingController::class, 'initializePayment'])->name('client.payments.initialize');
+        Route::get('/payment/verify/{reference}',               [\App\Http\Controllers\Client\BookingController::class, 'verifyPayment'])->name('client.payment.verify');
+        Route::get('/payment/success/{reference}',              [\App\Http\Controllers\Client\BookingController::class, 'paymentSuccess'])->name('client.payment.success');
+        Route::get('/payment/failed/{reference}',               [\App\Http\Controllers\Client\BookingController::class, 'paymentFailed'])->name('client.payment.failed');
 
     });
 
