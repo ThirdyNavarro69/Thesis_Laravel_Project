@@ -95,6 +95,18 @@
                 </div>
             </li>
 
+            {{-- Manage Online Gallery --}}
+            @php
+                $manageOnlineGalleryRoutes = Route::get('/view/online-gallery', [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'index'])->name('freelancer.online-gallery.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                <a href="{{ route('freelancer.online-gallery.index') }}" class="side-nav-link {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="image"></i></span>
+                    <span class="menu-text" data-lang="online-gallery">Online Gallery</span>
+                </a>
+            </li>
+
             {{-- Member Invitations --}}
             @php
                 $memberInvitationRoutes = Route::is('freelancer.invitation.index');

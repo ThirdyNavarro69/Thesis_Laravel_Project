@@ -34,7 +34,6 @@
                                         <th data-table-sort>Payment Status</th>
                                         <th data-table-sort>Remaining Balance</th>
                                         <th data-table-sort>Total Amount</th>
-                                        <th data-table-sort>Assigned Photographers</th>
                                         <th class="text-center" style="width: 1%;">Actions</th>
                                     </tr>
                                 </thead>
@@ -98,27 +97,6 @@
                                             </td>
                                             <td>PHP {{ number_format($booking->remaining_balance, 2) }}</td>
                                             <td>PHP {{ number_format($booking->total_amount, 2) }}</td>
-                                            <td>
-                                                @php
-                                                    // Get assigned photographers for this booking
-                                                    $assignedPhotographers = \App\Models\StudioOwner\BookingAssignedPhotographerModel::where('booking_id', $booking->id)
-                                                        ->whereIn('status', ['assigned', 'confirmed'])
-                                                        ->with(['photographer:id,first_name,last_name'])
-                                                        ->get();
-                                                @endphp
-                                                
-                                                @if($assignedPhotographers->count() > 0)
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                        @foreach($assignedPhotographers as $assignment)
-                                                            <span class="badge assignment-badge bg-light text-dark" title="{{ $assignment->photographer->first_name }} {{ $assignment->photographer->last_name }}">
-                                                                {{ substr($assignment->photographer->first_name, 0, 1) }}{{ substr($assignment->photographer->last_name, 0, 1) }}
-                                                            </span>
-                                                        @endforeach
-                                                    </div>
-                                                @else
-                                                    <span class="badge badge-soft-danger fs-8 px-1 w-100">No Assignment</span>
-                                                @endif
-                                            </td>
                                             <td>
                                                 <div class="d-flex justify-content-center gap-1">
                                                     <button class="btn btn-sm view-booking-btn" 

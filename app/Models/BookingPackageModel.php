@@ -52,4 +52,32 @@ class BookingPackageModel extends Model
     {
         return $this->belongsTo(BookingModel::class, 'booking_id');
     }
+
+    /**
+     * Get the package details for studio packages.
+     */
+    public function studioPackage()
+    {
+        return $this->belongsTo(\App\Models\StudioOwner\PackagesModel::class, 'package_id');
+    }
+
+    /**
+     * Get the package details for freelancer packages.
+     */
+    public function freelancerPackage()
+    {
+        return $this->belongsTo(\App\Models\Freelancer\PackagesModel::class, 'package_id');
+    }
+
+    /**
+     * Get the package based on type.
+     */
+    public function package()
+    {
+        if ($this->package_type === 'studio') {
+            return $this->studioPackage();
+        } else {
+            return $this->freelancerPackage();
+        }
+    }
 }

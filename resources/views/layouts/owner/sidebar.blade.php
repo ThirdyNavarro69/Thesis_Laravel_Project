@@ -95,6 +95,18 @@
                 </div>
             </li>
 
+            {{-- Manage Online Gallery --}}
+            @php
+                $manageOnlineGalleryRoutes = Route::is('owner.online-gallery.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                <a href="{{ route('owner.online-gallery.index') }}" class="side-nav-link {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="image"></i></span>
+                    <span class="menu-text" data-lang="online-gallery">Online Gallery</span>
+                </a>
+            </li>
+
             {{-- Manage Schedules --}}
             @php
                 $manageSchedulesRoutes  = Route::is('owner.studio-schedule.index');

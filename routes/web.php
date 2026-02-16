@@ -88,6 +88,15 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/assignments/{id}/status',                  [\App\Http\Controllers\StudioOwner\BookingController::class, 'updateAssignmentStatus'])->name('owner.booking.update.assignment.status');
         Route::put('/bookings/{id}/status',                     [\App\Http\Controllers\StudioOwner\BookingController::class, 'updateStatus'])->name('owner.booking.update.status');
         Route::put('/bookings/{id}/complete',                   [\App\Http\Controllers\StudioOwner\BookingController::class, 'completeBooking'])->name('owner.booking.complete');
+
+        // Manage Online Gallery
+        Route::get('/view/online-gallery',                      [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'index'])->name('owner.online-gallery.index');
+        Route::get('/online-gallery/completed-bookings',        [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'getCompletedBookings'])->name('owner.online-gallery.completed-bookings');
+        Route::get('/online-gallery/{bookingId}/details',       [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'getGalleryDetails'])->name('owner.online-gallery.details');
+        Route::post('/online-gallery/{bookingId}/upload',       [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'uploadImages'])->name('owner.online-gallery.upload');
+        Route::delete('/online-gallery/{galleryId}/image',      [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'deleteImage'])->name('owner.online-gallery.delete-image');
+        Route::delete('/online-gallery/{galleryId}',            [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'deleteGallery'])->name('owner.online-gallery.delete');
+        Route::put('/online-gallery/{galleryId}',               [\App\Http\Controllers\StudioOwner\OnlineGalleryController::class, 'updateGallery'])->name('owner.online-gallery.update');
         
         // Manage Studio Schedule                       
         Route::get('/view/schedules',                           [\App\Http\Controllers\StudioOwner\StudioScheduleController::class, 'index'])->name('owner.studio-schedule.index');
@@ -172,6 +181,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/bookings/{id}/details',                [\App\Http\Controllers\Freelancer\BookingController::class, 'getBookingDetails'])->name('freelancer.booking.details');
         Route::put('/bookings/{id}/status',                 [\App\Http\Controllers\Freelancer\BookingController::class, 'updateStatus'])->name('freelancer.booking.update.status');
         Route::put('/bookings/{id}/payment-status',         [\App\Http\Controllers\Freelancer\BookingController::class, 'updatePaymentStatus'])->name('freelancer.booking.update.payment.status');
+
+        // Manage Online Gallery
+        Route::get('/view/online-gallery',                  [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'index'])->name('freelancer.online-gallery.index');
+        Route::get('/online-gallery/{bookingId}/details',   [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'getGalleryDetails'])->name('freelancer.online-gallery.details');
+        Route::post('/online-gallery/{bookingId}/upload',   [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'uploadImages'])->name('freelancer.online-gallery.upload');
+        Route::delete('/online-gallery/{galleryId}/image',  [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'deleteImage'])->name('freelancer.online-gallery.delete-image');
+        Route::delete('/online-gallery/{galleryId}',        [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'deleteGallery'])->name('freelancer.online-gallery.delete');
+        Route::put('/online-gallery/{galleryId}',           [\App\Http\Controllers\Freelancer\OnlineGalleryController::class, 'updateGallery'])->name('freelancer.online-gallery.update');
     });
 
     // Client Routes =======================================================================================================================================================
