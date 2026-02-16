@@ -29,6 +29,7 @@ class PackagesModel extends Model
         'maximum_edited_photos',
         'coverage_scope',
         'package_price',
+        'online_gallery', // ADDED
         'status',
     ];
 
@@ -40,6 +41,7 @@ class PackagesModel extends Model
     protected $casts = [
         'package_inclusions' => 'array',
         'package_price' => 'decimal:2',
+        'online_gallery' => 'boolean', // ADDED
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -79,6 +81,7 @@ class PackagesModel extends Model
         'maximum_edited_photos' => 'required|integer|min:1|max:1000',
         'coverage_scope' => 'nullable|string|max:255',
         'package_price' => 'required|numeric|min:0',
+        'online_gallery' => 'boolean', // ADDED
         'status' => 'required|in:active,inactive',
     ];
 }

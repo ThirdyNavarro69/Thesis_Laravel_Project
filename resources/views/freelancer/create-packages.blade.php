@@ -85,6 +85,21 @@
                                     </div>
 
                                     <div class="col-12 mb-3">
+                                        <label class="form-label d-block">Online Gallery</label>
+                                        <div class="btn-group w-100 mb-1" role="group" aria-label="Online Gallery Toggle">
+                                            <input type="radio" class="btn-check" name="online_gallery" id="galleryYes" value="1" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="galleryYes">
+                                                <i class="ti ti-check me-1"></i> Yes, include online gallery
+                                            </label>
+                                            <input type="radio" class="btn-check" name="online_gallery" id="galleryNo" value="0" checked autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="galleryNo">
+                                                <i class="ti ti-x me-1"></i> No, exclude online gallery
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Online gallery allows clients to view and download photos online.</small>
+                                    </div>
+
+                                    <div class="col-12 mb-3">
                                         <label class="form-label">Status</label>
                                         <select class="form-select" name="status" required>
                                             <option value="">Select Status</option>
@@ -187,8 +202,12 @@
                     coverage_scope: $('input[name="coverage_scope"]').val(),
                     package_price: $('input[name="package_price"]').val(),
                     status: $('select[name="status"]').val(),
+                    online_gallery: $('input[name="online_gallery"]:checked').val(),
                     package_inclusions: []
                 };
+                
+                // Debug: Log the online gallery value
+                console.log('Online gallery value:', formData.online_gallery);
                 
                 // Collect inclusions as array
                 $('input[name="package_inclusions[]"]').each(function() {

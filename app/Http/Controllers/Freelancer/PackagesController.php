@@ -59,6 +59,21 @@ class PackagesController extends Controller
             // Add user_id to the validated data
             $validated['user_id'] = Auth::id();
             
+            // FIXED: Ensure online_gallery is properly handled as boolean
+            // Check if online_gallery exists in request and convert to boolean
+            if ($request->has('online_gallery')) {
+                // Convert string '1' or '0' to boolean
+                $validated['online_gallery'] = filter_var($request->online_gallery, FILTER_VALIDATE_BOOLEAN);
+            } else {
+                $validated['online_gallery'] = false;
+            }
+            
+            // Debug log (remove in production)
+            \Log::info('Online gallery value:', [
+                'raw' => $request->online_gallery,
+                'processed' => $validated['online_gallery']
+            ]);
+            
             // Create package
             $package = PackagesModel::create($validated);
             

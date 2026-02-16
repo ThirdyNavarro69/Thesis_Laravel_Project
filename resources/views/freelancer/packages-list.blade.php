@@ -49,6 +49,12 @@
                                                     <h1 class="display-6 fw-bold mb-0">PHP {{ number_format($package->package_price, 2) }}</h1>
                                                     <small class="d-block text-muted fs-base">{{ $package->duration }} Hours</small>
                                                     <small class="d-block text-muted">{{ $package->maximum_edited_photos }} Edited Photos</small>
+                                                    <div class="d-flex justify-content-center mt-2">
+                                                        <span class="badge {{ $package->online_gallery ? 'badge-soft-success' : 'badge-soft-secondary' }} px-2 py-1">
+                                                            <i class="ti ti-photo {{ $package->online_gallery ? '' : 'ti-photo-off' }} me-1"></i>
+                                                            Online Gallery: {{ $package->online_gallery ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 <ul class="list-unstyled text-start fs-sm mb-0">
@@ -139,6 +145,7 @@
             // View Package Details
             $(document).on('click', '.view-details-btn', function() {
                 const packageId = $(this).data('package-id');
+                loadPackageDetails(packageId);
             });
 
             // Category filter change event
@@ -299,6 +306,26 @@
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Package Price</label>
                                             <p class="mb-0 fw-medium">PHP ${parseFloat(package.package_price).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ADDED: Online Gallery field -->
+                                <div class="col-12 col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="bg-light-primary rounded-circle p-2">
+                                                <i class="ti ti-photo fs-20 text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <label class="text-muted small mb-1">Online Gallery</label>
+                                            <div class="mb-0 fw-medium">
+                                                ${package.online_gallery 
+                                                    ? '<span class="badge badge-soft-success px-2 fw-medium"><i class="ti ti-check me-1"></i> Included</span>' 
+                                                    : '<span class="badge badge-soft-secondary px-2 fw-medium"><i class="ti ti-x me-1"></i> Not Included</span>'}
+                                            </div>
+                                            <small class="text-muted d-block mt-1">Client access to digital gallery</small>
                                         </div>
                                     </div>
                                 </div>
