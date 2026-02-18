@@ -81,7 +81,7 @@
                                     <i class="ti ti-photo me-1"></i>{{ $gallery->total_photos }} Photos
                                 </span>
                                 
-                                <span class="position-absolute top-0 start-0 badge bg-soft-primary m-3">
+                                <span class="position-absolute top-0 start-0 badge badge-soft-primary m-3">
                                     {{ $gallery->type === 'studio' ? 'Studio' : 'Freelancer' }}
                                 </span>
                             </div>
