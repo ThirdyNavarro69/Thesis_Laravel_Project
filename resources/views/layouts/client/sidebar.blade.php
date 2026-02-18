@@ -66,6 +66,18 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Online Gallery --}}
+            @php
+                $manageOnlineGalleryRoutes = Route::is('client.online-gallery.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                <a href="{{ route('client.online-gallery.index') }}" class="side-nav-link {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i class="ti ti-photo"></i></span>
+                    <span class="menu-text" data-lang="online-gallery">Online Gallery</span>
+                </a>
+            </li>
         </ul>
     </div>
 </div>
