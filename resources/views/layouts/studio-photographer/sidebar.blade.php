@@ -34,7 +34,7 @@
             
             <li class="side-nav-item {{ $isDashboardActive ? 'active' : '' }}">
                 <a href="{{ route('studio-photographer.dashboard') }}" class="side-nav-link {{ $isDashboardActive ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-layout-dashboard"></i></span>
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -46,7 +46,7 @@
             
             <li class="side-nav-item {{ $assignedStudioRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageAssignedStudio" aria-expanded="{{ $assignedStudioRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageAssignedStudio" class="side-nav-link {{ $assignedStudioRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-aperture"></i></span>
                     <span class="menu-text" data-lang="assigned-studio">Studio</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -68,7 +68,7 @@
 
             <li class="side-nav-item {{ $assignedBookingRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageAssignedBooking" aria-expanded="{{ $assignedBookingRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageAssignedBooking" class="side-nav-link {{ $assignedBookingRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="calendar-check"></i></span>
+                    <span class="menu-icon"><i class="ti ti-calendar-check"></i></span>
                     <span class="menu-text" data-lang="assigned-booking">Booking</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -81,6 +81,18 @@
                         </li>
                     </ul>
                 </div>
+            </li>
+
+            {{-- Manage Online Gallery --}}
+            @php
+                $manageOnlineGalleryRoutes = Route::is('studio-photographer.online-gallery.index');
+            @endphp
+
+            <li class="side-nav-item {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                <a href="{{ route('studio-photographer.online-gallery.index') }}" class="side-nav-link {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i class="ti ti-photo"></i></span>
+                    <span class="menu-text" data-lang="online-gallery">Online Gallery</span>
+                </a>
             </li>
         </ul>
     </div>

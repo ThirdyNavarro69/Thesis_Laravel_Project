@@ -34,7 +34,7 @@
             
             <li class="side-nav-item {{ $isDashboardActive ? 'active' : '' }}">
                 <a href="{{ route('owner.dashboard') }}" class="side-nav-link {{ $isDashboardActive ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-layout-dashboard"></i></span>
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -47,7 +47,7 @@
             
             <li class="side-nav-item {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudios" aria-expanded="{{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageStudios" class="side-nav-link {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-aperture"></i></span>
                     <span class="menu-text" data-lang="manage-studios">Studios</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -75,7 +75,7 @@
             
             <li class="side-nav-item {{ $manageBookingsRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageBookings" aria-expanded="{{ $manageBookingsRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageBookings" class="side-nav-link {{ $manageBookingsRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
+                    <span class="menu-icon"><i class="ti ti-notebook"></i></span>
                     <span class="menu-text" data-lang="manage-bookings">Bookings</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -102,7 +102,7 @@
             
             <li class="side-nav-item {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
                 <a href="{{ route('owner.online-gallery.index') }}" class="side-nav-link {{ $manageOnlineGalleryRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="image"></i></span>
+                    <span class="menu-icon"><i class="ti ti-photo"></i></span>
                     <span class="menu-text" data-lang="online-gallery">Online Gallery</span>
                 </a>
             </li>
@@ -115,7 +115,7 @@
             
             <li class="side-nav-item {{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageSchedules" aria-expanded="{{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSchedules" class="side-nav-link {{ $manageSchedulesRoutes || $setupSchedulesRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="calendar-check-2"></i></span>
+                    <span class="menu-icon"><i class="ti ti-calendar-check"></i></span>
                     <span class="menu-text" data-lang="manage-schedules">Schedules</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -142,7 +142,7 @@
             
             <li class="side-nav-item {{ $manageMembersRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageMembers" aria-expanded="{{ $manageMembersRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageMembers" class="side-nav-link {{ $manageMembersRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="user-star"></i></span>
+                    <span class="menu-icon"><i class="ti ti-user-star"></i></span>
                     <span class="menu-text" data-lang="manage-members">Members</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -174,7 +174,7 @@
 
             <li class="side-nav-item {{ $manageStudioPhotographersRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudioPhotographers" aria-expanded="{{ $manageStudioPhotographersRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageStudioPhotographers" class="side-nav-link {{ $manageStudioPhotographersRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="square-user-round"></i></span>
+                    <span class="menu-icon"><i class="ti ti-user-circle"></i></span>
                     <span class="menu-text" data-lang="manage-studio-photographers">Photographers</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -203,7 +203,7 @@
 
             <li class="side-nav-item {{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManagePackages" aria-expanded="{{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManagePackages" class="side-nav-link {{ $managePackagesRoutes || $createPackagesRoutes || $listPackagesRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="package-check"></i></span>
+                    <span class="menu-icon"><i class="ti ti-package"></i></span>
                     <span class="menu-text" data-lang="manage-packages">Packages</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -236,7 +236,7 @@
             
             <li class="side-nav-item {{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageCategoryServices" aria-expanded="{{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageCategoryServices" class="side-nav-link {{ $manageCategoryServicesRoutes || $createCategoryServicesRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="list-tree"></i></span>
+                    <span class="menu-icon"><i class="ti ti-list-tree"></i></span>
                     <span class="menu-text" data-lang="manage-category-services">Services</span>
                     <span class="menu-arrow"></span>
                 </a>

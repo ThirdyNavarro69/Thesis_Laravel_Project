@@ -34,7 +34,7 @@
             
             <li class="side-nav-item {{ $isDashboardActive ? 'active' : '' }}">
                 <a href="{{ route('client.dashboard') }}" class="side-nav-link {{ $isDashboardActive ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-layout-dashboard"></i></span>
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -47,7 +47,7 @@
             
             <li class="side-nav-item {{ $myBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarMyBookings" aria-expanded="{{ $myBookingsRoutes || $bookingHistoryRoutes ? 'true' : 'false' }}" aria-controls="sidebarMyBookings" class="side-nav-link {{ $myBookingsRoutes || $bookingHistoryRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="notebook-pen"></i></span>
+                    <span class="menu-icon"><i class="ti ti-notebook"></i></span>
                     <span class="menu-text" data-lang="manage-bookings">My Bookings</span>
                     <span class="menu-arrow"></span>
                 </a>

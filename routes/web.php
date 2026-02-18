@@ -258,6 +258,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assignment/{id}/details',          [\App\Http\Controllers\StudioPhotographer\AssignedBookingController::class, 'getBookingDetails'])->name('assignment.details');
         Route::post('/assignment/{id}/update-status',   [\App\Http\Controllers\StudioPhotographer\AssignedBookingController::class, 'updateAssignmentStatus'])->name('assignment.update-status');
 
+        // Manage Online Gallery
+        Route::get('/view/online-gallery',                  [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'index'])->name('studio-photographer.online-gallery.index');
+        Route::get('/online-gallery/{bookingId}/details',   [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'getGalleryDetails'])->name('studio-photographer.online-gallery.details');
+        Route::post('/online-gallery/{bookingId}/upload',   [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'uploadImages'])->name('studio-photographer.online-gallery.upload');
+        Route::delete('/online-gallery/{galleryId}/image',  [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'deleteImage'])->name('studio-photographer.online-gallery.delete-image');
+        Route::delete('/online-gallery/{galleryId}',        [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'deleteGallery'])->name('studio-photographer.online-gallery.delete');
+        Route::put('/online-gallery/{galleryId}',           [\App\Http\Controllers\StudioPhotographer\OnlineGalleryController::class, 'updateGallery'])->name('studio-photographer.online-gallery.update');
+
     });
 
     // Home redirect based on authentication

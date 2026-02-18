@@ -34,7 +34,7 @@
             
             <li class="side-nav-item {{ $isDashboardActive ? 'active' : '' }}">
                 <a href="{{ route('admin.dashboard') }}" class="side-nav-link {{ $isDashboardActive ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-dashboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-layout-dashboard"></i></span>
                     <span class="menu-text" data-lang="dashboard">Dashboard</span>
                 </a>
             </li>
@@ -46,7 +46,7 @@
             
             <li class="side-nav-item {{ $manageUsersRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageUsers" aria-expanded="{{ $manageUsersRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageUsers" class="side-nav-link {{ $manageUsersRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="users"></i></span>
+                    <span class="menu-icon"><i class="ti ti-users"></i></span>
                     <span class="menu-text" data-lang="manage-users">Users</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -69,7 +69,7 @@
             
             <li class="side-nav-item {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageStudios" aria-expanded="{{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageStudios" class="side-nav-link {{ $manageStudiosRoutes || $pendingStudiosRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="clapperboard"></i></span>
+                    <span class="menu-icon"><i class="ti ti-device-cctv"></i></span>
                     <span class="menu-text" data-lang="manage-studios">Studios</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -96,7 +96,7 @@
             
             <li class="side-nav-item {{ $viewFreelancerRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageFreelancer" aria-expanded="{{ $viewFreelancerRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageFreelancer" class="side-nav-link {{ $viewFreelancerRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="file-user"></i></span>
+                    <span class="menu-icon"><i class="ti ti-user-circle"></i></span>
                     <span class="menu-text" data-lang="manage-freelancer">Freelancer</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -119,7 +119,7 @@
             
             <li class="side-nav-item {{ $manageCategoriesRoutes || $createCategoryRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageCategories" aria-expanded="{{ $manageCategoriesRoutes || $createCategoryRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageCategories" class="side-nav-link {{ $manageCategoriesRoutes || $createCategoryRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="layout-list"></i></span>
+                    <span class="menu-icon"><i class="ti ti-layout-list"></i></span>
                     <span class="menu-text" data-lang="manage-categories">Categories</span>
                     <span class="menu-arrow"></span>
                 </a>
@@ -147,7 +147,7 @@
             
             <li class="side-nav-item {{ $viewLocationRoutes || $createLocationRoutes ? 'active' : '' }}">
                 <a data-bs-toggle="collapse" href="#sidebarManageLocations" aria-expanded="{{ $viewLocationRoutes || $createLocationRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageLocations" class="side-nav-link {{ $viewLocationRoutes || $createLocationRoutes ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="map-pinned"></i></span>
+                    <span class="menu-icon"><i class="ti ti-map-pin"></i></span>
                     <span class="menu-text" data-lang="manage-locations">Locations</span>
                     <span class="menu-arrow"></span>
                 </a>
