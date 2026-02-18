@@ -1,0 +1,234 @@
+
+<?php $__env->startSection('title', 'Create Services'); ?>
+
+
+<?php $__env->startSection('content'); ?>
+    <div class="content-page">
+        <div class="container-fluid">                  
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header card-title">
+                            <h4 class="card-title">Create Category Services</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="createServiceForm" class="needs-validation" novalidate>
+                                <?php echo csrf_field(); ?>
+                                <div class="row">
+
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Select Verified Studios</label>
+                                        <select class="form-select" name="studio_id" id="studio_id" required>
+                                            <option value="">Select Verified Studios</option>
+                                            <?php $__currentLoopData = $verifiedStudios; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $studio): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($studio->id); ?>"><?php echo e($studio->studio_name); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Please select a verified studio.
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Select Category</label>
+                                        <select class="form-select" name="category_id" id="category_id" required>
+                                            <option value="">Select Category</option>
+                                            <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($category->id); ?>"><?php echo e($category->category_name); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Please select a category.
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Service Name (Contents)</label>                                        
+                                        <div id="serviceNamesContainer">
+                                            <div class="input-group mb-2 service-name-field">
+                                                <input type="text" class="form-control" name="service_name[]" placeholder="Enter service name" required>
+                                                <button class="btn btn-default add-service-name-btn" type="button">
+                                                    <i class="ti ti-plus"></i>
+                                                </button>
+                                                <button class="btn btn-default remove-service-name-btn" type="button" disabled>
+                                                    <i class="ti ti-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="invalid-feedback">
+                                            Please enter at least one service name.
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <span id="submitText">Create Services</span>
+                                    <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php $__env->stopSection(); ?>
+
+
+<?php $__env->startSection('scripts'); ?>
+    <script>
+        $(document).ready(function() {
+            // Function to update remove button states
+            function updateRemoveButtons() {
+                const serviceFields = $('.service-name-field');
+                if (serviceFields.length === 1) {
+                    serviceFields.find('.remove-service-name-btn').prop('disabled', true);
+                } else {
+                    serviceFields.find('.remove-service-name-btn').prop('disabled', false);
+                }
+            }
+            
+            // Add new service name field
+            $(document).on('click', '.add-service-name-btn', function() {
+                const newField = $(`
+                    <div class="input-group mb-2 service-name-field">
+                        <input type="text" class="form-control" name="service_name[]" placeholder="Enter service name" required>
+                        <button class="btn btn-default add-service-name-btn" type="button">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                        <button class="btn btn-default remove-service-name-btn" type="button">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </div>
+                `);
+                
+                $('#serviceNamesContainer').append(newField);
+                updateRemoveButtons();
+            });
+            
+            // Remove service name field
+            $(document).on('click', '.remove-service-name-btn', function() {
+                if ($('.service-name-field').length > 1) {
+                    $(this).closest('.service-name-field').remove();
+                    updateRemoveButtons();
+                }
+            });
+            
+            // Form submission
+            $('#createServiceForm').submit(function(e) {
+                e.preventDefault();
+                
+                // Validate that at least one service name is filled
+                const serviceNames = $('input[name="service_name[]"]').filter(function() {
+                    return $(this).val().trim() !== '';
+                });
+                
+                if (serviceNames.length === 0) {
+                    $('#serviceNamesContainer').next('.invalid-feedback').show();
+                    $('#serviceNamesContainer').addClass('is-invalid');
+                    return;
+                } else {
+                    $('#serviceNamesContainer').next('.invalid-feedback').hide();
+                    $('#serviceNamesContainer').removeClass('is-invalid');
+                }
+                
+                if (!this.checkValidity()) {
+                    e.stopPropagation();
+                    this.classList.add('was-validated');
+                    return;
+                }
+                
+                const formData = $(this).serialize();
+                const submitBtn = $('#submitBtn');
+                const submitText = $('#submitText');
+                const spinner = $('#spinner');
+                
+                // Show loading state
+                submitBtn.prop('disabled', true);
+                submitText.text('Creating...');
+                spinner.removeClass('d-none');
+                
+                $.ajax({
+                    url: '<?php echo e(route("owner.services.store")); ?>',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success alert
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timerProgressBar: true,
+                                timer: 1500
+                            }).then(() => {
+                                // Reset form
+                                $('#createServiceForm')[0].reset();
+                                $('#createServiceForm').removeClass('was-validated');
+                                // Reset service names container to single field
+                                $('#serviceNamesContainer').html(`
+                                    <div class="input-group mb-2 service-name-field">
+                                        <input type="text" class="form-control" name="service_name[]" placeholder="Enter service name" required>
+                                        <button class="btn btn-default add-service-name-btn" type="button">
+                                            <i class="ti ti-plus"></i>
+                                        </button>
+                                        <button class="btn btn-default remove-service-name-btn" type="button" disabled>
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </div>
+                                `);
+                                window.location.href = '<?php echo e(route("owner.services.index")); ?>';
+                            });
+                        } else {
+                            showErrorAlert(response.message || 'Failed to create service.');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred. Please try again.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                            
+                            // Show validation errors if any
+                            if (xhr.responseJSON.errors) {
+                                const errors = xhr.responseJSON.errors;
+                                errorMessage = '';
+                                for (const key in errors) {
+                                    if (key === 'service_name') {
+                                        errorMessage += errors[key][0] + '\n';
+                                    } else if (Array.isArray(errors[key])) {
+                                        errorMessage += errors[key][0] + '\n';
+                                    } else {
+                                        errorMessage += errors[key] + '\n';
+                                    }
+                                }
+                            }
+                        }
+                        
+                        showErrorAlert(errorMessage);
+                    },
+                    complete: function() {
+                        // Reset button state
+                        submitBtn.prop('disabled', false);
+                        submitText.text('Create Services');
+                        spinner.addClass('d-none');
+                    }
+                });
+            });
+            
+            function showErrorAlert(message) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: message,
+                    confirmButtonColor: '#DC3545',
+                    confirmButtonText: 'OK'
+                });
+            }
+            
+            // Initial button state
+            updateRemoveButtons();
+        });
+    </script>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.owner.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\proj\resources\views/owner/create-services.blade.php ENDPATH**/ ?>
