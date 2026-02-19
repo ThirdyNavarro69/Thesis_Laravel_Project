@@ -166,6 +166,34 @@
                     </ul>
                 </div>
             </li>
+            
+            {{-- Manage Subscription --}}
+            @php
+                $manageSubscriptionRoutes = Route::is('admin.subscription.index');
+                $createSubscriptionRoutes = Route::is('admin.subscription.create');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageSubscriptionRoutes || $createSubscriptionRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageSubscription" aria-expanded="{{ $manageSubscriptionRoutes || $createSubscriptionRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSubscription" class="side-nav-link {{ $manageSubscriptionRoutes || $createSubscriptionRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i class="ti ti-carambola"></i></span>
+                    <span class="menu-text" data-lang="manage-subscription">Subscription</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $manageSubscriptionRoutes || $createSubscriptionRoutes ? 'show' : '' }}" id="sidebarManageSubscription">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.subscription.index') }}" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="subscription">View Subscription</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.subscription.create') }}" class="side-nav-link {{ $createSubscriptionRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="create-subscription">Create Subscription</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 </div>

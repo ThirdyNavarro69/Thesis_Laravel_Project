@@ -10,13 +10,13 @@ use App\Http\Middleware\StudioPhotographerMiddleware;
 // Auth Routes =========================================================================================================================================================
 Route::prefix('auth')->group(function () {
 
-    Route::get('/login',                [\App\Http\Controllers\Auth\AuthController::class, 'index'])->name('login');
-    Route::get('/register',             [\App\Http\Controllers\Auth\AuthController::class, 'register'])->name('register');
-    Route::get('/verify',               [\App\Http\Controllers\Auth\AuthController::class, 'verify'])->name('verify');
-    Route::post('/register',            [\App\Http\Controllers\Auth\AuthController::class, 'store'])->name('auth.register.store');
-    Route::post('/login',               [\App\Http\Controllers\Auth\AuthController::class, 'login'])->name('auth.login.store');
-    Route::post('/logout',              [\App\Http\Controllers\Auth\AuthController::class, 'logout'])->name('auth.logout');
-    Route::get('/verify-email/{token}', [\App\Http\Controllers\Auth\AuthController::class, 'verifyEmail'])->name('auth.verify.email');
+    Route::get('/login',                            [\App\Http\Controllers\Auth\AuthController::class, 'index'])->name('login');
+    Route::get('/register',                         [\App\Http\Controllers\Auth\AuthController::class, 'register'])->name('register');
+    Route::get('/verify',                           [\App\Http\Controllers\Auth\AuthController::class, 'verify'])->name('verify');
+    Route::post('/register',                        [\App\Http\Controllers\Auth\AuthController::class, 'store'])->name('auth.register.store');
+    Route::post('/login',                           [\App\Http\Controllers\Auth\AuthController::class, 'login'])->name('auth.login.store');
+    Route::post('/logout',                          [\App\Http\Controllers\Auth\AuthController::class, 'logout'])->name('auth.logout');
+    Route::get('/verify-email/{token}',             [\App\Http\Controllers\Auth\AuthController::class, 'verifyEmail'])->name('auth.verify.email');
 
 });
 
@@ -63,6 +63,16 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/location/{id}',                [\App\Http\Controllers\Admin\LocationController::class, 'update'])->name('admin.location.update');
         Route::delete('/location/{id}',             [\App\Http\Controllers\Admin\LocationController::class, 'destroy'])->name('admin.location.destroy');
         Route::get('/location/data/all',            [\App\Http\Controllers\Admin\LocationController::class, 'getLocations'])->name('admin.location.data');
+
+        // Manage Subscription
+        Route::get('/view/subscription',            [\App\Http\Controllers\Admin\SubscriptionController::class, 'index'])->name('admin.subscription.index');
+        Route::get('/create/subscription',          [\App\Http\Controllers\Admin\SubscriptionController::class, 'create'])->name('admin.subscription.create');
+        Route::post('/subscription',                [\App\Http\Controllers\Admin\SubscriptionController::class, 'store'])->name('admin.subscription.store');
+        Route::get('/subscription/{id}',            [\App\Http\Controllers\Admin\SubscriptionController::class, 'show'])->name('admin.subscription.show');
+        Route::get('/subscription/{id}/edit',       [\App\Http\Controllers\Admin\SubscriptionController::class, 'edit'])->name('admin.subscription.edit');
+        Route::put('/subscription/{id}',            [\App\Http\Controllers\Admin\SubscriptionController::class, 'update'])->name('admin.subscription.update');
+        Route::delete('/subscription/{id}',         [\App\Http\Controllers\Admin\SubscriptionController::class, 'destroy'])->name('admin.subscription.delete');
+        Route::get('/subscription/data/all',        [\App\Http\Controllers\Admin\SubscriptionController::class, 'getPlans'])->name('admin.subscription.data');
     });
 
     // Studio Owner Routes =================================================================================================================================================
