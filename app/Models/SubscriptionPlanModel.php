@@ -39,6 +39,9 @@ class SubscriptionPlanModel extends Model
         'commission_rate',
         'max_booking',
         'max_studio_photographers',
+        'max_studios',
+        'staff_limit',
+        'priority_level',
         'features',
         'support_level',
         'status',
@@ -183,5 +186,67 @@ class SubscriptionPlanModel extends Model
             return 'Unlimited';
         }
         return $this->max_studio_photographers . ' photographers';
+    }
+
+    /**
+     * Get max studios display text
+     */
+    public function getMaxStudiosDisplayAttribute()
+    {
+        if ($this->user_type !== 'studio') {
+            return 'N/A';
+        }
+        if ($this->max_studios === null) {
+            return 'Unlimited';
+        }
+        return $this->max_studios . ' studios';
+    }
+
+    /**
+     * Get staff limit display text
+     */
+    public function getStaffLimitDisplayAttribute()
+    {
+        if ($this->user_type !== 'studio') {
+            return 'N/A';
+        }
+        if ($this->staff_limit === null) {
+            return 'Unlimited';
+        }
+        return $this->staff_limit . ' staff';
+    }
+
+    /**
+     * Get priority level with label
+     */
+    public function getPriorityLevelLabelAttribute()
+    {
+        $levels = [
+            0 => 'Normal',
+            1 => 'Low Priority',
+            2 => 'Medium Priority',
+            3 => 'High Priority',
+            4 => 'Very High Priority',
+            5 => 'Top Priority'
+        ];
+        
+        return $levels[$this->priority_level] ?? 'Level ' . $this->priority_level;
+    }
+
+    /**
+     * Get priority badge class
+     */
+    public function getPriorityBadgeClassAttribute()
+    {
+        $classes = [
+            0 => 'badge-soft-secondary',
+            1 => 'badge-soft-info',
+            2 => 'badge-soft-primary',
+            3 => 'badge-soft-warning',
+            4 => 'badge-soft-danger',
+            5 => 'badge-soft-success',
+        ];
+        
+        return $classes[$this->priority_level] ?? 'badge-soft-secondary';
     }
 }

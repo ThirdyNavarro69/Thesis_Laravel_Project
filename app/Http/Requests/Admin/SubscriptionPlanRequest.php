@@ -29,6 +29,7 @@ class SubscriptionPlanRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'max_booking' => ['nullable', 'integer', 'min:0'],
+            'priority_level' => ['nullable', 'integer', 'min:0', 'max:5'],
             'features' => ['required', 'array', 'min:1'],
             'features.*' => ['required', 'string', 'max:255'],
             'support_level' => ['required', 'in:basic,priority,dedicated'],
@@ -38,6 +39,8 @@ class SubscriptionPlanRequest extends FormRequest
         // Conditional rules based on user type
         if ($this->user_type === 'studio') {
             $rules['max_studio_photographers'] = ['nullable', 'integer', 'min:1'];
+            $rules['max_studios'] = ['nullable', 'integer', 'min:1'];
+            $rules['staff_limit'] = ['nullable', 'integer', 'min:1'];
         }
 
         // Conditional rule for plan name (auto-generated but can be overridden)
@@ -86,6 +89,13 @@ class SubscriptionPlanRequest extends FormRequest
             'support_level.in' => 'Invalid support level selected.',
             'status.required' => 'Please select a status.',
             'status.in' => 'Invalid status selected.',
+            'max_studios.integer' => 'Maximum studios must be a whole number.',
+            'max_studios.min' => 'Maximum studios must be at least 1.',
+            'staff_limit.integer' => 'Staff limit must be a whole number.',
+            'staff_limit.min' => 'Staff limit must be at least 1.',
+            'priority_level.integer' => 'Priority level must be a whole number.',
+            'priority_level.min' => 'Priority level must be between 0 and 5.',
+            'priority_level.max' => 'Priority level must be between 0 and 5.',
         ];
     }
 

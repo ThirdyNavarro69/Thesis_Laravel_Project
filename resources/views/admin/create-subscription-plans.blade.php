@@ -98,13 +98,24 @@
 
                                 {{-- Row 4: Conditional Fields (Studio only) --}}
                                 <div class="row" id="studioFields" style="display: none;">
-                                    <div class="col-md-12 mb-3">
-                                        <label class="form-label">Maximum Studio Photographers</label>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Maximum Studio Photographers</label>
                                         <input type="number" class="form-control" name="max_studio_photographers" id="max_studio_photographers" placeholder="Leave empty for unlimited" min="1">
-                                        <small class="text-muted">Maximum number of photographers this studio can have. Leave empty for unlimited.</small>
-                                        <div class="invalid-feedback">
-                                            Please enter a valid number.
-                                        </div>
+                                        <small class="text-muted">Maximum number of photographers this studio can have.</small>
+                                    </div>
+                                    
+                                    {{-- NEW: Maximum Studios --}}
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Maximum Studios</label>
+                                        <input type="number" class="form-control" name="max_studios" id="max_studios" placeholder="Leave empty for unlimited" min="1">
+                                        <small class="text-muted">How many studios can the owner register?</small>
+                                    </div>
+                                    
+                                    {{-- NEW: Staff Limit --}}
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Staff Limit</label>
+                                        <input type="number" class="form-control" name="staff_limit" id="staff_limit" placeholder="Leave empty for unlimited" min="1">
+                                        <small class="text-muted">Maximum number of staff/employees</small>
                                     </div>
                                 </div>
 
@@ -122,13 +133,28 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Status</label>
                                         <select class="form-select" name="status" id="status" required>
-                                            <option value="">Select Status</option>
+                                            <option value="" disabled selected>Select Status</option>
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Please select a status.
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold">Priority Level (0-5)</label>
+                                        <select class="form-select" name="priority_level" id="priority_level">
+                                            <option value="0">0 - Normal (Default)</option>
+                                            <option value="1">1 - Low Priority</option>
+                                            <option value="2">2 - Medium Priority</option>
+                                            <option value="3">3 - High Priority</option>
+                                            <option value="4">4 - Very High Priority</option>
+                                            <option value="5">5 - Top Priority</option>
+                                        </select>
+                                        <small class="text-muted">Higher priority shows first in client dashboard</small>
                                     </div>
                                 </div>
 
@@ -297,6 +323,9 @@
                     description: $('#description').val(),
                     support_level: $('#support_level').val(),
                     status: $('#status').val(),
+                    max_studios: $('#user_type').val() === 'studio' ? ($('#max_studios').val() || null) : null,
+                    staff_limit: $('#user_type').val() === 'studio' ? ($('#staff_limit').val() || null) : null,
+                    priority_level: $('#priority_level').val() || 0,
                     features: []
                 };
 

@@ -62,8 +62,11 @@
                                         <th>Plan Name</th>
                                         <th>Price</th>
                                         <th>Commission</th>
+                                        <th>Priority</th>
                                         <th>Max Booking</th>
-                                        <th>Max Photographers</th>
+                                        <th>Max Studios</th>
+                                        <th>Max Photogs</th>
+                                        <th>Staff Limit</th>
                                         <th>Support</th>
                                         <th>Status</th>
                                         <th class="text-center" style="width: 120px;">Actions</th>
@@ -79,10 +82,29 @@
                                             <td>{{ $plan->name }}</td>
                                             <td>{{ $plan->formatted_price }}</td>
                                             <td>{{ $plan->commission_rate }}%</td>
+                                            <td>
+                                                <span class="badge {{ $plan->priority_badge_class }}">
+                                                    Level {{ $plan->priority_level }}
+                                                </span>
+                                            </td>
                                             <td>{{ $plan->max_booking_display }}</td>
                                             <td>
                                                 @if($plan->user_type === 'studio')
+                                                    {{ $plan->max_studios_display }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($plan->user_type === 'studio')
                                                     {{ $plan->max_studio_photographers_display }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($plan->user_type === 'studio')
+                                                    {{ $plan->staff_limit_display }}
                                                 @else
                                                     N/A
                                                 @endif
@@ -111,7 +133,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="12" class="text-center py-4">
+                                            <td colspan="15" class="text-center py-4">
                                                 <div class="text-muted">
                                                     <i class="ti ti-file-text fs-2"></i>
                                                     <p class="mb-0">No subscription plans found.</p>
@@ -142,98 +164,318 @@
 
     {{-- View Plan Modal --}}
     <div class="modal fade" id="viewPlanModal" tabindex="-1" aria-labelledby="viewPlanModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="viewPlanModalLabel">Plan Details</h5>
+                    <h5 class="modal-title fw-semibold" id="viewPlanModalLabel">
+                        Plan Details
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="text-center py-4" id="planLoadingSpinner">
+                <div class="modal-body p-4">
+
+                    {{-- Loading Spinner --}}
+                    <div class="text-center py-5" id="planLoadingSpinner">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <p class="mt-2">Loading plan details...</p>
+                        <p class="mt-2 text-muted">Loading plan details...</p>
                     </div>
-                    
+
+                    {{-- Plan Details --}}
                     <div id="planDetails" style="display: none;">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <table class="table table-bordered">
-                                    <tr>
-                                        <th style="width: 40%">User Type:</th>
-                                        <td id="view_user_type"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Plan Type:</th>
-                                        <td id="view_plan_type"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Billing Cycle:</th>
-                                        <td id="view_billing_cycle"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Plan Code:</th>
-                                        <td><code id="view_plan_code"></code></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Plan Name:</th>
-                                        <td id="view_name"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Price:</th>
-                                        <td id="view_price"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Commission Rate:</th>
-                                        <td id="view_commission_rate"></td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <table class="table table-bordered">
-                                    <tr>
-                                        <th style="width: 40%">Max Bookings:</th>
-                                        <td id="view_max_booking"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Max Photographers:</th>
-                                        <td id="view_max_photographers"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Support Level:</th>
-                                        <td id="view_support_level"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Status:</th>
-                                        <td id="view_status"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Created At:</th>
-                                        <td id="view_created_at"></td>
-                                    </tr>
-                                </table>
+
+                        {{-- Plan Header --}}
+                        <div class="row align-items-center mb-4">
+                            <div class="col-12 col-lg-8">
+                                <div class="d-flex align-items-center flex-column flex-md-row">
+                                    <div class="flex-shrink-0 mb-3 mb-md-0">
+                                        <div class="bg-light-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                            <i data-lucide="crown" class="fs-32 text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-md-4 text-center text-md-start">
+                                        <h2 class="mb-1 h3" id="view_name_header">—</h2>
+                                        <div class="d-flex align-items-center justify-content-center justify-content-md-start mb-2 flex-wrap gap-2">
+                                            <span class="badge badge-soft-primary p-1" id="view_plan_type_badge">—</span>
+                                            <span id="view_status_header"></span>
+                                        </div>
+                                        <p class="text-muted mb-0">
+                                            <i class="ti ti-tag me-1"></i>
+                                            Plan Code: <span class="fw-medium font-monospace" id="view_plan_code_header">—</span>
+                                            &nbsp;|&nbsp;
+                                            <i class="ti ti-users me-1"></i>
+                                            <span id="view_user_type_header">—</span>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <h6 class="fw-bold">Description:</h6>
-                                <p id="view_description" class="text-muted"></p>
-                            </div>
-                        </div>
-                        
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <h6 class="fw-bold">Features:</h6>
-                                <ul id="view_features" class="list-group list-group-flush">
-                                </ul>
+
+                        <div class="row mb-3">
+                            <div class="col">
+
+                                {{-- PLAN IDENTIFICATION INFORMATION --}}
+                                <div class="row g-2 mb-3">
+                                    <h5 class="card-title text-primary">PLAN IDENTIFICATION INFORMATION</h5>
+
+                                    {{-- Plan Name --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="badge" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Plan Name</label>
+                                                <p class="mb-0 fw-medium" id="view_name">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Plan Code --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="key-round" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Plan Code</label>
+                                                <p class="mb-0 fw-medium font-monospace" id="view_plan_code">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- User Type --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="user-circle" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">User Type</label>
+                                                <p class="mb-0 fw-medium" id="view_user_type">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Plan Type --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="layers" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Plan Type</label>
+                                                <p class="mb-0 fw-medium" id="view_plan_type">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Plan Description --}}
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="file-text" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Description</label>
+                                                <p class="mb-0 fw-medium" id="view_description">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- PRICING & BILLING INFORMATION --}}
+                                <div class="row g-2 mb-3">
+                                    <h5 class="card-title text-primary">PRICING & BILLING INFORMATION</h5>
+
+                                    {{-- Price --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="philippine-peso" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Price</label>
+                                                <p class="mb-0 fw-medium" id="view_price">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Billing Cycle --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="refresh-cw" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Billing Cycle</label>
+                                                <p class="mb-0 fw-medium" id="view_billing_cycle">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Commission Rate --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="percent" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Commission Rate</label>
+                                                <p class="mb-0 fw-medium" id="view_commission_rate">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Priority Level --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="arrow-up-circle" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Priority Level</label>
+                                                <div id="view_priority_level">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- PLAN LIMITS & CAPABILITIES --}}
+                                <div class="row g-2 mb-3">
+                                    <h5 class="card-title text-primary">PLAN LIMITS & CAPABILITIES</h5>
+
+                                    {{-- Max Bookings --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="calendar-check" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Max Bookings</label>
+                                                <p class="mb-0 fw-medium" id="view_max_booking">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Max Photographers --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="camera" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Max Photographers</label>
+                                                <p class="mb-0 fw-medium" id="view_max_photographers">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Max Studios --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="building-2" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Max Studios</label>
+                                                <p class="mb-0 fw-medium" id="view_max_studios">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Staff Limit --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="users" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Staff Limit</label>
+                                                <p class="mb-0 fw-medium" id="view_staff_limit">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Support Level --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="headphones" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Support Level</label>
+                                                <p class="mb-0 fw-medium" id="view_support_level">—</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Status --}}
+                                    <div class="col-12 col-md-6">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-light-primary rounded-circle p-2">
+                                                    <i data-lucide="shield-check" class="fs-20 text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <label class="text-muted small mb-1">Status</label>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <span id="view_status"></span>
+                                                    <span class="text-muted small">Created on <span id="view_created_at">—</span></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- PLAN FEATURES --}}
+                                <div class="row g-2 mb-3">
+                                    <h5 class="card-title text-primary">PLAN FEATURES</h5>
+                                    <div class="col-12">
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-6">
+                                                <div class="list-group" id="view_features_col_1"></div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="list-group" id="view_features_col_2"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -321,11 +563,11 @@
             // ===== VIEW PLAN MODAL =====
             $(document).on('click', '.btn-view', function() {
                 let planId = $(this).data('id');
-                
+
                 // Show loading spinner, hide details
                 $('#planLoadingSpinner').show();
                 $('#planDetails').hide();
-                
+
                 // Fetch plan details
                 $.ajax({
                     url: '/admin/subscription/' + planId,
@@ -333,35 +575,66 @@
                     success: function(response) {
                         if (response.success) {
                             let plan = response.data;
-                            
-                            // Populate modal with plan data
-                            $('#view_user_type').text(plan.user_type === 'studio' ? 'Studio Owner' : 'Freelancer');
-                            $('#view_plan_type').text(plan.plan_type.charAt(0).toUpperCase() + plan.plan_type.slice(1));
-                            $('#view_billing_cycle').text(plan.billing_cycle.charAt(0).toUpperCase() + plan.billing_cycle.slice(1));
-                            $('#view_plan_code').text(plan.plan_code);
+
+                            let userTypeLabel = plan.user_type === 'studio' ? 'Studio Owner' : 'Freelancer';
+                            let planTypeLabel = plan.plan_type.charAt(0).toUpperCase() + plan.plan_type.slice(1);
+                            let billingLabel  = plan.billing_cycle.charAt(0).toUpperCase() + plan.billing_cycle.slice(1);
+                            let statusBadge   = plan.status === 'active'
+                                ? '<span class="badge badge-soft-success px-2 fw-medium">Active</span>'
+                                : '<span class="badge badge-soft-secondary px-2 fw-medium">Inactive</span>';
+                            let priorityBadge = '<span class="badge ' + plan.priority_badge_class + '">Level ' + plan.priority_level + ' – ' + plan.priority_level_label + '</span>';
+
+                            // --- Header area ---
+                            $('#view_name_header').text(plan.name);
+                            $('#view_plan_type_badge').text(planTypeLabel);
+                            $('#view_status_header').html(statusBadge);
+                            $('#view_plan_code_header').text(plan.plan_code);
+                            $('#view_user_type_header').text(userTypeLabel);
+
+                            // --- Plan Identification ---
                             $('#view_name').text(plan.name);
-                            $('#view_price').text('₱' + parseFloat(plan.price).toFixed(2));
-                            $('#view_commission_rate').text(plan.commission_rate + '%');
-                            $('#view_max_booking').text(plan.max_booking ? plan.max_booking + ' per ' + plan.billing_cycle : 'Unlimited');
-                            $('#view_max_photographers').text(plan.max_studio_photographers ? plan.max_studio_photographers : 'N/A');
-                            $('#view_support_level').text(plan.support_level.charAt(0).toUpperCase() + plan.support_level.slice(1) + ' Support');
-                            $('#view_status').html(plan.status === 'active' ? 
-                                '<span class="badge badge-soft-success">Active</span>' : 
-                                '<span class="badge badge-soft-secondary">Inactive</span>');
+                            $('#view_plan_code').text(plan.plan_code);
+                            $('#view_user_type').text(userTypeLabel);
+                            $('#view_plan_type').text(planTypeLabel);
                             $('#view_description').text(plan.description || 'No description provided.');
+
+                            // --- Pricing & Billing ---
+                            $('#view_price').text('₱' + parseFloat(plan.price).toFixed(2));
+                            $('#view_billing_cycle').text(billingLabel);
+                            $('#view_commission_rate').text(plan.commission_rate + '%');
+                            $('#view_priority_level').html(priorityBadge);
+
+                            // --- Limits & Capabilities ---
+                            $('#view_max_booking').text(plan.max_booking ? plan.max_booking + ' per ' + plan.billing_cycle : 'Unlimited');
+                            $('#view_max_photographers').text(plan.max_studio_photographers || 'N/A');
+                            $('#view_max_studios').text(plan.max_studios || 'Unlimited');
+                            $('#view_staff_limit').text(plan.staff_limit || 'Unlimited');
+                            $('#view_support_level').text(plan.support_level.charAt(0).toUpperCase() + plan.support_level.slice(1) + ' Support');
+                            $('#view_status').html(statusBadge);
                             $('#view_created_at').text(new Date(plan.created_at).toLocaleDateString());
-                            
-                            // Features
-                            let featuresList = $('#view_features');
-                            featuresList.empty();
+
+                            // --- Features (split into two columns) ---
+                            $('#view_features_col_1, #view_features_col_2').empty();
                             if (plan.features && plan.features.length > 0) {
-                                plan.features.forEach(function(feature) {
-                                    featuresList.append('<li class="list-group-item"><i class="ti ti-check text-success me-2"></i>' + feature + '</li>');
+                                let mid = Math.ceil(plan.features.length / 2);
+                                plan.features.forEach(function(feature, index) {
+                                    let item = '<li class="list-group-item"><div class="d-flex align-items-start">'
+                                        + '<i class="ti ti-check text-success me-2 mt-1"></i>'
+                                        + '<div><h5 class="mb-1 fw-semibold">' + feature + '</h5></div>'
+                                        + '</div></li>';
+                                    if (index < mid) {
+                                        $('#view_features_col_1').append(item);
+                                    } else {
+                                        $('#view_features_col_2').append(item);
+                                    }
                                 });
                             } else {
-                                featuresList.append('<li class="list-group-item text-muted">No features listed.</li>');
+                                $('#view_features_col_1').append('<li class="list-group-item text-muted">No features listed.</li>');
                             }
-                            
+
+                            // Re-init lucide icons for dynamically loaded content
+                            if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+
                             // Hide loading, show details
                             $('#planLoadingSpinner').hide();
                             $('#planDetails').show();
