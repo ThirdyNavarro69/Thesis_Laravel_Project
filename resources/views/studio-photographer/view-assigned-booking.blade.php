@@ -100,12 +100,13 @@
                                                     $statusBadge = [
                                                         'assigned' => 'badge-soft-info',
                                                         'confirmed' => 'badge-soft-primary',
+                                                        'in_progress' => 'badge-soft-warning',
                                                         'completed' => 'badge-soft-success',
                                                         'cancelled' => 'badge-soft-danger'
                                                     ][$assignment->status] ?? 'badge-soft-secondary';
                                                 @endphp
                                                 <span class="badge {{ $statusBadge }} fs-8 px-1 w-100 text-uppercase">
-                                                    {{ $assignment->status }}
+                                                    {{ str_replace('_', ' ', $assignment->status) }}
                                                 </span>
                                             </td>
                                             <td>
@@ -292,43 +293,56 @@
                     });
                 }
                 
-                // Create status action buttons
+                // Create status action buttons based on current status
                 let statusActions = '';
+
                 if (assignment.status === 'assigned') {
+                    // Photographer can only accept or reject
                     statusActions = `
                         <button class="btn btn-soft-danger me-2" id="cancelAssignmentBtn">
-                            <i data-lucide="x" class="me-1"></i> Cancel Assignment
+                            <i data-lucide="x" class="me-1"></i> Reject Assignment
                         </button>
                         <button class="btn btn-primary" id="confirmAssignmentBtn">
-                            <i data-lucide="check" class="me-1"></i> Confirm Assignment
+                            <i data-lucide="check" class="me-1"></i> Accept Assignment
                         </button>
                     `;
-                } else if (assignment.status === 'confirmed') {
+                } 
+                else if (assignment.status === 'confirmed') {
+                    // Photographer can start working (in progress) or cancel
                     statusActions = `
                         <button class="btn btn-soft-danger me-2" id="cancelAssignmentBtn">
                             <i data-lucide="x" class="me-1"></i> Cancel Assignment
                         </button>
-                        <button class="btn btn-primary" id="completeAssignmentBtn">
+                        <button class="btn btn-primary" id="startAssignmentBtn">
+                            <i data-lucide="play" class="me-1"></i> Mark as In Progress
+                        </button>
+                    `;
+                } 
+                else if (assignment.status === 'in_progress') {
+                    // Photographer can complete their work or cancel
+                    statusActions = `
+                        <button class="btn btn-soft-danger me-2" id="cancelAssignmentBtn">
+                            <i data-lucide="x" class="me-1"></i> Cancel Assignment
+                        </button>
+                        <button class="btn btn-success" id="completeAssignmentBtn">
                             <i data-lucide="check-circle" class="me-1"></i> Mark as Completed
                         </button>
                     `;
-                } else if (assignment.status === 'completed') {
+                } 
+                else if (assignment.status === 'completed') {
                     statusActions = `
                         <span class="badge badge-soft-success fs-6 px-3 py-2">
-                            <i data-lucide="check-circle" class="me-1"></i> Completed
+                            <i data-lucide="check-circle" class="me-1"></i> Work Completed
                         </span>
+                        <small class="text-muted d-block mt-2">Waiting for owner to finalize booking</small>
                     `;
-                } else if (assignment.status === 'cancelled') {
+                } 
+                else if (assignment.status === 'cancelled') {
                     statusActions = `
                         <span class="badge badge-soft-danger fs-6 px-3 py-2">
                             <i data-lucide="x-circle" class="me-1"></i> Cancelled
                         </span>
                     `;
-                }
-
-                // Add payment status indicator for completed button
-                if (assignment.status === 'confirmed') {
-                    // We'll add a check in the click handler instead
                 }
                 
                 const modalContent = `
@@ -635,16 +649,16 @@
             
             // Bind status update buttons
             function bindStatusUpdateButtons() {
-                // Confirm Assignment
+                // Accept Assignment
                 $(document).off('click', '#confirmAssignmentBtn').on('click', '#confirmAssignmentBtn', function() {
                     Swal.fire({
-                        title: 'Confirm Assignment',
-                        text: 'Are you sure you want to confirm this assignment?',
+                        title: 'Accept Assignment',
+                        text: 'Are you sure you want to accept this assignment?',
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#3475db',
                         cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Yes, confirm it',
+                        confirmButtonText: 'Yes, accept it',
                         cancelButtonText: 'Cancel'
                     }).then((result) => {
                         if (result.isConfirmed) {
@@ -653,11 +667,29 @@
                     });
                 });
                 
+                // Start Assignment (In Progress)
+                $(document).off('click', '#startAssignmentBtn').on('click', '#startAssignmentBtn', function() {
+                    Swal.fire({
+                        title: 'Mark as In Progress',
+                        text: 'Are you ready to start working on this assignment?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3475db',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, start now',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            updateAssignmentStatus('in_progress');
+                        }
+                    });
+                });
+                
                 // Complete Assignment
                 $(document).off('click', '#completeAssignmentBtn').on('click', '#completeAssignmentBtn', function() {
                     Swal.fire({
                         title: 'Mark as Completed',
-                        text: 'Are you sure you want to mark this assignment as completed?',
+                        text: 'Have you finished all your work for this booking?',
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#3475db',
@@ -671,7 +703,7 @@
                     });
                 });
                 
-                // Cancel Assignment - Show modal for cancellation reason
+                // Cancel Assignment
                 $(document).off('click', '#cancelAssignmentBtn').on('click', '#cancelAssignmentBtn', function() {
                     showStatusUpdateModal('cancelled');
                 });

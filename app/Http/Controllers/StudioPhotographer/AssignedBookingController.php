@@ -66,18 +66,11 @@ class AssignedBookingController extends Controller
             // Get the booking
             $booking = $assignment->booking;
             
-            // Get studio relationship from booking if it exists
-            if ($booking && $booking->studio) {
-                $studio = $booking->studio;
-            } else {
-                $studio = $assignment->studio;
-            }
-            
             return response()->json([
                 'success' => true,
                 'assignment' => $assignment,
                 'booking' => $booking,
-                'studio' => $studio,
+                'studio' => $assignment->studio,
                 'assigner' => $assignment->assigner
             ]);
             
@@ -90,7 +83,7 @@ class AssignedBookingController extends Controller
     }
 
     /**
-     * Update assignment status (confirm/complete/cancel)
+     * Update assignment status (confirm/in_progress/complete/cancel)
      */
     public function updateAssignmentStatus(UpdateAssignmentStatusRequest $request, $assignmentId)
     {
@@ -109,37 +102,82 @@ class AssignedBookingController extends Controller
                 ]);
             }
             
-            // For completed status, check if booking is fully paid
-            if ($request->status === 'completed') {
-                $booking = BookingModel::find($assignment->booking_id);
-                
-                // Calculate total paid
-                $totalPaid = $booking->payments()->where('status', 'succeeded')->sum('amount');
-                
-                if ($totalPaid < $booking->total_amount) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cannot mark assignment as completed because the booking is not fully paid. Remaining balance: PHP ' . number_format($booking->total_amount - $totalPaid, 2)
-                    ]);
-                }
-            }
-            
             $updateData = ['status' => $request->status];
             
             switch ($request->status) {
                 case 'confirmed':
                     $updateData['confirmed_at'] = now();
-                    break;
-                case 'completed':
-                    $updateData['completed_at'] = now();
                     
-                    // Also update booking status to in_progress if it's still pending/confirmed
+                    // When photographer accepts, update main booking status to in_progress
                     $booking = BookingModel::find($assignment->booking_id);
                     if (in_array($booking->status, ['pending', 'confirmed'])) {
                         $booking->status = 'in_progress';
                         $booking->save();
                     }
                     break;
+                    
+                case 'in_progress':
+                    // Check if photographer has confirmed first
+                    if ($assignment->status !== 'confirmed') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You must confirm the assignment first before starting.'
+                        ]);
+                    }
+                    $updateData['started_at'] = now();
+                    
+                    // Make sure booking is in_progress (should already be from confirmation, but just in case)
+                    $booking = BookingModel::find($assignment->booking_id);
+                    if ($booking->status !== 'in_progress') {
+                        $booking->status = 'in_progress';
+                        $booking->save();
+                    }
+                    break;
+                    
+                case 'completed':
+                    // Check if assignment is in progress first
+                    if ($assignment->status !== 'in_progress') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You must mark the assignment as in progress first before completing.'
+                        ]);
+                    }
+                    
+                    // Check if booking is fully paid
+                    $booking = BookingModel::find($assignment->booking_id);
+                    $totalPaid = $booking->payments()->where('status', 'succeeded')->sum('amount');
+                    
+                    if ($totalPaid < $booking->total_amount) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Cannot mark as completed because the booking is not fully paid. Remaining balance: PHP ' . number_format($booking->total_amount - $totalPaid, 2)
+                        ]);
+                    }
+                    
+                    $updateData['completed_at'] = now();
+                    
+                    // Check if ALL photographers have completed their assignments
+                    $allPhotographersCompleted = true;
+                    $otherAssignments = BookingAssignedPhotographerModel::where('booking_id', $assignment->booking_id)
+                        ->where('id', '!=', $assignment->id)
+                        ->get();
+                    
+                    foreach ($otherAssignments as $other) {
+                        if ($other->status !== 'completed') {
+                            $allPhotographersCompleted = false;
+                            break;
+                        }
+                    }
+                    
+                    // If this is the last photographer to complete, update booking status
+                    // to let owner know it's ready for final completion
+                    if ($allPhotographersCompleted) {
+                        // You can add a note or just keep as in_progress
+                        // The owner will still need to click "Complete Booking"
+                        \Log::info('All photographers completed for booking: ' . $assignment->booking_id);
+                    }
+                    break;
+                    
                 case 'cancelled':
                     $updateData['cancelled_at'] = now();
                     $updateData['cancellation_reason'] = $request->cancellation_reason;

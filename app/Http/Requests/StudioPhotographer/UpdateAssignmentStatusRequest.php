@@ -14,7 +14,7 @@ class UpdateAssignmentStatusRequest extends FormRequest
     public function rules()
     {
         return [
-            'status' => 'required|in:confirmed,completed,cancelled',
+            'status' => 'required|in:confirmed,in_progress,completed,cancelled',
             'cancellation_reason' => 'required_if:status,cancelled|nullable|string|max:500'
         ];
     }

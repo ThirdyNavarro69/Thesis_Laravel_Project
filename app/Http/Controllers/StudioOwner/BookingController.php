@@ -407,12 +407,16 @@ class BookingController extends Controller
             
             // Check if all photographers have completed their assignments
             $assignments = BookingAssignedPhotographerModel::where('booking_id', $id)->get();
-            foreach ($assignments as $assignment) {
-                if ($assignment->status !== 'completed') {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'All assigned photographers must mark their assignments as completed before the owner can complete the booking.'
-                    ]);
+            
+            // If there are no photographers assigned, that's fine
+            if ($assignments->count() > 0) {
+                foreach ($assignments as $assignment) {
+                    if ($assignment->status !== 'completed') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'All assigned photographers must mark their assignments as completed before the owner can complete the booking.'
+                        ]);
+                    }
                 }
             }
             
