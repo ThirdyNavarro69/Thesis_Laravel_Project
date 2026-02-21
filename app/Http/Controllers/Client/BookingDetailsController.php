@@ -25,11 +25,6 @@ class BookingDetailsController extends Controller
                 ->with(['location', 'category', 'packages', 'schedules'])
                 ->findOrFail($id);
 
-            // Fetch all categories for the dropdown
-            $categories = CategoriesModel::where('status', 'active')
-                ->orderBy('category_name', 'asc')
-                ->get();
-
             // Fetch studio packages grouped by category
             $studioPackages = PackagesModel::where('studio_id', $id)
                 ->where('status', 'active')
@@ -37,33 +32,43 @@ class BookingDetailsController extends Controller
                 ->get()
                 ->groupBy('category_id');
 
-            return view('client.booking-details', compact('studio', 'categories', 'studioPackages', 'type'));
-        }
-        
-        // For freelancer
-        if ($type === 'freelancer') {
-            // Fetch freelancer details by user_id
-            $freelancer = ProfileModel::with(['user', 'location', 'categories', 'services', 'schedule'])
-                ->whereHas('user', function($query) {
-                    $query->where('status', 'active');
-                })
-                ->where('user_id', $id) // Changed from findOrFail($id) to where('user_id', $id)
-                ->firstOrFail(); // Changed to firstOrFail()
+            // Get category IDs that have active packages
+            $categoryIdsWithPackages = $studioPackages->keys()->toArray();
 
-            // Fetch all categories for the dropdown
-            $categories = CategoriesModel::where('status', 'active')
+            // Fetch only those categories
+            $categories = CategoriesModel::whereIn('id', $categoryIdsWithPackages)
+                ->where('status', 'active')
                 ->orderBy('category_name', 'asc')
                 ->get();
 
-            // Fetch freelancer packages grouped by category
-            $freelancerPackages = FreelancerPackagesModel::where('user_id', $freelancer->user_id)
-                ->where('status', 'active')
-                ->with('category')
-                ->get()
-                ->groupBy('category_id');
-
-            return view('client.booking-details', compact('freelancer', 'categories', 'freelancerPackages', 'type'));
+            return view('client.booking-details', compact('studio', 'categories', 'studioPackages', 'type'));
         }
+
+        // For freelancer
+        $freelancer = ProfileModel::with(['user', 'location', 'categories', 'services', 'schedule'])
+            ->whereHas('user', function($query) {
+                $query->where('status', 'active');
+            })
+            ->where('user_id', $id)
+            ->firstOrFail();
+
+        // Fetch freelancer packages grouped by category
+        $freelancerPackages = FreelancerPackagesModel::where('user_id', $freelancer->user_id)
+            ->where('status', 'active')
+            ->with('category')
+            ->get()
+            ->groupBy('category_id');
+
+        // Get category IDs that have active packages
+        $categoryIdsWithPackages = $freelancerPackages->keys()->toArray();
+
+        // Fetch only those categories
+        $categories = CategoriesModel::whereIn('id', $categoryIdsWithPackages)
+            ->where('status', 'active')
+            ->orderBy('category_name', 'asc')
+            ->get();
+
+        return view('client.booking-details', compact('freelancer', 'categories', 'freelancerPackages', 'type'));
         
         abort(404, 'Invalid type');
     }

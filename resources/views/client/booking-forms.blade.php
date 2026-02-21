@@ -531,16 +531,27 @@
                                 const durationText = package.duration === 1 ? '1 Hour' : `${package.duration} Hours`;
                                 const priceText = `₱${parseFloat(package.package_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                                 
-                                // Parse inclusions if it's a JSON string
+                                // ========== FIXED: Parse inclusions properly ==========
                                 let inclusions = [];
                                 if (typeof package.package_inclusions === 'string') {
                                     try {
                                         inclusions = JSON.parse(package.package_inclusions);
+                                        // Ensure it's an array
+                                        if (!Array.isArray(inclusions)) {
+                                            inclusions = [inclusions];
+                                        }
                                     } catch (e) {
-                                        inclusions = [package.package_inclusions];
+                                        // Not JSON, split by comma if contains commas
+                                        if (package.package_inclusions.includes(',')) {
+                                            inclusions = package.package_inclusions.split(',').map(item => item.trim());
+                                        } else {
+                                            inclusions = [package.package_inclusions];
+                                        }
                                     }
                                 } else if (Array.isArray(package.package_inclusions)) {
                                     inclusions = package.package_inclusions;
+                                } else {
+                                    inclusions = [];
                                 }
                                 
                                 // Check if this is a studio package
@@ -565,7 +576,7 @@
                                                 <!-- Package Description -->
                                                 <p class="text-muted small mb-3">${package.package_description ? package.package_description.substring(0, 80) + (package.package_description.length > 80 ? '...' : '') : 'No description available.'}</p>
                                                 
-                                                <!-- ========== Online Gallery badge for ALL package types ========== -->
+                                                <!-- Online Gallery badge for ALL package types -->
                                                 <div class="d-flex align-items-center mb-2">
                                                     ${package.online_gallery ? 
                                                         `<span class="p-1 badge badge-soft-success">
@@ -577,7 +588,7 @@
                                                     }
                                                 </div>
                                                 
-                                                <!-- ========== Only show photographer count for studio packages ========== -->
+                                                <!-- Only show photographer count for studio packages -->
                                                 ${isStudio ? `
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="p-1 badge badge-soft-primary">
@@ -608,20 +619,13 @@
                                                             </li>
                                                         ` : ''}
                                                         
-                                                        <!-- Package Inclusions (first 3 items) -->
-                                                        ${inclusions.slice(0, 3).map(inclusion => `
+                                                        <!-- All Package Inclusions (now correctly displayed as separate bullets) -->
+                                                        ${inclusions.map(inclusion => `
                                                             <li class="mb-1">
                                                                 <i class="ti ti-check text-success me-2"></i> 
                                                                 ${inclusion}
                                                             </li>
                                                         `).join('')}
-                                                        
-                                                        <!-- Show count of additional inclusions -->
-                                                        ${inclusions.length > 3 ? `
-                                                            <li class="text-muted">
-                                                                <small>+${inclusions.length - 3} more items</small>
-                                                            </li>
-                                                        ` : ''}
                                                         
                                                         <!-- Coverage Scope -->
                                                         ${package.coverage_scope ? `
@@ -644,7 +648,7 @@
                             // Clear any previous package selection
                             selectedPackageId = null;
                             
-                            // ========== ADDED: Style for selected package card ==========
+                            // Style for selected package card
                             $('<style>')
                                 .prop('type', 'text/css')
                                 .html(`

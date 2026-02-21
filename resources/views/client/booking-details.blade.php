@@ -179,17 +179,12 @@
                                                                             </li>
                                                                         @endif
                                                                         @if($package->package_inclusions && is_array($package->package_inclusions))
-                                                                            @foreach(array_slice($package->package_inclusions, 0, 3) as $inclusion)
+                                                                            @foreach($package->package_inclusions as $inclusion)
                                                                                 <li class="mb-1">
                                                                                     <i class="ti ti-check text-success me-2"></i> 
                                                                                     {{ $inclusion }}
                                                                                 </li>
                                                                             @endforeach
-                                                                            @if(count($package->package_inclusions) > 3)
-                                                                                <li class="text-muted">
-                                                                                    <small>+{{ count($package->package_inclusions) - 3 }} more items</small>
-                                                                                </li>
-                                                                            @endif
                                                                         @endif
                                                                         @if($package->coverage_scope)
                                                                             <li class="mb-1">
