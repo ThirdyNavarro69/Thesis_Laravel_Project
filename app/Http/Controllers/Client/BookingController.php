@@ -312,8 +312,8 @@ class BookingController extends Controller
     }
 
     /**
-     * Store booking with validation before storing
-     */
+    * Store booking with validation before storing
+    */
     public function store(Request $request)
     {
         // Validate all input first
@@ -338,7 +338,7 @@ class BookingController extends Controller
         ]);
 
         try {
-            // 1. Validate date availability first (before storing anything)
+            // 1. Validate date availability first
             $availabilityCheck = $this->checkDateAvailability($request);
             if (!$availabilityCheck['success'] || !$availabilityCheck['available']) {
                 return response()->json([
@@ -370,17 +370,18 @@ class BookingController extends Controller
             
             if ($request->payment_type === 'downpayment') {
                 $downPayment = $totalAmount * 0.3; // 30% downpayment
+                // ========== FIXED: remaining_balance should be total - downpayment = 12,600 ==========
                 $remainingBalance = $totalAmount - $downPayment;
-                $paymentStatus = 'unpaid';
+                $paymentStatus = 'pending';
                 $bookingStatus = 'pending';
             } else {
                 $downPayment = $totalAmount;
                 $remainingBalance = 0;
-                $paymentStatus = 'unpaid';
+                $paymentStatus = 'pending';
                 $bookingStatus = 'pending';
             }
 
-            // 5. Create booking (only if all validations pass)
+            // 5. Create booking
             $booking = BookingModel::create([
                 'booking_reference' => BookingModel::generateBookingReference(),
                 'client_id' => Auth::id(),
@@ -399,7 +400,7 @@ class BookingController extends Controller
                 'special_requests' => $request->special_requests,
                 'total_amount' => $totalAmount,
                 'down_payment' => $downPayment,
-                'remaining_balance' => $remainingBalance,
+                'remaining_balance' => $remainingBalance, // This should be 12,600 for downpayment
                 'deposit_policy' => $request->payment_type === 'downpayment' ? '30%' : '100%',
                 'payment_type' => $request->payment_type,
                 'status' => $bookingStatus,
@@ -679,8 +680,8 @@ class BookingController extends Controller
     }
 
     /**
-     * Verify payment after redirect from Stripe
-     */
+    * Verify payment after redirect from Stripe
+    */
     public function verifyPayment($reference, Request $request)
     {
         if (!$reference) {
@@ -710,7 +711,6 @@ class BookingController extends Controller
             // Check if already paid
             $paidPayment = $booking->payments()->where('status', 'succeeded')->first();
             if ($paidPayment) {
-                // Redirect to success page if already paid
                 return redirect()->route('client.payment.success', ['reference' => $reference]);
             }
             
@@ -725,7 +725,6 @@ class BookingController extends Controller
         $sessionId = request()->query('session_id') ?? $payment->stripe_session_id;
         
         if (!$sessionId) {
-            // If no session ID, check if payment was already processed via webhook
             if ($payment->status === 'succeeded') {
                 return redirect()->route('client.payment.success', ['reference' => $reference]);
             }
@@ -742,10 +741,6 @@ class BookingController extends Controller
             $sessionData = $this->stripeService->retrieveCheckoutSession($sessionId);
             
             if (!$sessionData) {
-                // Try to check payment status directly from Stripe
-                Log::warning('Could not retrieve Stripe session, checking payment status');
-                
-                // Show verifying page
                 return view('client.payment-verifying', [
                     'booking' => $booking,
                     'payment' => $payment,
@@ -776,31 +771,11 @@ class BookingController extends Controller
                     'payment_details' => $paymentDetails,
                 ]);
 
-                // Check if this is a balance payment
-                $paymentDetails = $payment->payment_details ?? [];
-                $isBalancePayment = $paymentDetails['is_balance_payment'] ?? false;
-                
-                // Calculate total paid including this payment
-                $totalPaid = $booking->payments()
-                    ->where('status', 'succeeded')
-                    ->sum('amount') + $payment->amount;
-                
-                // Determine new payment status
-                if ($totalPaid >= $booking->total_amount) {
-                    $paymentStatus = 'paid';
-                } elseif ($totalPaid > 0) {
-                    $paymentStatus = 'partially_paid';
-                } else {
-                    $paymentStatus = 'pending';
-                }
-                
-                // Update booking payment status
-                $booking->update([
-                    'payment_status' => $paymentStatus,
-                    'remaining_balance' => max(0, $booking->total_amount - $totalPaid),
-                ]);
+                // ========== FIXED: Update booking payment status and remaining balance ==========
+                $booking->updatePaymentStatus();
                 
                 // Only update booking status to confirmed if it's the first payment
+                $isBalancePayment = $paymentDetails['is_balance_payment'] ?? false;
                 if (!$isBalancePayment && $booking->status === 'pending') {
                     $booking->update([
                         'status' => 'confirmed',
@@ -812,23 +787,15 @@ class BookingController extends Controller
                     'payment_id' => $payment->id,
                     'booking_id' => $booking->id,
                     'amount' => $payment->amount,
-                    'total_paid' => $totalPaid,
-                    'payment_status' => $paymentStatus,
+                    'total_paid' => $booking->total_paid,
+                    'payment_status' => $booking->payment_status,
+                    'remaining_balance' => $booking->remaining_balance,
                     'is_balance_payment' => $isBalancePayment,
                 ]);
 
-                // ADD THIS NEW CODE FOR REVENUE SPLIT
-                $this->createRevenueRecord($booking, $payment);
-                
-                Log::info('Stripe payment verified successfully', [
-                    'payment_id' => $payment->id,
-                    'booking_id' => $booking->id,
-                    'amount' => $payment->amount,
-                    'payment_type' => $booking->payment_type,
-                    'payment_status' => $paymentStatus,
-                ]);
+                // Create revenue record for this payment
+                SystemRevenueModel::createForPayment($booking, $payment);
 
-                // REDIRECT TO SUCCESS PAGE
                 return redirect()->route('client.payment.success', ['reference' => $reference]);
 
             } elseif ($status === 'unpaid' || $status === 'open') {
@@ -842,7 +809,6 @@ class BookingController extends Controller
                 ]);
                 
             } else {
-                // Unknown status or expired/cancelled
                 return redirect()->route('client.payment.failed', ['reference' => $reference]);
             }
 
@@ -1748,60 +1714,7 @@ class BookingController extends Controller
      */
     private function createRevenueRecord($booking, $payment)
     {
-        try {
-            // Calculate revenue split (10% platform fee)
-            $revenueSplit = SystemRevenueModel::calculateRevenueSplit($payment->amount, 10.00);
-            
-            // Determine provider type and ID
-            if ($booking->booking_type === 'studio') {
-                $providerType = 'studio';
-                $providerId = $booking->provider_id; // This is studio_id
-            } else {
-                $providerType = 'freelancer';
-                $providerId = $booking->provider_id; // This is user_id for freelancer
-            }
-            
-            // Create revenue record
-            $revenue = SystemRevenueModel::create([
-                'transaction_reference' => SystemRevenueModel::generateTransactionReference(),
-                'booking_id' => $booking->id,
-                'payment_id' => $payment->id,
-                'total_amount' => $revenueSplit['total_amount'],
-                'platform_fee_percentage' => $revenueSplit['platform_fee_percentage'],
-                'platform_fee_amount' => $revenueSplit['platform_fee_amount'],
-                'provider_amount' => $revenueSplit['provider_amount'],
-                'provider_type' => $providerType,
-                'provider_id' => $providerId,
-                'client_id' => $booking->client_id,
-                'status' => 'completed',
-                'breakdown' => [
-                    'booking_reference' => $booking->booking_reference,
-                    'payment_reference' => $payment->payment_reference,
-                    'payment_type' => $booking->payment_type,
-                    'platform_fee_percentage' => '10%',
-                    'calculation' => [
-                        'total_payment' => $payment->amount,
-                        'platform_fee' => $revenueSplit['platform_fee_amount'],
-                        'provider_earnings' => $revenueSplit['provider_amount'],
-                    ],
-                ],
-                'settled_at' => now(),
-            ]);
-            
-            Log::info('System revenue record created', [
-                'revenue_id' => $revenue->id,
-                'booking_id' => $booking->id,
-                'payment_id' => $payment->id,
-                'platform_fee' => $revenueSplit['platform_fee_amount'],
-                'provider_amount' => $revenueSplit['provider_amount'],
-            ]);
-            
-            return $revenue;
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to create revenue record: ' . $e->getMessage());
-            return null;
-        }
+        return SystemRevenueModel::createForPayment($booking, $payment);
     }
 
     /**

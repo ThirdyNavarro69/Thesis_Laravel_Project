@@ -160,8 +160,8 @@ class BookingController extends Controller
     }
 
     /**
-     * Update payment status
-     */
+    * Update payment status
+    */
     public function updatePaymentStatus(Request $request, $id)
     {
         try {
@@ -198,28 +198,19 @@ class BookingController extends Controller
                 ], 400);
             }
             
-            $updateData = ['payment_status' => $request->payment_status];
-            
-            // ✅ FIX: If fully paid, set remaining balance to 0
-            if ($request->payment_status === 'paid') {
-                $updateData['remaining_balance'] = 0;
-            }
+            // ========== FIXED: Don't manually update remaining_balance ==========
+            // Let the model handle it through the accessor
+            $booking->payment_status = $request->payment_status;
+            $booking->save();
 
-            // ✅ FIX: If refunded, restore remaining balance to total amount
-            if ($request->payment_status === 'refunded') {
-                $updateData['remaining_balance'] = $booking->total_amount;
-            }
-            
-            $booking->update($updateData);
-            
-            // ✅ FIX: Create a payment record for the final payment
+            // Create a payment record for the final payment
             if ($request->payment_status === 'paid') {
                 // Calculate the final payment amount (total - already paid)
-                $totalPaid = $this->getTotalPaidAmount($booking);
+                $totalPaid = $booking->total_paid; // Use the accessor
                 $finalPayment = $booking->total_amount - $totalPaid;
                 
                 if ($finalPayment > 0) {
-                    PaymentModel::create([
+                    $payment = PaymentModel::create([
                         'booking_id' => $booking->id,
                         'payment_reference' => PaymentModel::generatePaymentReference(),
                         'amount' => $finalPayment,
@@ -233,6 +224,9 @@ class BookingController extends Controller
                         ],
                         'paid_at' => now()
                     ]);
+                    
+                    // Create revenue record for this payment
+                    SystemRevenueModel::createForPayment($booking, $payment);
                 }
             }
             
