@@ -902,13 +902,24 @@
                             <div class="card border-0 shadow-none">
                                 <div class="card-body p-0">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 class="card-title mb-0 fw-semibold text-uppercase small text-primary">
-                                            Assigned Photographers
-                                        </h6>
-                                        ${!['in_progress', 'completed'].includes(booking.status) ? `
+                                        <div>
+                                            <h6 class="card-title mb-0 fw-semibold text-uppercase small text-primary">
+                                                Assigned Photographers
+                                            </h6>
+                                            <small class="text-muted">
+                                                Package allows: <span class="fw-medium">${data.max_photographers} photographer(s)</span> | 
+                                                Currently assigned: <span class="fw-medium">${data.current_assigned_count}</span>
+                                            </small>
+                                        </div>
+                                        ${!['in_progress', 'completed'].includes(booking.status) && data.current_assigned_count < data.max_photographers ? `
                                             <button class="btn btn-primary btn-sm" id="assignPhotographerBtn">
                                                 <i data-lucide="user-plus" class="me-1"></i> Assign Photographer
                                             </button>
+                                        ` : data.current_assigned_count >= data.max_photographers ? `
+                                            <span class="badge badge-soft-info px-3 py-2">
+                                                <i data-lucide="check-circle" class="me-1" style="width: 16px;"></i>
+                                                Maximum photographers assigned
+                                            </span>
                                         ` : ''}
                                     </div>
                                     <div id="assignedPhotographersList">
@@ -1071,29 +1082,60 @@
             function renderAvailablePhotographers(data) {
                 const booking = data.booking;
                 const photographers = data.photographers;
+                const assignmentInfo = data.assignment_info;
 
                 // Update booking info
                 $('#assignBookingInfo').text(`${booking.reference} - ${booking.category}`);
                 $('#assignBookingDetails').text(`${booking.event_date} • ${booking.event_name}`);
-                $('#assignBookingStatus').text('Available for Assignment');
+                
+                // Show requirement info in status badge
+                if (assignmentInfo.is_initial_assignment) {
+                    $('#assignBookingStatus').text(`Initial Assignment: Need ${assignmentInfo.required_photographers} photographers`);
+                } else {
+                    $('#assignBookingStatus').text(`Adding: Need ${assignmentInfo.remaining_needed} more of ${assignmentInfo.required_photographers}`);
+                }
+
+                // Show requirement info alert
+                const requirementInfoHtml = `
+                    <div class="alert alert-${assignmentInfo.is_initial_assignment ? 'warning' : 'info'} border-0 bg-light-${assignmentInfo.is_initial_assignment ? 'warning' : 'info'} mb-4">
+                        <div class="d-flex align-items-center">
+                            <i data-lucide="${assignmentInfo.is_initial_assignment ? 'alert-triangle' : 'info'}" class="me-2" style="width: 20px;"></i>
+                            <div>
+                                <strong>Package Photographer Requirement</strong><br>
+                                <small>
+                                    This package <span class="fw-bold text-primary">REQUIRES</span> exactly <span class="fw-bold">${assignmentInfo.required_photographers}</span> photographer(s).<br>
+                                    ${assignmentInfo.is_initial_assignment 
+                                        ? `You must select <span class="fw-bold">ALL ${assignmentInfo.required_photographers}</span> photographers now.` 
+                                        : `Currently assigned: <span class="fw-bold">${assignmentInfo.current_assigned}</span>. 
+                                        You need to select <span class="fw-bold">${assignmentInfo.remaining_needed}</span> more photographer(s) to complete the requirement.`}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
 
                 if (photographers.length === 0) {
-                    $('#photographerListContainer').html(`
+                    $('#photographerListContainer').html(requirementInfoHtml + `
                         <div class="text-center py-4">
                             <i data-lucide="users" class="fs-20 text-muted mb-2"></i>
                             <p class="mb-2">No available photographers for this booking date.</p>
-                            <small class="text-muted">All photographers are either assigned or have conflicting schedules.</small>
+                            <small class="text-muted">Please check back later or add more photographers to your studio.</small>
                         </div>
                     `);
                     $('#confirmAssignment').prop('disabled', true);
                     return;
                 }
 
-                let photographersHtml = '';
+                let photographersHtml = requirementInfoHtml + '<div class="photographer-list">';
                 photographers.forEach(photographer => {
                     const initials = photographer.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
+                    // Determine max selectable based on remaining needed
+                    const maxSelectable = assignmentInfo.is_initial_assignment ? assignmentInfo.required_photographers : assignmentInfo.remaining_needed;
+                    // Disable if already selected max and not this one
+                    const isDisabled = selectedPhotographers.length >= maxSelectable && !selectedPhotographers.includes(photographer.id.toString());
+                    
                     photographersHtml += `
-                        <div class="card border mb-2 photographer-card" data-photographer-id="${photographer.id}">
+                        <div class="card border mb-2 photographer-card ${selectedPhotographers.includes(photographer.id.toString()) ? 'selected border-primary' : ''}" data-photographer-id="${photographer.id}">
                             <div class="card-body p-0">
                                 <div class="row align-items-center">
                                     <div class="col-auto px-4">
@@ -1102,7 +1144,8 @@
                                                 type="checkbox" 
                                                 id="photographer_${photographer.id}" 
                                                 value="${photographer.id}"
-                                                ${selectedPhotographers.includes(photographer.id.toString()) ? 'checked' : ''}>
+                                                ${selectedPhotographers.includes(photographer.id.toString()) ? 'checked' : ''}
+                                                ${isDisabled ? 'disabled' : ''}>
                                             <label class="form-check-label visually-hidden" for="photographer_${photographer.id}">Assign ${photographer.name}</label>
                                         </div>
                                     </div>
@@ -1130,19 +1173,84 @@
                         </div>
                     `;
                 });
+                photographersHtml += '</div>';
 
                 $('#photographerListContainer').html(photographersHtml);
-                $('#confirmAssignment').prop('disabled', false);
+                
+                // Update confirm button text based on requirement
+                updateConfirmButtonState(assignmentInfo);
                 loadIcons();
+            }
+
+            // Add new helper function
+            function updateConfirmButtonState(assignmentInfo) {
+                const requiredCount = assignmentInfo.is_initial_assignment 
+                    ? assignmentInfo.required_photographers 
+                    : assignmentInfo.remaining_needed;
+                
+                if (selectedPhotographers.length === requiredCount) {
+                    $('#confirmAssignment').prop('disabled', false);
+                    $('#selectionWarning').remove();
+                    
+                    // Update button text
+                    if (assignmentInfo.is_initial_assignment) {
+                        $('#confirmAssignment').text(`Assign All ${requiredCount} Photographers`);
+                    } else {
+                        $('#confirmAssignment').text(`Add ${requiredCount} Photographer(s)`);
+                    }
+                } else {
+                    $('#confirmAssignment').prop('disabled', true);
+                    
+                    // Show warning
+                    let warningMessage = '';
+                    if (assignmentInfo.is_initial_assignment) {
+                        warningMessage = `You must select exactly ${requiredCount} photographers for the initial assignment.`;
+                    } else {
+                        warningMessage = `You need to select exactly ${requiredCount} more photographer(s) to complete the requirement.`;
+                    }
+                    
+                    if ($('#selectionWarning').length === 0) {
+                        $('#photographerListContainer').prepend(`
+                            <div class="alert alert-warning mb-3" id="selectionWarning">
+                                <i data-lucide="alert-triangle" class="me-1"></i>
+                                ${warningMessage}
+                            </div>
+                        `);
+                    } else {
+                        $('#selectionWarning').html(`
+                            <i data-lucide="alert-triangle" class="me-1"></i>
+                            ${warningMessage}
+                        `);
+                    }
+                    loadIcons();
+                }
             }
 
             // Photographer checkbox change
             $(document).on('change', '.photographer-checkbox', function() {
                 const photographerId = $(this).val();
                 
+                // Get assignment info from the data attribute or parse from the alert
+                const isInitialAssignment = $('.alert-warning').length > 0 || $('.alert-info').text().includes('Initial Assignment');
+                const requiredText = $('.alert-info, .alert-warning').text();
+                const requiredMatch = requiredText.match(/(\d+)/g);
+                const requiredCount = requiredMatch ? parseInt(requiredMatch[requiredMatch.length - 1]) : 1;
+                
                 if ($(this).is(':checked')) {
-                    if (!selectedPhotographers.includes(photographerId)) {
+                    if (!selectedPhotographers.includes(photographerId) && selectedPhotographers.length < requiredCount) {
                         selectedPhotographers.push(photographerId);
+                    } else if (selectedPhotographers.length >= requiredCount) {
+                        // Uncheck if trying to exceed required count
+                        $(this).prop('checked', false);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Cannot Select More',
+                            text: `You need to select exactly ${requiredCount} photographer(s).`,
+                            confirmButtonColor: '#3475db',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        return;
                     }
                 } else {
                     const index = selectedPhotographers.indexOf(photographerId);
@@ -1152,10 +1260,18 @@
                 }
                 
                 // Update UI
-                $('.photographer-card').removeClass('selected');
+                $('.photographer-card').removeClass('selected border-primary');
                 selectedPhotographers.forEach(id => {
-                    $(`.photographer-card[data-photographer-id="${id}"]`).addClass('selected');
+                    $(`.photographer-card[data-photographer-id="${id}"]`).addClass('selected border-primary');
                 });
+                
+                // Update confirm button state with current assignment info
+                const assignmentInfo = {
+                    is_initial_assignment: isInitialAssignment,
+                    required_photographers: requiredCount,
+                    remaining_needed: requiredCount - selectedPhotographers.length
+                };
+                updateConfirmButtonState(assignmentInfo);
             });
 
             // Confirm assignment
@@ -1213,8 +1329,8 @@
                             }).then(() => {
                                 assignModal.hide();
                                 setTimeout(() => {
-                                    bookingModal.show(); // Show booking modal again
-                                    loadBookingDetails(currentBookingId); // Refresh booking details
+                                    bookingModal.show();
+                                    loadBookingDetails(currentBookingId);
                                 }, 300);
                                 // Reset form
                                 $('#assignmentNotes').val('');

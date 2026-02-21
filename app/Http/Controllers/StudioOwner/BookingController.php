@@ -113,7 +113,7 @@ class BookingController extends Controller
             // Calculate total paid
             $totalPaid = $booking->payments->where('status', 'succeeded')->sum('amount');
             
-            // Get available statuses for dropdown (REMOVED - owner no longer updates status)
+            // Get available statuses for dropdown
             $availableStatuses = [];
             
             // Check if all photographers have completed their assignments
@@ -125,6 +125,18 @@ class BookingController extends Controller
                     $allPhotographersCompleted = false;
                     break;
                 }
+            }
+            
+            // Get maximum photographers allowed based on package
+            $maxPhotographers = $this->getMaxPhotographersFromPackage($booking);
+            $currentAssignedCount = $booking->assignedPhotographers->count();
+            
+            // Get package details for display
+            $bookingPackage = $booking->packages->first();
+            $packageDetails = null;
+            
+            if ($bookingPackage && $bookingPackage->package_type === 'studio') {
+                $packageDetails = \App\Models\StudioOwner\PackagesModel::find($bookingPackage->package_id);
             }
             
             // Owner can only complete booking if:
@@ -147,7 +159,10 @@ class BookingController extends Controller
                 'can_owner_complete' => $canOwnerComplete,
                 'total_paid' => $totalPaid,
                 'status_badge_class' => $booking->getStatusBadgeClass(),
-                'payment_status_badge_class' => $booking->getPaymentStatusBadgeClass()
+                'payment_status_badge_class' => $booking->getPaymentStatusBadgeClass(),
+                'max_photographers' => $maxPhotographers,
+                'current_assigned_count' => $currentAssignedCount,
+                'package_photographer_count' => $packageDetails->photographer_count ?? 1
             ]);
             
         } catch (\Exception $e) {
@@ -156,6 +171,32 @@ class BookingController extends Controller
                 'message' => 'Error fetching booking details: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get maximum photographers allowed from the booking's package
+     */
+    private function getMaxPhotographersFromPackage($booking)
+    {
+        // Get the booking package
+        $bookingPackage = $booking->packages->first();
+        
+        if (!$bookingPackage) {
+            return 1; // Default to 1 if no package
+        }
+        
+        // Get the actual package from tbl_packages based on package_id and package_type
+        if ($bookingPackage->package_type === 'studio') {
+            $package = \App\Models\StudioOwner\PackagesModel::find($bookingPackage->package_id);
+        } else {
+            $package = \App\Models\Freelancer\PackagesModel::find($bookingPackage->package_id);
+        }
+        
+        if ($package && isset($package->photographer_count)) {
+            return (int) $package->photographer_count;
+        }
+        
+        return 1; // Default to 1 if no photographer_count specified
     }
 
     /**
@@ -180,6 +221,7 @@ class BookingController extends Controller
             $booking = BookingModel::where('id', $bookingId)
                 ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
+                ->with(['packages', 'category'])
                 ->firstOrFail();
             
             // Get the specific studio for this booking (for photographers)
@@ -190,6 +232,31 @@ class BookingController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot assign photographers to a booking that is in progress or already completed.'
+                ]);
+            }
+            
+            // Get required photographer count from package
+            $requiredPhotographers = $this->getMaxPhotographersFromPackage($booking);
+            $currentAssignedCount = BookingAssignedPhotographerModel::where('booking_id', $bookingId)->count();
+            $remainingNeeded = $requiredPhotographers - $currentAssignedCount;
+            
+            // Get package details for display
+            $bookingPackage = $booking->packages->first();
+            $packageName = 'N/A';
+            $packageDetails = null;
+            
+            if ($bookingPackage) {
+                if ($bookingPackage->package_type === 'studio') {
+                    $packageDetails = \App\Models\StudioOwner\PackagesModel::find($bookingPackage->package_id);
+                }
+                $packageName = $bookingPackage->package_name;
+            }
+            
+            // Check if requirement is already met
+            if ($remainingNeeded <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "This booking already has all {$requiredPhotographers} required photographers assigned."
                 ]);
             }
             
@@ -227,6 +294,18 @@ class BookingController extends Controller
                     'event_name' => $booking->event_name,
                     'event_date' => \Carbon\Carbon::parse($booking->event_date)->format('M d, Y'),
                     'category' => $booking->category->category_name ?? 'N/A'
+                ],
+                'assignment_info' => [
+                    'required_photographers' => $requiredPhotographers,
+                    'current_assigned' => $currentAssignedCount,
+                    'remaining_needed' => $remainingNeeded,
+                    'is_initial_assignment' => ($currentAssignedCount === 0),
+                    'package_name' => $packageName,
+                    'package_details' => $packageDetails ? [
+                        'photographer_count' => $packageDetails->photographer_count,
+                        'duration' => $packageDetails->duration,
+                        'maximum_edited_photos' => $packageDetails->maximum_edited_photos
+                    ] : null
                 ]
             ]);
             
@@ -239,8 +318,8 @@ class BookingController extends Controller
     }
 
     /**
-     * Assign photographers to booking
-     */
+    * Assign photographers to booking
+    */
     public function assignPhotographers(Request $request, $bookingId)
     {
         try {
@@ -266,6 +345,7 @@ class BookingController extends Controller
             $booking = BookingModel::where('id', $bookingId)
                 ->whereIn('provider_id', $studioIds)
                 ->where('booking_type', 'studio')
+                ->with(['packages'])
                 ->firstOrFail();
             
             // Get the specific studio for this booking
@@ -277,6 +357,38 @@ class BookingController extends Controller
                     'success' => false,
                     'message' => 'Cannot assign photographers to a booking that is in progress or already completed.'
                 ]);
+            }
+            
+            // Get required photographer count from package
+            $requiredPhotographers = $this->getMaxPhotographersFromPackage($booking);
+            $currentAssignedCount = BookingAssignedPhotographerModel::where('booking_id', $bookingId)->count();
+            
+            // Check if we're doing initial assignment or adding more
+            if ($currentAssignedCount === 0) {
+                // Initial assignment - must assign EXACTLY the required number
+                if (count($request->photographer_ids) != $requiredPhotographers) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "This package requires exactly {$requiredPhotographers} photographer(s). Please select {$requiredPhotographers} photographers."
+                    ]);
+                }
+            } else {
+                // Adding more photographers - check if total will equal required number
+                $totalAfterAssignment = $currentAssignedCount + count($request->photographer_ids);
+                
+                if ($totalAfterAssignment > $requiredPhotographers) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "This package requires a total of {$requiredPhotographers} photographer(s). You currently have {$currentAssignedCount} assigned. You can only add " . ($requiredPhotographers - $currentAssignedCount) . " more."
+                    ]);
+                }
+                
+                if ($totalAfterAssignment < $requiredPhotographers) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "This package requires a total of {$requiredPhotographers} photographer(s). You currently have {$currentAssignedCount} assigned. You need to add " . ($requiredPhotographers - $currentAssignedCount) . " more to complete the required count."
+                    ]);
+                }
             }
             
             DB::beginTransaction();
@@ -304,9 +416,20 @@ class BookingController extends Controller
             
             DB::commit();
             
+            // Check if assignment is now complete (all photographers assigned)
+            $newTotal = $currentAssignedCount + $assignedCount;
+            $isComplete = ($newTotal == $requiredPhotographers);
+            
             return response()->json([
                 'success' => true,
-                'message' => $assignedCount . ' photographer(s) assigned successfully.'
+                'message' => $assignedCount . ' photographer(s) assigned successfully.' . 
+                            ($isComplete ? ' All required photographers have been assigned.' : ''),
+                'assignment_info' => [
+                    'current_assigned' => $newTotal,
+                    'required_photographers' => $requiredPhotographers,
+                    'remaining_needed' => $requiredPhotographers - $newTotal,
+                    'is_complete' => $isComplete
+                ]
             ]);
             
         } catch (\Exception $e) {
