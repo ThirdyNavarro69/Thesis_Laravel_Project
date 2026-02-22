@@ -23,6 +23,17 @@ Route::prefix('auth')->group(function () {
 // Authenticated Routes ================================================================================================================================================
 Route::middleware(['auth'])->group(function () {
 
+    // Notifications Routes ================================================================================================================================================
+    Route::prefix('notifications')->group(function () {
+        
+        Route::get('/unread-count',  [\App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+        Route::get('/recent',        [\App\Http\Controllers\NotificationController::class, 'getRecent'])->name('notifications.recent');
+        Route::get('/',              [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/{id}/read',    [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+        Route::post('/read-all',     [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::delete('/{id}',       [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
+    });
+
     // Admin Routes ========================================================================================================================================================
     Route::prefix('admin')->middleware([AdminMiddleware::class])->group(function () {
 
