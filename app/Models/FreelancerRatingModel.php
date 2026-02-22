@@ -69,7 +69,7 @@ class FreelancerRatingModel extends Model
      */
     public function freelancer()
     {
-        return $this->belongsTo(ProfileModel::class, 'freelancer_id', 'user_id');
+        return $this->belongsTo(\App\Models\Freelancer\ProfileModel::class, 'freelancer_id', 'user_id');
     }
 
     /**

@@ -158,4 +158,12 @@ class StudiosModel extends Model
     {
         return $this->hasMany(\App\Models\StudioOwner\StudioPhotographersModel::class, 'studio_id');
     }
+
+    /**
+     * Get the ratings for the studio.
+     */
+    public function ratings()
+    {
+        return $this->hasMany(\App\Models\StudioRatingModel::class, 'studio_id');
+    }
 }

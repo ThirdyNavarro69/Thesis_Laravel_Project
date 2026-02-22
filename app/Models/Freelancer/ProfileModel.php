@@ -95,4 +95,12 @@ class ProfileModel extends Model
     {
         return $this->hasMany(\App\Models\Freelancer\ServiceModel::class, 'user_id', 'user_id');
     }
+
+    /**
+     * Get the ratings for the freelancer.
+     */
+    public function ratings()
+    {
+        return $this->hasMany(\App\Models\FreelancerRatingModel::class, 'freelancer_id', 'user_id');
+    }
 }

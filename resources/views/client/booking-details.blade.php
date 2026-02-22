@@ -32,13 +32,30 @@
                                             </h2>
                                             <div class="d-flex align-items-center justify-content-center justify-content-md-start mb-2 flex-wrap">
                                                 <span class="text-warning me-2">
-                                                    <i class="ti ti-star-filled"></i>
-                                                    <i class="ti ti-star-filled"></i>
-                                                    <i class="ti ti-star-filled"></i>
-                                                    <i class="ti ti-star-half-filled"></i>
-                                                    <i class="ti ti-star"></i>
+                                                    @php
+                                                        $avgRating = $type === 'studio' ? ($studio->average_rating ?? 0) : ($freelancer->average_rating ?? 0);
+                                                        $fullStars = floor($avgRating);
+                                                        $halfStar = ($avgRating - $fullStars) >= 0.5 ? 1 : 0;
+                                                        $emptyStars = 5 - $fullStars - $halfStar;
+                                                    @endphp
+                                                    
+                                                    @for($i = 0; $i < $fullStars; $i++)
+                                                        <i class="ti ti-star-filled fs-6"></i>
+                                                    @endfor
+                                                    
+                                                    @if($halfStar)
+                                                        <i class="ti ti-star-half-filled fs-6"></i>
+                                                    @endif
+                                                    
+                                                    @for($i = 0; $i < $emptyStars; $i++)
+                                                        <i class="ti ti-star fs-6"></i>
+                                                    @endfor
                                                 </span>
-                                                <span class="text-muted me-2">4.5</span>
+                                                <span class="text-muted me-2">
+                                                    {{ number_format($avgRating, 1) }} 
+                                                    ({{ $type === 'studio' ? ($studio->ratings_count ?? 0) : ($freelancer->ratings_count ?? 0) }} 
+                                                    {{ ($type === 'studio' ? ($studio->ratings_count ?? 0) : ($freelancer->ratings_count ?? 0)) == 1 ? 'review' : 'reviews' }})
+                                                </span>
                                                 <span class="badge badge-soft-success p-1">
                                                     {{ $type === 'studio' ? 'Verified Studio' : 'Verified Freelancer' }}
                                                 </span>
@@ -370,6 +387,137 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- RATINGS SECTION --}}
+                                    @php
+                                        $totalRatings = $type === 'studio' ? ($studio->ratings_count ?? 0) : ($freelancer->ratings_count ?? 0);
+                                        $avgRating = $type === 'studio' ? ($studio->average_rating ?? 0) : ($freelancer->average_rating ?? 0);
+                                    @endphp
+
+                                    @if($totalRatings > 0)
+                                    <div class="row mb-4">
+                                        <h5 class="card-title mb-3 text-primary">
+                                            <i class="ti ti-star me-2"></i>Client Reviews ({{ $totalRatings }})
+                                        </h5>
+                                        
+                                        <div class="row">
+                                            {{-- Rating Summary --}}
+                                            <div class="col-md-4 mb-3 mb-md-0">
+                                                <div class="text-center p-3 bg-light rounded">
+                                                    <h2 class="display-4 fw-bold text-primary mb-2">{{ number_format($avgRating, 1) }}</h2>
+                                                    <div class="text-warning mb-2">
+                                                        @php
+                                                            $fullStars = floor($avgRating);
+                                                            $halfStar = ($avgRating - $fullStars) >= 0.5 ? 1 : 0;
+                                                            $emptyStars = 5 - $fullStars - $halfStar;
+                                                        @endphp
+                                                        
+                                                        @for($i = 0; $i < $fullStars; $i++)
+                                                            <i class="ti ti-star-filled fs-5"></i>
+                                                        @endfor
+                                                        
+                                                        @if($halfStar)
+                                                            <i class="ti ti-star-half-filled fs-5"></i>
+                                                        @endif
+                                                        
+                                                        @for($i = 0; $i < $emptyStars; $i++)
+                                                            <i class="ti ti-star fs-5"></i>
+                                                        @endfor
+                                                    </div>
+                                                    <p class="text-muted mb-0">Based on {{ $totalRatings }} {{ $totalRatings == 1 ? 'review' : 'reviews' }}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            {{-- Rating Distribution --}}
+                                            <div class="col-md-8">
+                                                @for($star = 5; $star >= 1; $star--)
+                                                    @php
+                                                        $count = $ratingDistribution[$star] ?? 0;
+                                                        $percentage = $totalRatings > 0 ? round(($count / $totalRatings) * 100) : 0;
+                                                    @endphp
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <span class="text-muted small me-2" style="width: 30px;">{{ $star }} ★</span>
+                                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                                 style="width: {{ $percentage }}%;" 
+                                                                 aria-valuenow="{{ $percentage }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                        <span class="text-muted small ms-2" style="width: 40px;">{{ $count }}</span>
+                                                    </div>
+                                                @endfor
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- Recent Reviews --}}
+                                        @if($recentRatings->isNotEmpty())
+                                        <div class="mt-4">
+                                            <h6 class="mb-3">Recent Reviews</h6>
+                                            <div class="row g-3">
+                                                @foreach($recentRatings as $rating)
+                                                <div class="col-md-6">
+                                                    <div class="card border">
+                                                        <div class="card-body">
+                                                            <div class="d-flex align-items-center mb-2">
+                                                                <img src="{{ $rating->client->profile_photo ? asset('storage/' . $rating->client->profile_photo) : asset('assets/images/avatars/default.png') }}" 
+                                                                     class="rounded-circle me-2" 
+                                                                     style="width: 30px; height: 30px; object-fit: cover;" 
+                                                                     alt="{{ $rating->client->full_name }}">
+                                                                <div>
+                                                                    <h6 class="mb-0">{{ $rating->client->full_name }}</h6>
+                                                                    <small class="text-muted">{{ $rating->created_at->diffForHumans() }}</small>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="text-warning mb-2">
+                                                                @for($i = 1; $i <= 5; $i++)
+                                                                    @if($i <= $rating->rating)
+                                                                        <i class="ti ti-star-filled fs-6"></i>
+                                                                    @else
+                                                                        <i class="ti ti-star fs-6"></i>
+                                                                    @endif
+                                                                @endfor
+                                                            </div>
+                                                            
+                                                            @if($rating->title)
+                                                                <h6 class="fw-bold mb-1">{{ $rating->title }}</h6>
+                                                            @endif
+                                                            
+                                                            <p class="small text-muted mb-0">{{ $rating->review_text }}</p>
+                                                            
+                                                            @if($rating->is_recommend)
+                                                                <span class="badge badge-soft-success mt-2">
+                                                                    <i class="ti ti-thumb-up me-1"></i> Recommends
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                            
+                                            @if(($type === 'studio' ? $studio->ratings_count : $freelancer->ratings_count) > 5)
+                                            <div class="text-center mt-3">
+                                                <a href="#" class="btn btn-link text-primary" data-bs-toggle="modal" data-bs-target="#allReviewsModal">
+                                                    View All {{ $totalRatings }} Reviews
+                                                </a>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+                                    </div>
+                                    @else
+                                    <div class="row mb-4">
+                                        <h5 class="card-title mb-3 text-primary">
+                                            <i class="ti ti-star me-2"></i>Client Reviews
+                                        </h5>
+                                        <div class="alert alert-info">
+                                            <i class="ti ti-info-circle me-2"></i> No reviews yet. Be the first to leave a review after booking!
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -490,6 +638,35 @@
             </div>
         </div>
     </div>
+
+    {{-- All Reviews Modal --}}
+    @if(($type === 'studio' ? ($studio->ratings_count ?? 0) : ($freelancer->ratings_count ?? 0)) > 0)
+    <div class="modal fade" id="allReviewsModal" tabindex="-1" aria-labelledby="allReviewsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="allReviewsModalLabel">
+                        <i class="ti ti-star me-2"></i>All Reviews
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{-- This will be loaded via AJAX --}}
+                    <div class="text-center py-4" id="reviews-loading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading reviews...</p>
+                    </div>
+                    <div id="reviews-container" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 @endsection
 
 {{-- SCRIPTS --}}
@@ -518,6 +695,282 @@
             $('#packageCategory').on('change', function() {
                 const categoryId = $(this).val();
                 filterPackages(categoryId);
+            });
+
+            // Load all reviews when modal is opened
+            $('#allReviewsModal').on('show.bs.modal', function() {
+                const modal = $(this);
+                const loadingEl = $('#reviews-loading');
+                const containerEl = $('#reviews-container');
+                
+                // Show loading, hide container
+                loadingEl.show();
+                containerEl.hide().empty();
+                
+                // Get the appropriate URL based on type
+                @if($type === 'studio')
+                    const url = '{{ route("client.studio-reviews", $studio->id) }}';
+                @else
+                    const url = '{{ route("client.freelancer-reviews", $freelancer->user_id) }}';
+                @endif
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        loadingEl.hide();
+                        
+                        if (response.success) {
+                            let html = '';
+                            
+                            // Summary stats
+                            html += `
+                                <div class="bg-light p-3 rounded mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3 text-center">
+                                            <h3 class="display-5 fw-bold text-primary mb-1">${response.average_rating}</h3>
+                                            <div class="text-warning mb-1">
+                                                ${generateRatingStars(response.average_rating)}
+                                            </div>
+                                            <small class="text-muted">${response.total_reviews} reviews</small>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="row g-2">
+                            `;
+                            
+                            // Distribution
+                            for (let star = 5; star >= 1; star--) {
+                                const count = response.distribution[star] || 0;
+                                const percentage = response.total_reviews > 0 ? (count / response.total_reviews * 100).toFixed(0) : 0;
+                                
+                                html += `
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-muted small me-2" style="width: 40px;">${star} ★</span>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar bg-warning" style="width: ${percentage}%"></div>
+                                            </div>
+                                            <span class="text-muted small ms-2" style="width: 40px;">${count}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
+                            html += `</div></div></div>`;
+                            
+                            // Reviews list
+                            if (response.reviews.data.length > 0) {
+                                $.each(response.reviews.data, function(index, review) {
+                                    const profilePhoto = review.client.profile_photo ? 
+                                        '{{ asset("storage") }}/' + review.client.profile_photo : 
+                                        '{{ asset("assets/images/avatars/default.png") }}';
+                                    
+                                    html += `
+                                        <div class="card border mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <img src="${profilePhoto}" 
+                                                         class="rounded-circle me-2" 
+                                                         style="width: 40px; height: 40px; object-fit: cover;" 
+                                                         alt="${review.client.first_name}">
+                                                    <div>
+                                                        <h6 class="mb-0">${review.client.first_name} ${review.client.last_name}</h6>
+                                                        <small class="text-muted">${new Date(review.created_at).toLocaleDateString()}</small>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="text-warning mb-2">
+                                                    ${generateRatingStars(review.rating)}
+                                                </div>
+                                                
+                                                ${review.title ? `<h6 class="fw-bold mb-1">${review.title}</h6>` : ''}
+                                                
+                                                <p class="small text-muted mb-0">${review.review_text}</p>
+                                                
+                                                ${review.is_recommend ? `
+                                                    <span class="badge badge-soft-success mt-2">
+                                                        <i class="ti ti-thumb-up me-1"></i> Recommends
+                                                    </span>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                
+                                // Pagination
+                                if (response.reviews.last_page > 1) {
+                                    html += '<div class="pagination-container mt-3">';
+                                    html += '<nav><ul class="pagination justify-content-center">';
+                                    
+                                    for (let i = 1; i <= response.reviews.last_page; i++) {
+                                        html += `<li class="page-item ${i === response.reviews.current_page ? 'active' : ''}">
+                                            <a class="page-link review-page-link" href="#" data-page="${i}">${i}</a>
+                                        </li>`;
+                                    }
+                                    
+                                    html += '</ul></nav></div>';
+                                }
+                            } else {
+                                html += '<div class="alert alert-info">No reviews found.</div>';
+                            }
+                            
+                            containerEl.html(html).show();
+                        }
+                    },
+                    error: function() {
+                        loadingEl.hide();
+                        containerEl.html('<div class="alert alert-danger">Failed to load reviews. Please try again.</div>').show();
+                    }
+                });
+            });
+
+            // Helper function to generate rating stars
+            function generateRatingStars(rating) {
+                let stars = '';
+                const fullStars = Math.floor(rating);
+                const halfStar = (rating - fullStars) >= 0.5 ? 1 : 0;
+                const emptyStars = 5 - fullStars - halfStar;
+                
+                for (let i = 0; i < fullStars; i++) {
+                    stars += '<i class="ti ti-star-filled fs-6"></i>';
+                }
+                
+                if (halfStar) {
+                    stars += '<i class="ti ti-star-half-filled fs-6"></i>';
+                }
+                
+                for (let i = 0; i < emptyStars; i++) {
+                    stars += '<i class="ti ti-star fs-6"></i>';
+                }
+                
+                return stars;
+            }
+
+            // Handle pagination clicks
+            $(document).on('click', '.review-page-link', function(e) {
+                e.preventDefault();
+                const page = $(this).data('page');
+                const loadingEl = $('#reviews-loading');
+                const containerEl = $('#reviews-container');
+                
+                loadingEl.show();
+                containerEl.hide();
+                
+                // Get the appropriate URL based on type
+                @if($type === 'studio')
+                    const url = '{{ route("client.studio-reviews", $studio->id) }}?page=' + page;
+                @else
+                    const url = '{{ route("client.freelancer-reviews", $freelancer->user_id) }}?page=' + page;
+                @endif
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        loadingEl.hide();
+                        
+                        if (response.success) {
+                            let html = '';
+                            
+                            // Summary stats (keep the same as above)
+                            html += `
+                                <div class="bg-light p-3 rounded mb-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3 text-center">
+                                            <h3 class="display-5 fw-bold text-primary mb-1">${response.average_rating}</h3>
+                                            <div class="text-warning mb-1">
+                                                ${generateRatingStars(response.average_rating)}
+                                            </div>
+                                            <small class="text-muted">${response.total_reviews} reviews</small>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="row g-2">
+                            `;
+                            
+                            // Distribution
+                            for (let star = 5; star >= 1; star--) {
+                                const count = response.distribution[star] || 0;
+                                const percentage = response.total_reviews > 0 ? (count / response.total_reviews * 100).toFixed(0) : 0;
+                                
+                                html += `
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-muted small me-2" style="width: 40px;">${star} ★</span>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar bg-warning" style="width: ${percentage}%"></div>
+                                            </div>
+                                            <span class="text-muted small ms-2" style="width: 40px;">${count}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
+                            html += `</div></div></div>`;
+                            
+                            // Reviews list for current page
+                            if (response.reviews.data.length > 0) {
+                                $.each(response.reviews.data, function(index, review) {
+                                    const profilePhoto = review.client.profile_photo ? 
+                                        '{{ asset("storage") }}/' + review.client.profile_photo : 
+                                        '{{ asset("assets/images/avatars/default.png") }}';
+                                    
+                                    html += `
+                                        <div class="card border mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <img src="${profilePhoto}" 
+                                                         class="rounded-circle me-2" 
+                                                         style="width: 40px; height: 40px; object-fit: cover;" 
+                                                         alt="${review.client.first_name}">
+                                                    <div>
+                                                        <h6 class="mb-0">${review.client.first_name} ${review.client.last_name}</h6>
+                                                        <small class="text-muted">${new Date(review.created_at).toLocaleDateString()}</small>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="text-warning mb-2">
+                                                    ${generateRatingStars(review.rating)}
+                                                </div>
+                                                
+                                                ${review.title ? `<h6 class="fw-bold mb-1">${review.title}</h6>` : ''}
+                                                
+                                                <p class="small text-muted mb-0">${review.review_text}</p>
+                                                
+                                                ${review.is_recommend ? `
+                                                    <span class="badge badge-soft-success mt-2">
+                                                        <i class="ti ti-thumb-up me-1"></i> Recommends
+                                                    </span>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                
+                                // Pagination
+                                if (response.reviews.last_page > 1) {
+                                    html += '<div class="pagination-container mt-3">';
+                                    html += '<nav><ul class="pagination justify-content-center">';
+                                    
+                                    for (let i = 1; i <= response.reviews.last_page; i++) {
+                                        html += `<li class="page-item ${i === response.reviews.current_page ? 'active' : ''}">
+                                            <a class="page-link review-page-link" href="#" data-page="${i}">${i}</a>
+                                        </li>`;
+                                    }
+                                    
+                                    html += '</ul></nav></div>';
+                                }
+                            } else {
+                                html += '<div class="alert alert-info">No reviews found.</div>';
+                            }
+                            
+                            containerEl.html(html).show();
+                        }
+                    },
+                    error: function() {
+                        loadingEl.hide();
+                        containerEl.html('<div class="alert alert-danger">Failed to load reviews. Please try again.</div>').show();
+                    }
+                });
             });
         });
     </script>

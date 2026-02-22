@@ -69,7 +69,7 @@ class StudioRatingModel extends Model
      */
     public function studio()
     {
-        return $this->belongsTo(StudiosModel::class, 'studio_id');
+        return $this->belongsTo(\App\Models\StudioOwner\StudiosModel::class, 'studio_id');
     }
 
     /**

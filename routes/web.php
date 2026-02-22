@@ -253,15 +253,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/reviews/preset-reviews',                  [\App\Http\Controllers\Client\StudioRatingController::class, 'getPresetReviews'])->name('client.reviews.preset');
         Route::post('/reviews',                                 [\App\Http\Controllers\Client\StudioRatingController::class, 'store'])->name('client.reviews.store');
         Route::get('/reviews/check/{bookingId}',                [\App\Http\Controllers\Client\StudioRatingController::class, 'checkCanReview'])->name('client.reviews.check');
-        Route::get('/studio/{studioId}/reviews',                [\App\Http\Controllers\Client\StudioRatingController::class, 'getStudioReviews'])->name('client.studio.reviews');
-        Route::get('/studio/{studioId}/reviews',                [\App\Http\Controllers\Client\StudioRatingController::class, 'getStudioReviews'])->name('client.studio.reviews');
+        Route::get('/studio/{studioId}/reviews',                [\App\Http\Controllers\Client\StudioRatingController::class, 'getStudioReviews'])->name('client.studio-reviews');
 
         // Freelancer Reviews
         Route::get('/freelancer-reviews/create/{bookingId}',    [\App\Http\Controllers\Client\FreelancerRatingController::class, 'create'])->name('client.freelancer-reviews.create');
         Route::post('/freelancer-reviews/preset-reviews',       [\App\Http\Controllers\Client\FreelancerRatingController::class, 'getPresetReviews'])->name('client.freelancer-reviews.preset');
         Route::post('/freelancer-reviews',                      [\App\Http\Controllers\Client\FreelancerRatingController::class, 'store'])->name('client.freelancer-reviews.store');
         Route::get('/freelancer-reviews/check/{bookingId}',     [\App\Http\Controllers\Client\FreelancerRatingController::class, 'checkCanReview'])->name('client.freelancer-reviews.check');
-        Route::get('/freelancer/{freelancerId}/reviews',        [\App\Http\Controllers\Client\FreelancerRatingController::class, 'getFreelancerReviews'])->name('client.freelancer.reviews'); 
+        Route::get('/freelancer/{freelancerId}/reviews',        [\App\Http\Controllers\Client\FreelancerRatingController::class, 'getFreelancerReviews'])->name('client.freelancer-reviews'); 
 
         // Booking Process
         Route::get('/booking-form/{type}/{id}',                 [\App\Http\Controllers\Client\BookingController::class, 'create'])->name('client.booking-forms');
