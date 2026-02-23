@@ -57,34 +57,77 @@
                                                     </div>
                                                 </div>
 
-                                                <ul class="list-unstyled text-start fs-sm mb-0">
-                                                    @if($package->package_inclusions && is_array($package->package_inclusions))
-                                                        @foreach(array_slice($package->package_inclusions, 0, 5) as $inclusion)
-                                                        <li class="mb-2">
-                                                            <i class="ti ti-check text-success me-2"></i> 
-                                                            {{ $inclusion }}
-                                                        </li>
-                                                        @endforeach
+                                                {{-- INCLUSIONS ON CARD - FIXED: Display first 3 inclusions --}}
+                                                <div class="text-start mb-3">
+                                                    <small class="text-muted fw-semibold d-block mb-2">INCLUSIONS:</small>
+                                                    <ul class="list-unstyled fs-sm mb-0">
+                                                        @if($package->package_inclusions && 
+                                                            (is_array($package->package_inclusions) || is_string($package->package_inclusions)))
+                                                            
+                                                            @php
+                                                                // Handle different data types
+                                                                $inclusions = [];
+                                                                if (is_array($package->package_inclusions)) {
+                                                                    $inclusions = $package->package_inclusions;
+                                                                } elseif (is_string($package->package_inclusions)) {
+                                                                    // Try to decode JSON
+                                                                    $decoded = json_decode($package->package_inclusions, true);
+                                                                    if (is_array($decoded)) {
+                                                                        $inclusions = $decoded;
+                                                                    } else {
+                                                                        // Split by commas if it's a comma-separated string
+                                                                        $inclusions = array_map('trim', explode(',', $package->package_inclusions));
+                                                                    }
+                                                                }
+                                                                
+                                                                // Filter out empty values
+                                                                $inclusions = array_filter($inclusions);
+                                                                
+                                                                // Take first 3 inclusions
+                                                                $displayInclusions = array_slice($inclusions, 0, 3);
+                                                                $hasMore = count($inclusions) > 3;
+                                                            @endphp
+                                                            
+                                                            @foreach($displayInclusions as $inclusion)
+                                                                @if(!empty($inclusion))
+                                                                <li class="mb-2">
+                                                                    <i class="ti ti-check text-success me-2"></i> 
+                                                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $inclusion }}">
+                                                                        {{ $inclusion }}
+                                                                    </span>
+                                                                </li>
+                                                                @endif
+                                                            @endforeach
+                                                            
+                                                            @if($hasMore)
+                                                                <li class="mb-2 text-muted">
+                                                                    <i class="ti ti-dots me-2"></i>
+                                                                    <small>+{{ count($inclusions) - 3 }} more inclusions</small>
+                                                                </li>
+                                                            @endif
+                                                        @else
+                                                            <li class="mb-2 text-muted">
+                                                                <i class="ti ti-minus me-2"></i>
+                                                                No inclusions specified
+                                                            </li>
+                                                        @endif
                                                         
-                                                        @if(count($package->package_inclusions) > 5)
+                                                        @if($package->coverage_scope)
                                                         <li class="mb-2">
-                                                            <i class="ti ti-dots me-2"></i>
-                                                            <small class="text-muted">+{{ count($package->package_inclusions) - 5 }} more inclusions</small>
+                                                            <i class="ti ti-map-pin text-primary me-2"></i> 
+                                                            <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ $package->coverage_scope }}">
+                                                                {{ $package->coverage_scope }}
+                                                            </span>
                                                         </li>
                                                         @endif
-                                                    @endif
-                                                    
-                                                    @if($package->coverage_scope)
-                                                    <li class="mb-2">
-                                                        <i class="ti ti-map-pin text-primary me-2"></i> 
-                                                        {{ $package->coverage_scope }}
-                                                    </li>
-                                                    @endif
-                                                </ul>
+                                                    </ul>
+                                                </div>
                                             </div>
                                             <div class="card-footer bg-transparent px-5 pb-4">
                                                 <div class="d-flex gap-2">
-                                                    <button class="btn btn-outline-primary w-100 py-2 fw-semibold rounded-pill view-details-btn" data-package-id="{{ $package->id }}"data-category-id="{{ $package->category_id }}">
+                                                    <button class="btn btn-outline-primary w-100 py-2 fw-semibold rounded-pill view-details-btn" 
+                                                            data-package-id="{{ $package->id }}"
+                                                            data-category-id="{{ $package->category_id }}">
                                                         View Details
                                                     </button>
                                                 </div>
@@ -157,10 +200,12 @@
              * Filter packages by category
              */
             function filterPackagesByCategory(categoryId) {
+                // Remove any existing "no packages" message
+                $('#noPackagesMessage').remove();
+                
                 if (!categoryId) {
                     // Show all packages when "All Categories" is selected
                     $('.col-md-4').show();
-                    $('#noPackagesMessage').remove();
                     return;
                 }
 
@@ -175,23 +220,17 @@
                 
                 if (visiblePackages === 0) {
                     // Show "no packages" message
-                    if (!$('#noPackagesMessage').length) {
-                        const messageHtml = `
-                            <div id="noPackagesMessage" class="text-center py-5 col-12">
-                                <i class="ti ti-package-off fs-1 text-muted mb-3"></i>
-                                <h5 class="text-muted">No packages found in this category</h5>
-                                <p class="text-muted mb-4">Try selecting a different category or create a package in this category.</p>
-                                <a href="{{ route('freelancer.packages.create') }}" class="btn btn-primary">
-                                    <i class="ti ti-plus me-1"></i> Create Package
-                                </a>
-                            </div>
-                        `;
-                        $('.row.g-3.mb-4').append(messageHtml);
-                    }
-                    $('#noPackagesMessage').show();
-                } else {
-                    // Hide the message if it exists
-                    $('#noPackagesMessage').hide();
+                    const messageHtml = `
+                        <div id="noPackagesMessage" class="text-center py-5 col-12">
+                            <i class="ti ti-package-off fs-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">No packages found in this category</h5>
+                            <p class="text-muted mb-4">Try selecting a different category or create a package in this category.</p>
+                            <a href="{{ route('freelancer.packages.create') }}" class="btn btn-primary">
+                                <i class="ti ti-plus me-1"></i> Create Package
+                            </a>
+                        </div>
+                    `;
+                    $('.row.g-3.mb-4').append(messageHtml);
                 }
             }
 
@@ -201,7 +240,7 @@
             function loadPackageDetails(packageId) {
                 // Show loading
                 $('#packageLoading').show();
-                $('#packageDetailsContent').hide();
+                $('#packageDetailsContent').empty().hide();
                 
                 // Reset modal title
                 $('#viewPackageModalLabel').text('Package Details');
@@ -214,15 +253,20 @@
                     url: '{{ url("freelancer/packages") }}/' + packageId,
                     type: 'GET',
                     dataType: 'json',
+                    timeout: 10000,
                     success: function(response) {
-                        if (response.success) {
+                        if (response.success && response.data) {
                             renderPackageDetails(response.data);
                         } else {
                             showError(response.message || 'Failed to load package details');
                         }
                     },
                     error: function(xhr, status, error) {
-                        showError('Error loading package details. Please try again.');
+                        let errorMessage = 'Error loading package details. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        showError(errorMessage);
                         console.error('Error:', error);
                     },
                     complete: function() {
@@ -233,27 +277,63 @@
             }
 
             /**
-             * Render package details in modal
+             * Render package details in modal - FIXED inclusions display
              */
             function renderPackageDetails(package) {
+                // Debug: Log the package data
+                console.log('Freelancer package data:', package);
+                
                 // Set modal title
-                $('#viewPackageModalLabel').text(package.package_name + ' Details');
+                $('#viewPackageModalLabel').text((package.package_name || 'Package') + ' Details');
+                
+                // SAFELY handle package_inclusions
+                let inclusions = [];
+                if (package.package_inclusions) {
+                    if (Array.isArray(package.package_inclusions)) {
+                        inclusions = package.package_inclusions;
+                    } else if (typeof package.package_inclusions === 'string') {
+                        // Try to parse if it's a JSON string
+                        try {
+                            const parsed = JSON.parse(package.package_inclusions);
+                            inclusions = Array.isArray(parsed) ? parsed : [package.package_inclusions];
+                        } catch (e) {
+                            // If it's a comma-separated string, split it
+                            inclusions = package.package_inclusions.split(',').map(item => item.trim());
+                        }
+                    } else {
+                        inclusions = [String(package.package_inclusions)];
+                    }
+                }
                 
                 // Format inclusions as list
                 let inclusionsHtml = '';
-                if (package.package_inclusions && Array.isArray(package.package_inclusions)) {
-                    package.package_inclusions.forEach(inclusion => {
-                        inclusionsHtml += `<li class="mb-1"><i class="ti ti-check text-success me-2"></i>${inclusion}</li>`;
+                if (inclusions.length > 0) {
+                    inclusions.forEach(inclusion => {
+                        if (inclusion && inclusion.trim()) {
+                            inclusionsHtml += `<li class="mb-1"><i class="ti ti-check text-success me-2"></i>${inclusion.trim()}</li>`;
+                        }
                     });
                 }
                 
+                // If still no inclusions, show a default message
+                if (!inclusionsHtml) {
+                    inclusionsHtml = '<li class="mb-1 text-muted"><i class="ti ti-minus me-2"></i>No inclusions specified</li>';
+                }
+                
                 // Format date
-                const createdAt = new Date(package.created_at);
-                const formattedDate = createdAt.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                let formattedDate = 'N/A';
+                if (package.created_at) {
+                    try {
+                        const createdAt = new Date(package.created_at);
+                        formattedDate = createdAt.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                    } catch (e) {
+                        formattedDate = package.created_at;
+                    }
+                }
 
                 // Build HTML
                 const html = `
@@ -261,10 +341,10 @@
                         <div class="col-12">
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1">
-                                    <h3 class="mb-1">${package.package_name}</h3>
+                                    <h3 class="mb-1">${package.package_name || 'Unnamed Package'}</h3>
                                     <div class="d-flex align-items-center mb-2 flex-wrap">
                                         <span class="badge ${package.status === 'active' ? 'badge-soft-success' : 'badge-soft-danger'} px-2 fw-medium">
-                                            ${package.status.toUpperCase()}
+                                            ${package.status ? package.status.toUpperCase() : 'INACTIVE'}
                                         </span>
                                         <span class="ms-2 text-muted small">Created: ${formattedDate}</span>
                                     </div>
@@ -291,7 +371,7 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Package Name</label>
-                                            <p class="mb-0 fw-medium">${package.package_name}</p>
+                                            <p class="mb-0 fw-medium">${package.package_name || 'N/A'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -305,12 +385,11 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Package Price</label>
-                                            <p class="mb-0 fw-medium">PHP ${parseFloat(package.package_price).toFixed(2)}</p>
+                                            <p class="mb-0 fw-medium">PHP ${package.package_price ? parseFloat(package.package_price).toFixed(2) : '0.00'}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- ADDED: Online Gallery field -->
                                 <div class="col-12 col-md-6">
                                     <div class="d-flex align-items-start">
                                         <div class="flex-shrink-0">
@@ -339,7 +418,7 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Duration</label>
-                                            <p class="mb-0 fw-medium">${package.duration} Hours</p>
+                                            <p class="mb-0 fw-medium">${package.duration || 0} Hours</p>
                                         </div>
                                     </div>
                                 </div>
@@ -353,7 +432,7 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Maximum Edited Photos</label>
-                                            <p class="mb-0 fw-medium">${package.maximum_edited_photos} Photos</p>
+                                            <p class="mb-0 fw-medium">${package.maximum_edited_photos || 0} Photos</p>
                                         </div>
                                     </div>
                                 </div>
@@ -385,7 +464,9 @@
                                         </div>
                                         <div class="flex-grow-1 ms-3">
                                             <label class="text-muted small mb-1">Package Inclusions</label>
-                                            ${inclusionsHtml ? `<ul class="list-unstyled mb-0">${inclusionsHtml}</ul>` : '<p class="text-muted mb-0">No inclusions specified</p>'}
+                                            <ul class="list-unstyled mb-0">
+                                                ${inclusionsHtml}
+                                            </ul>
                                         </div>
                                     </div>
                                 </div>
@@ -415,24 +496,6 @@
                 `;
                 
                 $('#packageDetailsContent').html(html);
-            }
-
-            /**
-             * Show no packages message
-             */
-            function showNoPackagesMessage() {
-                const $cardBody = $('.card-body');
-                if (!$('#noPackagesMessage').length) {
-                    const messageHtml = `
-                        <div id="noPackagesMessage" class="text-center py-5">
-                            <i class="ti ti-package-off fs-1 text-muted mb-3"></i>
-                            <h5 class="text-muted">No packages found in this category</h5>
-                            <p class="text-muted mb-4">Try selecting a different category.</p>
-                        </div>
-                    `;
-                    $cardBody.append(messageHtml);
-                }
-                $('#noPackagesMessage').show();
             }
 
             /**

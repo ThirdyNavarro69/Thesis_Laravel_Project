@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Default Title')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -19,13 +20,6 @@
 
     {{-- CHOICES CSS --}}
     <link rel="stylesheet" href="{{ asset('assets/plugins/choices/choices.min.css') }}">
-
-    {{-- DROPZONE --}}
-    <link rel="stylesheet" href="{{ asset('assets/plugins/dropzone/dropzone.css') }}" type="text/css">
-
-    {{-- FILE POND --}}
-    <link rel="stylesheet" href="{{ asset('assets/plugins/filepond/filepond.min.css') }}" type="text/css">
-    <link rel="stylesheet" href="{{ asset('assets/plugins/filepond/filepond-plugin-image-preview.min.css') }}">
 
     {{-- VENDOR CSS --}}
     <link href="{{ asset('assets/css/vendors.min.css') }}" rel="stylesheet" type="text/css" />
@@ -81,19 +75,6 @@
     <script src="{{ asset('assets/plugins/select2/select2.min.js') }}"></script>
     <script src="{{ asset('assets/js/pages/form-choice.js') }}"></script>
     <script src="{{ asset('assets/js/pages/form-select2.js') }}"></script>
-
-    {{-- DROPZONE --}}
-    <script src="{{ asset('assets/plugins/dropzone/dropzone-min.js') }}"></script>
-
-    {{-- FILE POND --}}
-    <script src="{{ asset('assets/plugins/filepond/filepond.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/filepond/filepond-plugin-image-preview.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/filepond/filepond-plugin-file-validate-size.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/filepond/filepond-plugin-image-exif-orientation.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/filepond/filepond-plugin-file-encode.min.js') }}"></script>
-
-    {{-- FILE UPLOAD --}}
-    <script src="{{ asset('assets/js/pages/form-fileupload.js') }}"></script>
 
     {{-- YIELD SCRIPT --}}
     @yield('scripts')
