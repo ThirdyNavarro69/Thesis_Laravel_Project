@@ -34,13 +34,16 @@ class StudioPlanModel extends Model
         'plan_id',
         'subscription_reference',
         'stripe_session_id',
+        'stripe_payment_intent_id',
         'start_date',
         'end_date',
         'next_billing_date',
+        'paid_at',
         'amount_paid',
         'payment_status',
         'status',
         'plan_snapshot',
+        'stripe_response',
         'usage_metrics',
         'cancelled_at',
         'cancellation_reason',
@@ -55,10 +58,12 @@ class StudioPlanModel extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'next_billing_date' => 'date',
+        'paid_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'amount_paid' => 'decimal:2',
         'plan_snapshot' => 'array',
+        'stripe_response' => 'array',
         'usage_metrics' => 'array',
-        'cancelled_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -132,6 +137,35 @@ class StudioPlanModel extends Model
         
         $daysUntilExpiry = now()->diffInDays($this->end_date, false);
         return $daysUntilExpiry <= 7 && $daysUntilExpiry >= 0;
+    }
+
+    /**
+     * Check if subscription can be cancelled (within 3 days from paid_at or start_date)
+     */
+    public function canBeCancelled()
+    {
+        // Must be active and paid
+        if ($this->status !== 'active' || $this->payment_status !== 'paid') {
+            return false;
+        }
+
+        // Get reference date (use paid_at if available, otherwise start_date)
+        $referenceDate = $this->paid_at ?? $this->start_date;
+        
+        // Get cancellation deadline (reference date + 3 days)
+        $cancellationDeadline = $referenceDate->copy()->addDays(3)->endOfDay();
+        
+        // Can cancel if current time is before or on the deadline
+        return now()->lte($cancellationDeadline);
+    }
+
+    /**
+     * Get cancellation deadline date
+     */
+    public function getCancellationDeadline()
+    {
+        $referenceDate = $this->paid_at ?? $this->start_date;
+        return $referenceDate->copy()->addDays(3);
     }
 
     /**

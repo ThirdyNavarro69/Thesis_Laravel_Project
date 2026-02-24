@@ -45,6 +45,9 @@ class SubscriptionController extends Controller
         return view('owner.view-subscription-plans', compact('plans', 'currentSubscription'));
     }
 
+    /**
+     * Display the subscription status page.
+     */
     public function status()
     {
         return view('owner.view-subscription-status');
@@ -369,14 +372,19 @@ class SubscriptionController extends Controller
                 DB::beginTransaction();
                 
                 try {
-                    // Update subscription as paid
-                    $studioPlan->update([
-                        'payment_status' => 'paid',
-                        'status' => 'active',
-                        'paid_at' => now(),
+                    // Prepare update data - FIXED: payment_status values as strings
+                    $updateData = [
+                        'payment_status' => 'paid', // FIXED: Use string 'paid' not constant
+                        'status' => 'active',       // FIXED: Use string 'active' not constant
                         'stripe_payment_intent_id' => $session['payment_intent'] ?? null,
                         'stripe_response' => $session,
-                    ]);
+                    ];
+                    
+                    // Only set paid_at if column exists (check via Schema or try/catch)
+                    $updateData['paid_at'] = now();
+                    
+                    // Update subscription
+                    $studioPlan->update($updateData);
 
                     DB::commit();
 
@@ -451,5 +459,286 @@ class SubscriptionController extends Controller
             'subscription' => $studioPlan,
             'error' => session('error', 'Payment was cancelled or failed.')
         ]);
+    }
+
+    /**
+     * Get subscription status data for DataTable.
+     */
+    public function getStatusData(Request $request): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            
+            // Get the studio
+            $studio = $user->studio;
+            if (!$studio) {
+                $studio = \App\Models\StudioOwner\StudiosModel::where('user_id', $user->id)->first();
+            }
+            
+            if (!$studio) {
+                return response()->json([
+                    'draw' => intval($request->input('draw', 1)),
+                    'recordsTotal' => 0,
+                    'recordsFiltered' => 0,
+                    'data' => []
+                ]);
+            }
+
+            $query = StudioPlanModel::with('plan')
+                ->where('studio_id', $studio->id);
+
+            // Search
+            if ($request->has('search') && !empty($request->search['value'])) {
+                $search = $request->search['value'];
+                $query->where(function($q) use ($search) {
+                    $q->where('subscription_reference', 'like', "%{$search}%")
+                    ->orWhereHas('plan', function($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+                });
+            }
+
+            // Filter by status
+            if ($request->has('status') && !empty($request->status)) {
+                $query->where('status', $request->status);
+            }
+
+            $totalRecords = $query->count();
+            
+            // Ordering
+            $columns = ['subscription_reference', 'plan_name', 'amount_paid', 'start_date', 'end_date', 'payment_status', 'status'];
+            $orderColumnIndex = $request->input('order.0.column', 0);
+            $orderDirection = $request->input('order.0.dir', 'desc');
+            
+            if (isset($columns[$orderColumnIndex])) {
+                $query->orderBy($columns[$orderColumnIndex], $orderDirection);
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            // Pagination
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 10);
+            $subscriptions = $query->skip($start)->take($length)->get();
+
+            // Format data for DataTable
+            $data = $subscriptions->map(function($subscription) {
+                // Use the model's canBeCancelled method
+                $canCancel = $subscription->canBeCancelled();
+                
+                $cancelButton = '';
+                if ($canCancel) {
+                    $cancelButton = '<button class="btn btn-sm btn-soft-danger cancel-subscription-btn" 
+                                            data-id="' . $subscription->id . '"
+                                            data-reference="' . $subscription->subscription_reference . '"
+                                            data-plan="' . ($subscription->plan->name ?? 'Unknown') . '">
+                                        <i class="ti ti-x"></i> Cancel
+                                    </button>';
+                }
+
+                return [
+                    'subscription_reference' => '<span class="fw-medium font-monospace">' . $subscription->subscription_reference . '</span>',
+                    'plan_name' => $subscription->plan->name ?? 'Unknown Plan',
+                    'amount' => '₱' . number_format($subscription->amount_paid, 2),
+                    'start_date' => $subscription->start_date->format('M d, Y'),
+                    'end_date' => $subscription->end_date->format('M d, Y'),
+                    'payment_status' => $this->getPaymentStatusBadge($subscription->payment_status),
+                    'status' => $this->getStatusBadge($subscription->status),
+                    'actions' => '<div class="d-flex justify-content-center gap-1">' . $cancelButton . '</div>'
+                ];
+            });
+
+            return response()->json([
+                'draw' => intval($request->input('draw', 1)),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $totalRecords,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch subscription status data', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'draw' => intval($request->input('draw', 1)),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel subscription.
+     */
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $user = auth()->user();
+            
+            // Get the studio
+            $studio = $user->studio;
+            if (!$studio) {
+                $studio = \App\Models\StudioOwner\StudiosModel::where('user_id', $user->id)->first();
+            }
+            
+            if (!$studio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Studio not found.'
+                ], 400);
+            }
+
+            $subscription = StudioPlanModel::where('id', $id)
+                ->where('studio_id', $studio->id)
+                ->first();
+
+            if (!$subscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subscription not found.'
+                ], 404);
+            }
+
+            // Check if subscription can be cancelled using the model method
+            if (!$subscription->canBeCancelled()) {
+                // Determine specific reason
+                if ($subscription->status !== 'active') {
+                    $message = 'Only active subscriptions can be cancelled.';
+                } elseif ($subscription->payment_status !== 'paid') {
+                    $message = 'Cannot cancel unpaid subscription.';
+                } else {
+                    // Cancellation period has expired
+                    $deadline = $subscription->getCancellationDeadline()->format('M d, Y');
+                    $message = "The 3-day cancellation period has expired. Cancellation was only available until {$deadline}.";
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 400);
+            }
+
+            $reason = $request->input('reason', 'Cancelled by user');
+
+            // Update subscription
+            $subscription->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+                'cancellation_reason' => $reason
+            ]);
+
+            // Log the cancellation
+            Log::info('Subscription cancelled', [
+                'subscription_id' => $subscription->id,
+                'subscription_reference' => $subscription->subscription_reference,
+                'studio_id' => $studio->id,
+                'reason' => $reason,
+                'cancelled_within_days' => now()->diffInDays($subscription->paid_at ?? $subscription->start_date)
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Subscription has been cancelled successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Failed to cancel subscription', [
+                'error' => $e->getMessage(),
+                'subscription_id' => $id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel subscription. Please try again.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get subscription details for modal display.
+     */
+    public function getSubscriptionDetails(string $id): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            
+            // Get the studio
+            $studio = $user->studio;
+            if (!$studio) {
+                $studio = \App\Models\StudioOwner\StudiosModel::where('user_id', $user->id)->first();
+            }
+            
+            if (!$studio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Studio not found.'
+                ], 400);
+            }
+
+            $subscription = StudioPlanModel::with('plan')
+                ->where('id', $id)
+                ->where('studio_id', $studio->id)
+                ->first();
+
+            if (!$subscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subscription not found.'
+                ], 404);
+            }
+
+            // Check if can be cancelled
+            $canCancel = $subscription->canBeCancelled();
+            $cancelDeadline = $subscription->getCancellationDeadline();
+            
+            // Calculate days since payment/start
+            $referenceDate = $subscription->paid_at ?? $subscription->start_date;
+            $daysSinceStart = now()->diffInDays($referenceDate, false);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $subscription->id,
+                    'reference' => $subscription->subscription_reference,
+                    'plan_name' => $subscription->plan->name ?? 'Unknown Plan',
+                    'plan_type' => $subscription->plan->plan_type ?? 'N/A',
+                    'billing_cycle' => ucfirst($subscription->plan->billing_cycle ?? 'N/A'),
+                    'amount' => '₱' . number_format($subscription->amount_paid, 2),
+                    'start_date' => $subscription->start_date->format('M d, Y'),
+                    'end_date' => $subscription->end_date->format('M d, Y'),
+                    'payment_status' => $subscription->payment_status,
+                    'payment_status_label' => ucfirst($subscription->payment_status),
+                    'status' => $subscription->status,
+                    'status_label' => ucfirst($subscription->status),
+                    'created_at' => $subscription->created_at->format('M d, Y'),
+                    'paid_at' => $subscription->paid_at ? $subscription->paid_at->format('Y-m-d H:i:s') : null,
+                    'can_cancel' => $canCancel,
+                    'cancel_deadline' => $cancelDeadline->format('M d, Y'),
+                    'days_since_start' => $daysSinceStart,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch subscription details', [
+                'error' => $e->getMessage(),
+                'subscription_id' => $id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load subscription details. Please try again.'
+            ], 500);
+        }
     }
 }
