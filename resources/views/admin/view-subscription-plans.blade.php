@@ -7,13 +7,6 @@
         <div class="container-fluid">                  
             <div class="row mt-3">
                 <div class="col-12">
-                    {{-- Add New Plan Button --}}
-                    <div class="mb-3 text-end">
-                        <a href="{{ route('admin.subscription.create') }}" class="btn btn-primary">
-                            <i class="ti ti-plus me-1"></i> Add New Plan
-                        </a>
-                    </div>
-
                     {{-- Success Message --}}
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">

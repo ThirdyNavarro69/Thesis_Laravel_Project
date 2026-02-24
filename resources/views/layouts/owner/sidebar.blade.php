@@ -255,6 +255,28 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Manage Subscription --}}
+            @php
+                $manageSubscriptionRoutes = Route::is('owner.subscription-plan.index');
+            @endphp
+            
+            <li class="side-nav-item {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageSubscription" aria-expanded="{{ $manageSubscriptionRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSubscription" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+                    <span class="menu-icon"><i class="ti ti-carambola"></i></span>
+                    <span class="menu-text" data-lang="manage-subscription">Subscription</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ $manageSubscriptionRoutes ? 'show' : '' }}" id="sidebarManageSubscription">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('owner.subscription-plan.index') }}" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="subscription-plans">View Subscription Plans</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </div>
 </div>

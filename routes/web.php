@@ -156,6 +156,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/packages',                                [\App\Http\Controllers\StudioOwner\PackagesController::class, 'store'])->name('owner.packages.store');
         Route::get('/packages/lists',                           [\App\Http\Controllers\StudioOwner\PackagesController::class, 'list'])->name('owner.packages.list');
         Route::get('/packages/{package}',                       [\App\Http\Controllers\StudioOwner\PackagesController::class, 'show'])->name('owner.packages.show');
+
+        // Manage Subscription  
+        Route::get('/view/subscription',                        [\App\Http\Controllers\StudioOwner\SubscriptionPlanController::class, 'index'])->name('owner.subscription-plan.index');
     });
 
     // Freelancer Routes ===================================================================================================================================================
