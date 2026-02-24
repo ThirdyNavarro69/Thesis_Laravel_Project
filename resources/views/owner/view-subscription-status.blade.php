@@ -66,24 +66,7 @@
                                     @endphp
 
                                     @forelse($subscriptions as $subscription)
-                                    @php
-                                        $canCancel = $subscription->canBeCancelled();
-                                        $cancelDeadline = $subscription->getCancellationDeadline()->format('M d, Y');
-                                        
-                                        // Debug - Remove this in production
-                                        \Log::info('Subscription Debug', [
-                                            'id' => $subscription->id,
-                                            'reference' => $subscription->subscription_reference,
-                                            'status' => $subscription->status,
-                                            'payment_status' => $subscription->payment_status,
-                                            'paid_at' => $subscription->paid_at,
-                                            'start_date' => $subscription->start_date,
-                                            'canCancel' => $canCancel,
-                                            'cancelDeadline' => $cancelDeadline,
-                                            'now' => now(),
-                                        ]);
-                                    @endphp
-                                    <tr>
+                                    <tr data-subscription-id="{{ $subscription->id }}">
                                         <td>
                                             <span class="fw-medium font-monospace">{{ $subscription->subscription_reference }}</span>
                                         </td>
@@ -116,27 +99,12 @@
                                             @endif
                                         </td>
                                         <td class="text-center">
-                                            <!-- View Details Button -->
+                                            <!-- View Details Button - NO DATA ATTRIBUTES -->
                                             <button class="btn btn-sm view-subscription-btn" 
-                                                data-id="{{ $subscription->id }}"
-                                                data-reference="{{ $subscription->subscription_reference }}"
-                                                data-plan="{{ $subscription->plan->name ?? 'Unknown' }}"
-                                                data-plan-type="{{ $subscription->plan->plan_type ?? 'N/A' }}"
-                                                data-amount="₱{{ number_format($subscription->amount_paid, 2) }}"
-                                                data-start="{{ $subscription->start_date->format('M d, Y') }}"
-                                                data-end="{{ $subscription->end_date->format('M d, Y') }}"
-                                                data-payment-status="{{ $subscription->payment_status }}"
-                                                data-payment-status-label="{{ ucfirst($subscription->payment_status) }}"
-                                                data-status="{{ $subscription->status }}"
-                                                data-status-label="{{ ucfirst($subscription->status) }}"
-                                                data-billing-cycle="{{ $subscription->plan->billing_cycle ?? 'N/A' }}"
-                                                data-created-at="{{ $subscription->created_at->format('M d, Y') }}"
-                                                data-paid-at="{{ $subscription->paid_at ? $subscription->paid_at->format('Y-m-d H:i:s') : '' }}"
-                                                data-can-cancel="{{ $canCancel ? 'true' : 'false' }}"
-                                                data-cancel-deadline="{{ $cancelDeadline }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#viewSubscriptionModal">
-                                                <i class="ti ti-edit"></i>
+                                                    data-id="{{ $subscription->id }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#viewSubscriptionModal">
+                                                <i class="ti ti-eye"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -446,7 +414,7 @@
     <script>
         $(document).ready(function() {
             let selectedSubscriptionId = null;
-            let selectedSubscriptionReference = null;
+            let currentSubscriptionData = null;
 
             // Search functionality
             $('#searchInput').on('keyup', function() {
@@ -454,11 +422,7 @@
                 
                 $('#subscriptionTableBody tr').each(function() {
                     let rowText = $(this).text().toLowerCase();
-                    if (rowText.indexOf(searchText) === -1) {
-                        $(this).hide();
-                    } else {
-                        $(this).show();
-                    }
+                    $(this).toggle(rowText.indexOf(searchText) !== -1);
                 });
             });
 
@@ -467,162 +431,146 @@
                 let filterStatus = $(this).val().toLowerCase();
                 
                 $('#subscriptionTableBody tr').each(function() {
-                    let statusCell = $(this).find('td:eq(6)').text().toLowerCase().trim();
+                    if (!$(this).data('subscription-id')) return; // Skip empty row
                     
-                    if (filterStatus === '' || statusCell.indexOf(filterStatus) !== -1) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
+                    let statusCell = $(this).find('td:eq(6)').text().toLowerCase().trim();
+                    $(this).toggle(filterStatus === '' || statusCell.indexOf(filterStatus) !== -1);
                 });
             });
 
-            // ===== VIEW SUBSCRIPTION DETAILS =====
+            // ===== VIEW SUBSCRIPTION DETAILS - DYNAMIC LOADING =====
             $(document).on('click', '.view-subscription-btn', function() {
-                // Show loading, hide details
+                selectedSubscriptionId = $(this).data('id');
+                
+                // Reset and show loading
                 $('#subscriptionLoadingSpinner').show();
                 $('#subscriptionDetails').hide();
-
-                // Get data from button attributes
-                selectedSubscriptionId = $(this).data('id');
-                selectedSubscriptionReference = $(this).data('reference');
-                let planName = $(this).data('plan');
-                let planType = $(this).data('plan-type');
-                let amount = $(this).data('amount');
-                let startDate = $(this).data('start');
-                let endDate = $(this).data('end');
-                let paymentStatus = $(this).data('payment-status');
-                let paymentStatusLabel = $(this).data('payment-status-label');
-                let status = $(this).data('status');
-                let statusLabel = $(this).data('status-label');
-                let billingCycle = $(this).data('billing-cycle');
-                let createdAt = $(this).data('created-at');
-                let canCancel = $(this).data('can-cancel');
-                let cancelDeadline = $(this).data('cancel-deadline');
-                let startDateValue = $(this).data('start-date');
-                let paidAt = $(this).data('paid-at');
-
-                // Debug logging
-                console.log('=== SUBSCRIPTION DEBUG ===');
-                console.log('ID:', selectedSubscriptionId);
-                console.log('Reference:', selectedSubscriptionReference);
-                console.log('Status:', status);
-                console.log('Payment Status:', paymentStatus);
-                console.log('Paid At:', paidAt);
-                console.log('Can Cancel (raw):', canCancel);
-                console.log('Can Cancel (type):', typeof canCancel);
-                console.log('Can Cancel (boolean):', canCancel === 'true' || canCancel === true);
-                console.log('Cancel Deadline:', cancelDeadline);
+                $('#showCancelModalBtn').hide();
+                $('#cancellationDeadlineInfo, #cancellationExpiredInfo').hide();
                 
-                // Convert to boolean properly
-                canCancel = canCancel === 'true' || canCancel === true;
-
-                // Calculate days since subscription started
-                let today = new Date();
-                let start = paidAt ? new Date(paidAt) : new Date(startDateValue);
-                let daysSinceStart = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-                
-                console.log('Days since subscription started:', daysSinceStart); // For debugging
-
-                // Simulate loading (remove in production)
-                setTimeout(function() {
-                    // Set header data
-                    $('#viewPlanNameHeader').text(planName);
-                    $('#viewPlanTypeBadge').text(planType.charAt(0).toUpperCase() + planType.slice(1));
-                    $('#viewReferenceHeader').text(selectedSubscriptionReference);
-                    $('#viewDatesHeader').text(startDate + ' – ' + endDate);
-
-                    // Set status badge
-                    let statusBadgeClass = '';
-                    let statusText = '';
-                    
-                    if (status === 'active') {
-                        statusBadgeClass = 'bg-success';
-                        statusText = 'Active';
-                    } else if (status === 'pending') {
-                        statusBadgeClass = 'badge-soft-warning';
-                        statusText = 'Pending';
-                    } else if (status === 'expired') {
-                        statusBadgeClass = 'badge-soft-secondary';
-                        statusText = 'Expired';
-                    } else if (status === 'cancelled') {
-                        statusBadgeClass = 'badge-soft-danger';
-                        statusText = 'Cancelled';
-                    } else {
-                        statusBadgeClass = 'badge-soft-secondary';
-                        statusText = statusLabel;
-                    }
-                    
-                    $('#viewStatusBadge').attr('class', 'badge ' + statusBadgeClass).text(statusText);
-
-                    // Set subscription information
-                    $('#viewReference').text(selectedSubscriptionReference);
-                    $('#viewPlanName').text(planName);
-                    $('#viewPlanType').text(planType);
-                    $('#viewBillingCycle').text(billingCycle);
-                    $('#viewAmount').text(amount);
-                    $('#viewStartDate').text(startDate);
-                    $('#viewEndDate').text(endDate);
-
-                    // Set payment status with appropriate color
-                    let paymentStatusColor = '';
-                    if (paymentStatus === 'paid') {
-                        paymentStatusColor = 'text-success';
-                    } else if (paymentStatus === 'pending') {
-                        paymentStatusColor = 'text-warning';
-                    } else if (paymentStatus === 'failed') {
-                        paymentStatusColor = 'text-danger';
-                    } else {
-                        paymentStatusColor = 'text-muted';
-                    }
-                    $('#viewPaymentStatus').attr('class', 'mb-0 fw-medium ' + paymentStatusColor).text(paymentStatusLabel);
-
-                    // Set status
-                    $('#viewStatus').attr('class', 'badge ' + statusBadgeClass).text(statusText);
-
-                    // Handle cancellation options
-                    console.log('=== CANCELLATION LOGIC ===');
-                    console.log('Can Cancel:', canCancel);
-                    console.log('Status:', status);
-                    console.log('Payment Status:', paymentStatus);
-                    console.log('Days Since Start:', daysSinceStart);
-                    
-                    if (canCancel) {
-                        console.log('✅ SHOWING CANCEL BUTTON');
-                        console.log('Cancel Deadline:', cancelDeadline);
-                        $('#cancellationDeadlineInfo').show();
-                        $('#cancellationExpiredInfo').hide();
-                        $('#cancelDeadlineDate').text(cancelDeadline);
-                        $('#showCancelModalBtn').show();
-                    } else {
-                        console.log('❌ HIDING CANCEL BUTTON');
-                        $('#cancellationDeadlineInfo').hide();
-                        
-                        // Check if subscription is active but cancellation period expired
-                        if (status === 'active' && paymentStatus === 'paid' && daysSinceStart > 3) {
-                            console.log('📅 Showing expired message');
-                            $('#cancellationExpiredInfo').show();
-                            $('#cancellationExpiredInfo .alert').html(`
-                                <i class="ti ti-alert-circle me-2"></i>
-                                <strong>Cancellation Period Expired:</strong> The 3-day cancellation period for this subscription ended on ${cancelDeadline}. 
-                                You can no longer cancel this subscription.
-                            `);
-                        } else {
-                            console.log('ℹ️ Not showing any cancellation message');
-                            $('#cancellationExpiredInfo').hide();
-                        }
-                        
-                        $('#showCancelModalBtn').hide();
-                    }
-
-                    // Hide loading, show details
-                    $('#subscriptionLoadingSpinner').hide();
-                    $('#subscriptionDetails').show();
-                }, 500); // Simulate loading for demo - remove in production
+                // Fetch subscription details via AJAX
+                fetchSubscriptionDetails(selectedSubscriptionId);
             });
+
+            function fetchSubscriptionDetails(id) {
+                let url = '{{ route("owner.subscription.details", ":id") }}'.replace(':id', id);
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            // Store the data for later use
+                            currentSubscriptionData = response.data;
+                            populateSubscriptionModal(response.data);
+                        } else {
+                            showModalError('Failed to load subscription details.');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error loading subscription details:', xhr);
+                        showModalError('An error occurred while loading details. Please try again.');
+                    }
+                });
+            }
+
+            function populateSubscriptionModal(data) {
+                // Set header data
+                $('#viewPlanNameHeader').text(data.plan_name);
+                $('#viewPlanTypeBadge').text(data.plan_type.charAt(0).toUpperCase() + data.plan_type.slice(1));
+                $('#viewReferenceHeader').text(data.reference);
+                $('#viewDatesHeader').text(data.start_date + ' – ' + data.end_date);
+
+                // Set status badge
+                let statusBadgeClass = getStatusBadgeClass(data.status);
+                $('#viewStatusBadge').attr('class', 'badge ' + statusBadgeClass).text(data.status_label);
+
+                // Set subscription information
+                $('#viewReference').text(data.reference);
+                $('#viewPlanName').text(data.plan_name);
+                $('#viewPlanType').text(data.plan_type);
+                $('#viewBillingCycle').text(data.billing_cycle);
+                $('#viewAmount').text(data.amount);
+                $('#viewStartDate').text(data.start_date);
+                $('#viewEndDate').text(data.end_date);
+
+                // Set payment status with appropriate color
+                let paymentStatusColor = getPaymentStatusColor(data.payment_status);
+                $('#viewPaymentStatus').attr('class', 'mb-0 fw-medium ' + paymentStatusColor).text(data.payment_status_label);
+
+                // Set status
+                $('#viewStatus').attr('class', 'badge ' + statusBadgeClass).text(data.status_label);
+
+                // Handle cancellation options
+                handleCancellationOptions(data);
+
+                // Hide loading, show details
+                $('#subscriptionLoadingSpinner').hide();
+                $('#subscriptionDetails').show();
+            }
+
+            function getStatusBadgeClass(status) {
+                const classes = {
+                    'active': 'badge-soft-success',
+                    'pending': 'badge-soft-warning',
+                    'expired': 'badge-soft-secondary',
+                    'cancelled': 'badge-soft-danger'
+                };
+                return classes[status] || 'badge-soft-secondary';
+            }
+
+            function getPaymentStatusColor(status) {
+                const colors = {
+                    'paid': 'text-success',
+                    'pending': 'text-warning',
+                    'failed': 'text-danger'
+                };
+                return colors[status] || 'text-muted';
+            }
+
+            function handleCancellationOptions(data) {
+                if (data.can_cancel) {
+                    $('#cancellationDeadlineInfo').show();
+                    $('#cancellationExpiredInfo').hide();
+                    $('#cancelDeadlineDate').text(data.cancel_deadline);
+                    $('#showCancelModalBtn').show();
+                } else {
+                    $('#cancellationDeadlineInfo').hide();
+                    $('#showCancelModalBtn').hide();
+                    
+                    // Check if subscription is active but cancellation period expired
+                    if (data.status === 'active' && data.payment_status === 'paid' && data.days_since_start > 3) {
+                        $('#cancellationExpiredInfo').show();
+                        $('#cancellationExpiredInfo .alert').html(`
+                            <i class="ti ti-alert-circle me-2"></i>
+                            <strong>Cancellation Period Expired:</strong> The 3-day cancellation period for this subscription ended on ${data.cancel_deadline}. 
+                            You can no longer cancel this subscription.
+                        `);
+                    } else {
+                        $('#cancellationExpiredInfo').hide();
+                    }
+                }
+            }
+
+            function showModalError(message) {
+                $('#subscriptionLoadingSpinner').hide();
+                $('#subscriptionDetails').html(`
+                    <div class="alert alert-danger text-center py-4">
+                        <i class="ti ti-alert-circle fs-1 d-block mb-3"></i>
+                        <p>${message}</p>
+                        <button class="btn btn-primary mt-2" onclick="location.reload()">Try Again</button>
+                    </div>
+                `);
+            }
 
             // ===== SHOW CANCEL MODAL =====
             $('#showCancelModalBtn').on('click', function() {
+                // Populate cancel modal with stored data
+                if (currentSubscriptionData) {
+                    $('#cancelModalPlanName').text(currentSubscriptionData.plan_name);
+                    $('#cancelModalReference').text(currentSubscriptionData.reference);
+                }
+                
                 // Reset modal
                 $('#cancellationReason').val('');
                 $('#confirmCancellation').prop('checked', false);
@@ -695,16 +643,28 @@
                 });
             });
 
-            // Reset modals on close
+            // Reset modal on close
             $('#viewSubscriptionModal').on('hidden.bs.modal', function() {
                 $('#subscriptionDetails').hide();
                 $('#subscriptionLoadingSpinner').show();
+                // Don't clear selectedSubscriptionId or currentSubscriptionData here
+                // because we might need them for cancel modal
             });
 
             $('#cancelSubscriptionModal').on('hidden.bs.modal', function() {
                 $('#cancellationReason').val('');
                 $('#confirmCancellation').prop('checked', false);
                 $('#confirmCancelBtn').prop('disabled', true);
+            });
+
+            // When view modal is completely closed and hidden
+            $('#viewSubscriptionModal').on('hidden.bs.modal', function() {
+                // Only clear if we're not showing cancel modal
+                setTimeout(function() {
+                    if (!$('#cancelSubscriptionModal').hasClass('show')) {
+                        // No need to clear - we can keep the data
+                    }
+                }, 500);
             });
         });
     </script>

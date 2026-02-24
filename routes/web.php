@@ -165,6 +165,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/subscription/history/data',                [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'history'])->name('owner.subscription.history');
         Route::get('/subscription/status/data',                 [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'getStatusData'])->name('owner.subscription.status.data');
         Route::post('/subscription/{id}/cancel',                [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'cancel'])->name('owner.subscription.cancel');
+        Route::get('/subscription/{id}/details',                [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'getSubscriptionDetails'])->name('owner.subscription.details');
         Route::get('/subscription/verify/{reference}',          [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'verifyPayment'])->name('owner.subscription.verify');
         Route::get('/subscription/success/{reference}',         [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'paymentSuccess'])->name('owner.subscription.success');
         Route::get('/subscription/failed/{reference}',          [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'paymentFailed'])->name('owner.subscription.failed');

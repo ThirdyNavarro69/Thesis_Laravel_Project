@@ -665,7 +665,7 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Get subscription details for modal display.
+     * Get subscription details for modal via AJAX.
      */
     public function getSubscriptionDetails(string $id): JsonResponse
     {
@@ -701,7 +701,7 @@ class SubscriptionController extends Controller
             $canCancel = $subscription->canBeCancelled();
             $cancelDeadline = $subscription->getCancellationDeadline();
             
-            // Calculate days since payment/start
+            // Calculate days since subscription started
             $referenceDate = $subscription->paid_at ?? $subscription->start_date;
             $daysSinceStart = now()->diffInDays($referenceDate, false);
 
@@ -714,8 +714,11 @@ class SubscriptionController extends Controller
                     'plan_type' => $subscription->plan->plan_type ?? 'N/A',
                     'billing_cycle' => ucfirst($subscription->plan->billing_cycle ?? 'N/A'),
                     'amount' => '₱' . number_format($subscription->amount_paid, 2),
+                    'amount_raw' => $subscription->amount_paid,
                     'start_date' => $subscription->start_date->format('M d, Y'),
+                    'start_date_raw' => $subscription->start_date->format('Y-m-d'),
                     'end_date' => $subscription->end_date->format('M d, Y'),
+                    'end_date_raw' => $subscription->end_date->format('Y-m-d'),
                     'payment_status' => $subscription->payment_status,
                     'payment_status_label' => ucfirst($subscription->payment_status),
                     'status' => $subscription->status,
@@ -724,6 +727,7 @@ class SubscriptionController extends Controller
                     'paid_at' => $subscription->paid_at ? $subscription->paid_at->format('Y-m-d H:i:s') : null,
                     'can_cancel' => $canCancel,
                     'cancel_deadline' => $cancelDeadline->format('M d, Y'),
+                    'cancel_deadline_raw' => $cancelDeadline->format('Y-m-d'),
                     'days_since_start' => $daysSinceStart,
                 ]
             ]);
