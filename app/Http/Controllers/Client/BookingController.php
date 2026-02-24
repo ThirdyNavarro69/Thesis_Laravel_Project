@@ -47,6 +47,14 @@ class BookingController extends Controller
                 ->where('status', 'active')
                 ->orderBy('category_name', 'asc')
                 ->get();
+
+            // Extract operating days from studio schedule
+            $schedule = $provider->schedules->first();
+            $operatingDays = $schedule->operating_days ?? [];
+            if (is_string($operatingDays)) {
+                $operatingDays = json_decode($operatingDays, true) ?? [];
+            }
+
         } else {
             $provider = ProfileModel::with(['user', 'categories', 'schedule'])
                 ->whereHas('user', function($query) {
@@ -62,6 +70,13 @@ class BookingController extends Controller
                 ->where('status', 'active')
                 ->orderBy('category_name', 'asc')
                 ->get();
+
+            // Extract operating days from freelancer schedule
+            $schedule = $provider->schedule;
+            $operatingDays = $schedule->operating_days ?? [];
+            if (is_string($operatingDays)) {
+                $operatingDays = json_decode($operatingDays, true) ?? [];
+            }
         }
 
         // Get all active municipalities for dropdown
@@ -82,7 +97,8 @@ class BookingController extends Controller
             'categories', 
             'user', 
             'availableDates',
-            'municipalities'
+            'municipalities',
+            'operatingDays'
         ));
     }
 
@@ -200,25 +216,27 @@ class BookingController extends Controller
     }
 
     /**
-     * Check date availability with schedule validation
+     * Check date availability with schedule and time overlap validation
      */
     public function checkAvailability(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:studio,freelancer',
-            'provider_id' => 'required|integer',
-            'date' => 'required|date',
+            'type'         => 'required|in:studio,freelancer',
+            'provider_id'  => 'required|integer',
+            'date'         => 'required|date',
+            'start_time'   => 'required|date_format:H:i',
+            'end_time'     => 'required|date_format:H:i|after:start_time',
         ]);
 
         $selectedDate = Carbon::parse($request->date);
-        $dayOfWeek = strtolower($selectedDate->format('l')); // e.g., "monday"
-        
+        $dayOfWeek    = strtolower($selectedDate->format('l'));
+
         // Check if date is in the past
         if ($selectedDate->isPast()) {
             return response()->json([
-                'success' => false,
-                'available' => false,
-                'message' => 'Selected date is in the past.',
+                'success'      => false,
+                'available'    => false,
+                'message'      => 'Selected date is in the past.',
                 'is_past_date' => true,
             ]);
         }
@@ -226,88 +244,122 @@ class BookingController extends Controller
         // Get provider schedule
         if ($request->type === 'studio') {
             $provider = StudiosModel::with('schedules')->find($request->provider_id);
-            
-            // Check studio schedule
+
             if (!$provider || !$provider->schedules || $provider->schedules->isEmpty()) {
                 return response()->json([
-                    'success' => false,
-                    'available' => false,
-                    'message' => 'Studio has no schedule available.',
+                    'success'     => false,
+                    'available'   => false,
+                    'message'     => 'Studio has no schedule available.',
                     'no_schedule' => true,
                 ]);
             }
-            
-            $schedule = $provider->schedules->first();
+
+            $schedule      = $provider->schedules->first();
             $operatingDays = $schedule->operating_days ?? [];
-            
-            // Ensure operating_days is an array
+
             if (is_string($operatingDays)) {
                 $operatingDays = json_decode($operatingDays, true) ?? [];
             }
-            
-            // Check if day is in operating days
+
             if (!in_array($dayOfWeek, $operatingDays)) {
                 return response()->json([
-                    'success' => false,
-                    'available' => false,
-                    'message' => 'Studio is closed on ' . ucfirst($dayOfWeek) . '.',
+                    'success'           => false,
+                    'available'         => false,
+                    'message'           => 'Studio is closed on ' . ucfirst($dayOfWeek) . '.',
                     'not_operating_day' => true,
                 ]);
             }
-            
+
             $maxBookings = $provider->max_clients_per_day ?? 3;
+
         } else {
             $provider = ProfileModel::with('schedule')->where('user_id', $request->provider_id)->first();
-            
-            // Check freelancer schedule
+
             if (!$provider || !$provider->schedule) {
                 return response()->json([
-                    'success' => false,
-                    'available' => false,
-                    'message' => 'Freelancer has no schedule available.',
+                    'success'     => false,
+                    'available'   => false,
+                    'message'     => 'Freelancer has no schedule available.',
                     'no_schedule' => true,
                 ]);
             }
-            
-            $schedule = $provider->schedule;
+
+            $schedule      = $provider->schedule;
             $operatingDays = $schedule->operating_days ?? [];
-            
-            // Ensure operating_days is an array
+
             if (is_string($operatingDays)) {
                 $operatingDays = json_decode($operatingDays, true) ?? [];
             }
-            
-            // Check if day is in operating days
+
             if (!in_array($dayOfWeek, $operatingDays)) {
                 return response()->json([
-                    'success' => false,
-                    'available' => false,
-                    'message' => 'Freelancer is not available on ' . ucfirst($dayOfWeek) . '.',
+                    'success'           => false,
+                    'available'         => false,
+                    'message'           => 'Freelancer is not available on ' . ucfirst($dayOfWeek) . '.',
                     'not_operating_day' => true,
                 ]);
             }
-            
+
             $maxBookings = $schedule->booking_limit ?? 3;
         }
 
-        // Get existing bookings for this date
-        $existingBookings = BookingModel::where('booking_type', $request->type)
+        // Check max bookings limit for the day
+        $existingBookingsCount = BookingModel::where('booking_type', $request->type)
             ->where('provider_id', $request->provider_id)
             ->where('event_date', $request->date)
             ->whereIn('status', ['pending', 'confirmed'])
             ->count();
 
-        $available = $existingBookings < $maxBookings;
+        if ($existingBookingsCount >= $maxBookings) {
+            return response()->json([
+                'success'           => false,
+                'available'         => false,
+                'existing_bookings' => $existingBookingsCount,
+                'max_bookings'      => $maxBookings,
+                'message'           => 'This date is fully booked (' . $existingBookingsCount . '/' . $maxBookings . ' bookings).',
+            ]);
+        }
+
+        // Check time overlap against existing bookings on the same date
+        $hasTimeOverlap = BookingModel::where('booking_type', $request->type)
+            ->where('provider_id', $request->provider_id)
+            ->where('event_date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->where(function ($query) use ($request) {
+                $query->where(function ($q) use ($request) {
+                    // New booking starts during an existing booking
+                    $q->where('start_time', '<=', $request->start_time)
+                    ->where('end_time', '>', $request->start_time);
+                })->orWhere(function ($q) use ($request) {
+                    // New booking ends during an existing booking
+                    $q->where('start_time', '<', $request->end_time)
+                    ->where('end_time', '>=', $request->end_time);
+                })->orWhere(function ($q) use ($request) {
+                    // New booking completely covers an existing booking
+                    $q->where('start_time', '>=', $request->start_time)
+                    ->where('end_time', '<=', $request->end_time);
+                });
+            })
+            ->exists();
+
+        if ($hasTimeOverlap) {
+            return response()->json([
+                'success'           => false,
+                'available'         => false,
+                'existing_bookings' => $existingBookingsCount,
+                'max_bookings'      => $maxBookings,
+                'message'           => 'The selected time slot overlaps with an existing booking.',
+                'time_overlap'      => true,
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'available' => $available,
-            'existing_bookings' => $existingBookings,
-            'max_bookings' => $maxBookings,
-            'operating_day' => in_array($dayOfWeek, $operatingDays),
-            'message' => $available ? 
-                'Available (' . $existingBookings . '/' . $maxBookings . ' bookings)' : 
-                'Fully booked (' . $existingBookings . '/' . $maxBookings . ' bookings)',
+            'success'           => true,
+            'available'         => true,
+            'existing_bookings' => $existingBookingsCount,
+            'max_bookings'      => $maxBookings,
+            'operating_day'     => true,
+            'message'           => 'Available (' . $existingBookingsCount . '/' . $maxBookings . ' bookings)',
         ]);
     }
 
@@ -1315,64 +1367,64 @@ class BookingController extends Controller
     }
 
     /**
-     * Get calendar availability for a specific month with schedule validation
+     * Get calendar availability for a full month
      */
     public function getCalendarAvailability(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:studio,freelancer',
+            'type'        => 'required|in:studio,freelancer',
             'provider_id' => 'required|integer',
-            'year' => 'required|integer',
-            'month' => 'required|integer|between:1,12',
+            'year'        => 'required|integer',
+            'month'       => 'required|integer|between:1,12',
         ]);
 
         try {
-            // Create start and end dates for the month
             $startDate = Carbon::create($request->year, $request->month, 1);
-            $endDate = $startDate->copy()->endOfMonth();
-            
+            $endDate   = $startDate->copy()->endOfMonth();
+
             // Get provider schedule
             if ($request->type === 'studio') {
                 $provider = StudiosModel::with('schedules')->find($request->provider_id);
-                
+
                 if (!$provider || !$provider->schedules || $provider->schedules->isEmpty()) {
                     return response()->json([
-                        'success' => false,
-                        'message' => 'Studio has no schedule available.',
+                        'success'      => false,
+                        'message'      => 'Studio has no schedule available.',
                         'availability' => [],
                     ]);
                 }
-                
-                $schedule = $provider->schedules->first();
+
+                $schedule      = $provider->schedules->first();
                 $operatingDays = $schedule->operating_days ?? [];
-                
+
                 if (is_string($operatingDays)) {
                     $operatingDays = json_decode($operatingDays, true) ?? [];
                 }
-                
+
                 $maxBookings = $provider->max_clients_per_day ?? 3;
+
             } else {
                 $provider = ProfileModel::with('schedule')->where('user_id', $request->provider_id)->first();
-                
+
                 if (!$provider || !$provider->schedule) {
                     return response()->json([
-                        'success' => false,
-                        'message' => 'Freelancer has no schedule available.',
+                        'success'      => false,
+                        'message'      => 'Freelancer has no schedule available.',
                         'availability' => [],
                     ]);
                 }
-                
-                $schedule = $provider->schedule;
+
+                $schedule      = $provider->schedule;
                 $operatingDays = $schedule->operating_days ?? [];
-                
+
                 if (is_string($operatingDays)) {
                     $operatingDays = json_decode($operatingDays, true) ?? [];
                 }
-                
+
                 $maxBookings = $schedule->booking_limit ?? 3;
             }
 
-            // Get existing bookings for this month
+            // Get booking counts per date for the month
             $existingBookings = BookingModel::where('booking_type', $request->type)
                 ->where('provider_id', $request->provider_id)
                 ->whereBetween('event_date', [$startDate, $endDate])
@@ -1380,53 +1432,45 @@ class BookingController extends Controller
                 ->selectRaw('event_date, COUNT(*) as booking_count')
                 ->groupBy('event_date')
                 ->get()
-                ->keyBy(function($item) {
-                    return $item->event_date->format('Y-m-d');
+                ->keyBy(function ($item) {
+                    return Carbon::parse($item->event_date)->format('Y-m-d');
                 });
 
             // Build availability data
             $availability = [];
-            $currentDate = $startDate->copy();
-            $today = Carbon::today();
-            
+            $currentDate  = $startDate->copy();
+            $today        = Carbon::today();
+
             while ($currentDate->lte($endDate)) {
-                $dateString = $currentDate->format('Y-m-d');
-                $dayOfWeek = strtolower($currentDate->format('l'));
-                
-                // Check if date is in the past
-                $isPast = $currentDate->lt($today);
-                
-                // Check if day is in operating days
+                $dateString    = $currentDate->format('Y-m-d');
+                $dayOfWeek     = strtolower($currentDate->format('l'));
+                $isPast        = $currentDate->lt($today);
                 $isOperatingDay = in_array($dayOfWeek, $operatingDays);
-                
-                // Get booking count
-                $bookingCount = $existingBookings[$dateString]->booking_count ?? 0;
-                
-                // Determine availability
-                $available = !$isPast && $isOperatingDay && ($bookingCount < $maxBookings);
+                $bookingCount  = $existingBookings[$dateString]->booking_count ?? 0;
+
+                // Fully booked if booking count has reached max limit
                 $fullyBooked = $isOperatingDay && ($bookingCount >= $maxBookings);
-                $notOperating = !$isOperatingDay;
-                
+                $available   = !$isPast && $isOperatingDay && !$fullyBooked;
+
                 $availability[$dateString] = [
-                    'date' => $dateString,
-                    'available' => $available,
-                    'fully_booked' => $fullyBooked,
-                    'not_operating' => $notOperating,
-                    'is_past' => $isPast,
+                    'date'            => $dateString,
+                    'available'       => $available,
+                    'fully_booked'    => $fullyBooked,
+                    'not_operating'   => !$isOperatingDay,
+                    'is_past'         => $isPast,
                     'is_operating_day' => $isOperatingDay,
-                    'booking_count' => $bookingCount,
-                    'max_bookings' => $maxBookings,
-                    'is_weekend' => $currentDate->isWeekend(),
+                    'booking_count'   => $bookingCount,
+                    'max_bookings'    => $maxBookings,
                 ];
-                
+
                 $currentDate->addDay();
             }
 
             return response()->json([
-                'success' => true,
-                'availability' => $availability,
-                'month' => $startDate->format('F Y'),
-                'max_bookings' => $maxBookings,
+                'success'        => true,
+                'availability'   => $availability,
+                'month'          => $startDate->format('F Y'),
+                'max_bookings'   => $maxBookings,
                 'operating_days' => $operatingDays,
             ]);
 

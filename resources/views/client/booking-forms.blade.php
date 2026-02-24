@@ -93,6 +93,7 @@
                                 @csrf
                                 <input type="hidden" id="bookingType" value="{{ $type }}">
                                 <input type="hidden" id="providerId" value="{{ $id }}">
+                                <input type="hidden" id="operatingDays" value="{{ json_encode($operatingDays) }}">
 
                                 {{-- CLIENT INFORMATION --}}
                                 <h4 class="card-title text-primary mb-3">Client Information</h4>
@@ -174,6 +175,7 @@
                                             <div class="invalid-feedback">
                                                 Please select a valid event date.
                                             </div>
+                                            <small class="text-muted mt-1 d-block" id="closedDayNote" style="display:none !important;"></small>
                                             <small class="text-muted mt-1" id="dateAvailabilityStatus">
                                                 <span id="dateStatusIcon" class="me-1"></span>
                                                 <span id="dateStatusText">Select a date to check availability</span>
@@ -441,6 +443,43 @@
             let bookingData = null;
             let bookingId = null;
 
+            // ========== Operating Days Enforcement ==========
+            const operatingDays = JSON.parse($('#operatingDays').val() || '[]');
+
+            /**
+             * Map day name to JS getDay() index (0 = Sunday, 6 = Saturday)
+             */
+            const dayNameToIndex = {
+                'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+                'thursday': 4, 'friday': 5, 'saturday': 6
+            };
+
+            /**
+             * Get array of operating day indices from operating days array
+             */
+            const operatingDayIndices = operatingDays
+                .map(d => dayNameToIndex[d.toLowerCase()])
+                .filter(d => d !== undefined);
+
+            /**
+             * Check if a date string falls on an operating day
+             */
+            function isOperatingDay(dateString) {
+                if (!dateString) return false;
+                const parts = dateString.split('-');
+                // Use explicit constructor to avoid timezone shift
+                const date = new Date(parts[0], parts[1] - 1, parts[2]);
+                return operatingDayIndices.includes(date.getDay());
+            }
+
+            /**
+             * Format operating days for readable display
+             */
+            function formatOperatingDays() {
+                if (!operatingDays.length) return 'No operating schedule set';
+                return operatingDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ');
+            }
+
             // Debug function to check available categories and packages
             function debugFreelancerPackages() {
                 const type = $('#bookingType').val();
@@ -459,7 +498,7 @@
                         data: {
                             type: type,
                             provider_id: providerId,
-                            category_id: 1, // Test with first category
+                            category_id: 1,
                             _token: '{{ csrf_token() }}'
                         },
                         success: function(response) {
@@ -473,7 +512,6 @@
             $('input[name="payment_type"]').on('change', function() {
                 const paymentType = $(this).val();
                 
-                // Only get summary if package is already selected
                 if (selectedPackageId) {
                     const packageRadio = $(`.package-radio[value="${selectedPackageId}"]`);
                     if (packageRadio.length) {
@@ -527,21 +565,18 @@
                             let packagesHtml = '<div class="row g-3">';
                             
                             response.packages.forEach(function(package, index) {
-                                // Format duration hours
                                 const durationText = package.duration === 1 ? '1 Hour' : `${package.duration} Hours`;
                                 const priceText = `₱${parseFloat(package.package_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                                 
-                                // ========== FIXED: Parse inclusions properly ==========
+                                // Parse inclusions properly
                                 let inclusions = [];
                                 if (typeof package.package_inclusions === 'string') {
                                     try {
                                         inclusions = JSON.parse(package.package_inclusions);
-                                        // Ensure it's an array
                                         if (!Array.isArray(inclusions)) {
                                             inclusions = [inclusions];
                                         }
                                     } catch (e) {
-                                        // Not JSON, split by comma if contains commas
                                         if (package.package_inclusions.includes(',')) {
                                             inclusions = package.package_inclusions.split(',').map(item => item.trim());
                                         } else {
@@ -554,7 +589,6 @@
                                     inclusions = [];
                                 }
                                 
-                                // Check if this is a studio package
                                 const isStudio = $('#bookingType').val() === 'studio';
                                 
                                 packagesHtml += `
@@ -567,16 +601,13 @@
                                         
                                         <label class="card border h-100 package-card" for="package${package.id}" style="cursor: pointer;">
                                             <div class="card-body">
-                                                <!-- Package Name & Price -->
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <h6 class="card-title fw-bold mb-0">${package.package_name}</h6>
                                                     <span class="text-success fw-bold">${priceText}</span>
                                                 </div>
                                                 
-                                                <!-- Package Description -->
                                                 <p class="text-muted small mb-3">${package.package_description ? package.package_description.substring(0, 80) + (package.package_description.length > 80 ? '...' : '') : 'No description available.'}</p>
                                                 
-                                                <!-- Online Gallery badge for ALL package types -->
                                                 <div class="d-flex align-items-center mb-2">
                                                     ${package.online_gallery ? 
                                                         `<span class="p-1 badge badge-soft-success">
@@ -588,7 +619,6 @@
                                                     }
                                                 </div>
                                                 
-                                                <!-- Only show photographer count for studio packages -->
                                                 ${isStudio ? `
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="p-1 badge badge-soft-primary">
@@ -599,11 +629,9 @@
                                                     </div>
                                                 ` : ''}
                                                 
-                                                <!-- Package Features -->
                                                 <div class="col">
                                                     <small class="text-muted d-block mb-2"><i class="ti ti-checklist me-1"></i> Package Includes:</small>
                                                     <ul class="list-unstyled small mb-0">
-                                                        <!-- Duration -->
                                                         ${package.duration ? `
                                                             <li class="mb-1">
                                                                 <i class="ti ti-clock text-primary me-2"></i> 
@@ -611,7 +639,6 @@
                                                             </li>
                                                         ` : ''}
                                                         
-                                                        <!-- Maximum Edited Photos -->
                                                         ${package.maximum_edited_photos ? `
                                                             <li class="mb-1">
                                                                 <i class="ti ti-camera text-primary me-2"></i> 
@@ -619,7 +646,6 @@
                                                             </li>
                                                         ` : ''}
                                                         
-                                                        <!-- All Package Inclusions (now correctly displayed as separate bullets) -->
                                                         ${inclusions.map(inclusion => `
                                                             <li class="mb-1">
                                                                 <i class="ti ti-check text-success me-2"></i> 
@@ -627,7 +653,6 @@
                                                             </li>
                                                         `).join('')}
                                                         
-                                                        <!-- Coverage Scope -->
                                                         ${package.coverage_scope ? `
                                                             <li class="mb-1">
                                                                 <i class="ti ti-map-pin text-primary me-2"></i> 
@@ -645,10 +670,8 @@
                             packagesHtml += '</div>';
                             $('#packagesContainer').html(packagesHtml);
                             
-                            // Clear any previous package selection
                             selectedPackageId = null;
                             
-                            // Style for selected package card
                             $('<style>')
                                 .prop('type', 'text/css')
                                 .html(`
@@ -659,7 +682,6 @@
                                 .appendTo('head');
                             
                         } else {
-                            // Show alert message when no packages found
                             let message = 'No packages available for this service/category.';
                             if (response.message) {
                                 message = response.message;
@@ -696,8 +718,6 @@
                 selectedPackageId = $(this).val();
                 const packageData = $(this).data('package');
                 const paymentType = $('input[name="payment_type"]:checked').val();
-                
-                // Get booking summary with payment type
                 getBookingSummaryWithPaymentType(packageData, paymentType);
             });
             
@@ -713,8 +733,6 @@
                     $('#venueName').prop('required', false);
                     $('#city').prop('required', false);
                     $('#barangay').prop('required', false);
-                    
-                    // Reset dropdowns
                     $('#city').val('').trigger('change');
                     $('#barangay').prop('disabled', true).html('<option value="">Select Barangay</option>');
                 }
@@ -723,9 +741,11 @@
             // Check date availability
             $('#checkDateBtn').on('click', function() {
                 const selectedDate = $('#eventDate').val();
-                const type = $('#bookingType').val();
-                const providerId = $('#providerId').val();
-                
+                const startTime    = $('#startTime').val();
+                const endTime      = $('#endTime').val();
+                const type         = $('#bookingType').val();
+                const providerId   = $('#providerId').val();
+
                 if (!selectedDate) {
                     Swal.fire({
                         icon: 'warning',
@@ -735,100 +755,111 @@
                     });
                     return;
                 }
-                
+
+                if (!startTime || !endTime) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Time Required',
+                        text: 'Please enter both start time and end time before checking availability.',
+                        confirmButtonColor: '#3475db'
+                    });
+                    return;
+                }
+
                 // Show checking status
                 $('#dateStatusIcon').html('<i class="ti ti-clock text-info"></i>');
                 $('#dateStatusText').text('Checking availability...');
-                
+
                 $.ajax({
                     url: '{{ route("client.bookings.check-availability") }}',
                     type: 'POST',
                     data: {
-                        type: type,
+                        type:        type,
                         provider_id: providerId,
-                        date: selectedDate,
-                        _token: '{{ csrf_token() }}'
+                        date:        selectedDate,
+                        start_time:  startTime,
+                        end_time:    endTime,
+                        _token:      '{{ csrf_token() }}'
                     },
                     success: function(response) {
-                        if (response.success) {
-                            if (response.available) {
-                                // Date is available - Green indicator
-                                $('#dateStatusIcon').html('<i class="ti ti-circle-check text-success"></i>');
-                                $('#dateStatusText').html(`
-                                    <span class="text-success fw-medium">Available</span> 
-                                    <span class="text-muted">(${response.existing_bookings}/${response.max_bookings} bookings)</span>
-                                `);
-                                
-                                // Enable submit button if date is available
-                                $('#submitBookingBtn').prop('disabled', false);
-                            } else {
-                                // Date is not available - Red indicator
-                                $('#dateStatusIcon').html('<i class="ti ti-circle-x text-danger"></i>');
-                                $('#dateStatusText').html(`
-                                    <span class="text-danger fw-medium">Fully Booked</span> 
-                                    <span class="text-muted">(${response.existing_bookings}/${response.max_bookings} bookings)</span>
-                                `);
-                                
-                                // Disable submit button if date is not available
-                                $('#submitBookingBtn').prop('disabled', true);
-                                
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Date Not Available',
-                                    text: response.message || 'This date is fully booked.',
-                                    confirmButtonColor: '#3475db'
-                                });
-                            }
+                        if (response.success && response.available) {
+                            $('#dateStatusIcon').html('<i class="ti ti-circle-check text-success"></i>');
+                            $('#dateStatusText').html(`
+                                <span class="text-success fw-medium">Available</span> 
+                                <span class="text-muted">(${response.existing_bookings}/${response.max_bookings} bookings)</span>
+                            `);
+                            $('#submitBookingBtn').prop('disabled', false);
                         } else {
-                            // Error or not available
-                            $('#dateStatusIcon').html('<i class="ti ti-alert-circle text-danger"></i>');
-                            $('#dateStatusText').html(`<span class="text-danger fw-medium">${response.message || 'Not Available'}</span>`);
-                            
-                            // Disable submit button on error
+                            $('#dateStatusIcon').html('<i class="ti ti-circle-x text-danger"></i>');
+                            $('#dateStatusText').html(`
+                                <span class="text-danger fw-medium">${response.message || 'Not Available'}</span>
+                            `);
                             $('#submitBookingBtn').prop('disabled', true);
-                            
-                            if (response.message) {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Availability Check Failed',
-                                    text: response.message,
-                                    confirmButtonColor: '#3475db'
-                                });
-                            }
+
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Not Available',
+                                text: response.message || 'This time slot is not available.',
+                                confirmButtonColor: '#3475db'
+                            });
                         }
                     },
                     error: function(xhr) {
                         $('#dateStatusIcon').html('<i class="ti ti-alert-circle text-danger"></i>');
                         $('#dateStatusText').html('<span class="text-danger fw-medium">Error checking availability</span>');
-                        
-                        // Disable submit button on error
                         $('#submitBookingBtn').prop('disabled', true);
-                        
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Failed to check date availability. Please try again.',
+                            text: 'Failed to check availability. Please try again.',
                             confirmButtonColor: '#3475db'
                         });
                     }
                 });
             });
 
-            // Auto-check when date changes
-            $('#eventDate').on('change', function() {
-                const selectedDate = $(this).val();
-                if (selectedDate) {
-                    $('#checkDateBtn').trigger('click');
-                } else {
+            // Auto-check when date or time changes
+            $('#eventDate, #startTime, #endTime').on('change', function() {
+                const selectedDate = $('#eventDate').val();
+                const startTime    = $('#startTime').val();
+                const endTime      = $('#endTime').val();
+
+                if (!selectedDate) {
                     $('#dateStatusIcon').empty();
                     $('#dateStatusText').text('Select a date to check availability');
+                    $('#closedDayNote').hide();
                     $('#submitBookingBtn').prop('disabled', false);
+                    return;
+                }
+
+                // Block non-operating days immediately without server call
+                if (!isOperatingDay(selectedDate)) {
+                    const parts   = selectedDate.split('-');
+                    const dayName = new Date(parts[0], parts[1] - 1, parts[2])
+                        .toLocaleDateString('en-US', { weekday: 'long' });
+
+                    $('#dateStatusIcon').html('<i class="ti ti-circle-x text-danger"></i>');
+                    $('#dateStatusText').html(
+                        `<span class="text-danger fw-medium">${dayName} is not an operating day</span>`
+                    );
+                    $('#closedDayNote').text('Operating days: ' + formatOperatingDays()).show();
+                    $('#submitBookingBtn').prop('disabled', true);
+                    return;
+                }
+
+                // Only auto-check if all three fields are filled
+                if (selectedDate && startTime && endTime) {
+                    $('#closedDayNote').hide();
+                    $('#checkDateBtn').trigger('click');
+                } else {
+                    $('#dateStatusIcon').html('<i class="ti ti-info-circle text-info"></i>');
+                    $('#dateStatusText').html('<span class="text-muted">Please fill in start and end time to check availability</span>');
                 }
             });
             
             // View calendar modal
             $('#viewCalendarBtn').on('click', function() {
-                // Generate calendar
                 generateAvailabilityCalendar();
                 $('#calendarModal').modal('show');
             });
@@ -837,7 +868,6 @@
             $('#submitBookingBtn').on('click', function() {
                 if (!validateBookingForm()) return;
                 
-                // Collect booking data
                 bookingData = {
                     type: $('#bookingType').val(),
                     provider_id: $('#providerId').val(),
@@ -855,11 +885,10 @@
                     full_name: $('#fullName').val(),
                     contact_number: $('#contactNumber').val(),
                     email: $('#email').val(),
-                    payment_type: $('input[name="payment_type"]:checked').val(), // Add payment type
+                    payment_type: $('input[name="payment_type"]:checked').val(),
                     _token: '{{ csrf_token() }}'
                 };
                 
-                // Show summary modal
                 showBookingSummary();
             });
             
@@ -878,7 +907,6 @@
                     return;
                 }
                 
-                // Show loading
                 barangaySelect.prop('disabled', true).html('<option value="">Loading barangays...</option>');
                 
                 $.ajax({
@@ -891,18 +919,13 @@
                     success: function(response) {
                         if (response.success && response.barangays && response.barangays.length > 0) {
                             let options = '<option value="">Select Barangay</option>';
-                            
-                            // Sort barangays alphabetically
                             const sortedBarangays = response.barangays.sort();
-                            
                             sortedBarangays.forEach(function(barangay) {
                                 options += `<option value="${barangay}">${barangay}</option>`;
                             });
-                            
                             barangaySelect.html(options).prop('disabled', false);
                         } else {
                             barangaySelect.html('<option value="">No barangays available</option>').prop('disabled', true);
-                            
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'No Barangays Found',
@@ -914,7 +937,6 @@
                     error: function(xhr) {
                         console.error('Barangay load error:', xhr);
                         barangaySelect.html('<option value="">Error loading barangays</option>').prop('disabled', true);
-                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -925,7 +947,8 @@
                 });
             });
             
-            // Functions
+            // ========== Functions ==========
+
             function getBookingSummaryWithPaymentType(packageData, paymentType) {
                 if (!packageData || !packageData.id) {
                     console.error('Package data or ID is missing');
@@ -943,19 +966,8 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            // Store summary data
                             window.bookingSummary = response.summary;
                             
-                            // ========== ADDED: Log package details for debugging ==========
-                            const isStudio = $('#bookingType').val() === 'studio';
-                            if (isStudio) {
-                                console.log('Studio Package Details:', {
-                                    online_gallery: response.summary.online_gallery,
-                                    photographer_count: response.summary.photographer_count
-                                });
-                            }
-                            
-                            // Update price display if summary modal is open
                             if ($('#bookingSummaryModal').hasClass('show')) {
                                 updateSummaryPriceDisplay(response.summary);
                             }
@@ -974,11 +986,11 @@
                     return false;
                 }
                 
-                // Check date availability status
                 const dateStatusText = $('#dateStatusText').text().toLowerCase();
                 if (dateStatusText.includes('fully booked') || 
                     dateStatusText.includes('not available') || 
-                    dateStatusText.includes('error')) {
+                    dateStatusText.includes('error') ||
+                    dateStatusText.includes('not an operating day')) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Date Not Available',
@@ -988,7 +1000,6 @@
                     return false;
                 }
                 
-                // Check if date has been checked
                 if ($('#dateStatusText').text() === 'Select a date to check availability') {
                     Swal.fire({
                         icon: 'warning',
@@ -1009,7 +1020,6 @@
                     return false;
                 }
                 
-                // Check if payment type is selected
                 const paymentType = $('input[name="payment_type"]:checked').val();
                 if (!paymentType) {
                     Swal.fire({
@@ -1021,7 +1031,6 @@
                     return false;
                 }
                 
-                // For on-location bookings, validate city and barangay
                 if ($('#locationType').val() === 'on-location') {
                     if (!$('#city').val()) {
                         Swal.fire({
@@ -1058,7 +1067,6 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            // Store summary data
                             window.bookingSummary = response.summary;
                         }
                     },
@@ -1069,16 +1077,13 @@
             }
             
             function showBookingSummary() {
-                // Populate summary modal
                 $('#summaryFullName').text(bookingData.full_name);
                 $('#summaryContactNumber').text(bookingData.contact_number);
                 $('#summaryEmailAddress').text(bookingData.email);
                 
-                // Get package name from selected radio button
                 const packageName = $(`.package-radio[value="${selectedPackageId}"]`).data('package').package_name;
                 $('#summaryPackage').text(packageName);
                 
-                // Format date and time
                 const eventDate = new Date(bookingData.event_date);
                 $('#summaryDate').text(eventDate.toLocaleDateString('en-US', { 
                     year: 'numeric', 
@@ -1094,26 +1099,12 @@
                     bookingData.location_type === 'in-studio' ? 'In-Studio' : 'On-Location'
                 );
                 
-                // Location details
                 if (bookingData.location_type === 'on-location') {
                     let locationText = '';
-                    
-                    if (bookingData.venue_name) {
-                        locationText += `<strong>${bookingData.venue_name}</strong><br>`;
-                    }
-                    
-                    if (bookingData.street) {
-                        locationText += bookingData.street + ', ';
-                    }
-                    
-                    if (bookingData.barangay) {
-                        locationText += 'Brgy. ' + bookingData.barangay + ', ';
-                    }
-                    
-                    if (bookingData.city) {
-                        locationText += bookingData.city + ', ';
-                    }
-                    
+                    if (bookingData.venue_name) locationText += `<strong>${bookingData.venue_name}</strong><br>`;
+                    if (bookingData.street) locationText += bookingData.street + ', ';
+                    if (bookingData.barangay) locationText += 'Brgy. ' + bookingData.barangay + ', ';
+                    if (bookingData.city) locationText += bookingData.city + ', ';
                     locationText += 'Cavite';
                     
                     $('#summaryLocationDetails').html(`
@@ -1124,15 +1115,12 @@
                     $('#summaryLocationDetails').hide();
                 }
                 
-                // Price breakdown
                 if (window.bookingSummary) {
                     $('#packagePrice').text('₱' + window.bookingSummary.package_price);
                     $('#downPayment').text('₱' + window.bookingSummary.down_payment);
                     $('#remainingBalance').text('₱' + window.bookingSummary.remaining_balance);
                     $('#totalAmount').text('₱' + window.bookingSummary.total_amount);
                     
-                    // ========== MODIFIED: Display Online Gallery for ALL package types ==========
-                    // Always show online gallery badge (for both studio and freelancer)
                     const galleryHtml = `
                         <p class="text-muted small mb-1 mt-2">Online Gallery:</p>
                         <p class="fw-medium mb-2">
@@ -1143,10 +1131,7 @@
                         </p>
                     `;
                     
-                    // Only show photographer count for studio packages
                     const isStudio = $('#bookingType').val() === 'studio';
-                    
-                    // Insert after package name or before price breakdown
                     $('#summaryPackage').after(galleryHtml);
                     
                     if (isStudio && window.bookingSummary.photographer_count !== undefined) {
@@ -1162,7 +1147,6 @@
                         $('#summaryPackage').after(photographerHtml);
                     }
                     
-                    // Inclusions
                     let inclusionsHtml = '';
                     if (window.bookingSummary.inclusions && Array.isArray(window.bookingSummary.inclusions)) {
                         window.bookingSummary.inclusions.forEach(function(inclusion) {
@@ -1172,7 +1156,6 @@
                     $('#summaryInclusions').html(inclusionsHtml);
                 }
                 
-                // Show modal
                 $('#bookingSummaryModal').modal('show');
             }
             
@@ -1183,12 +1166,10 @@
                     Processing...
                 `);
                 
-                // Ensure bookingData has payment_type
                 if (!bookingData.payment_type) {
                     bookingData.payment_type = $('input[name="payment_type"]:checked').val();
                 }
                 
-                // Create booking
                 $.ajax({
                     url: '{{ route("client.bookings.store") }}',
                     type: 'POST',
@@ -1204,7 +1185,6 @@
                     },
                     error: function(xhr) {
                         console.error('Booking store error:', xhr);
-                        // Show specific validation errors
                         if (xhr.responseJSON && xhr.responseJSON.errors) {
                             let errorMessages = [];
                             $.each(xhr.responseJSON.errors, function(field, messages) {
@@ -1239,7 +1219,6 @@
             }
 
             function proceedWithPayment() {
-                // Show loading
                 $('#proceedToPaymentBtn').prop('disabled', true);
                 $('#proceedToPaymentBtn').html(`
                     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -1256,10 +1235,8 @@
                     success: function(response) {
                         if (response.success) {
                             if (response.type === 'payment_intent') {
-                                // Redirect to card payment page
                                 window.location.href = response.redirect_url;
                             } else if (response.redirect_url) {
-                                // Redirect to checkout session
                                 window.location.href = response.redirect_url;
                             } else {
                                 showError('No redirect URL provided');
@@ -1267,14 +1244,6 @@
                             }
                         } else {
                             showError('Payment initialization failed: ' + (response.message || 'Unknown error'));
-                            if (response.test_mode_note) {
-                                Swal.fire({
-                                    icon: 'info',
-                                    title: 'Test Mode Notice',
-                                    text: response.test_mode_note,
-                                    confirmButtonColor: '#3475db'
-                                });
-                            }
                             resetPaymentButton();
                         }
                     },
@@ -1289,10 +1258,7 @@
             function generateAvailabilityCalendar() {
                 const calendarEl = document.getElementById('availabilityCalendar');
                 const today = new Date();
-                const twoMonthsLater = new Date();
-                twoMonthsLater.setMonth(today.getMonth() + 2);
                 
-                // Get availability data from server
                 getCalendarAvailability(today.getFullYear(), today.getMonth() + 1).then(availabilityData => {
                     let calendarHtml = `
                         <div class="calendar-header d-flex justify-content-between align-items-center mb-3">
@@ -1303,44 +1269,40 @@
                         <div class="calendar-grid" id="calendarGrid">
                     `;
                     
-                    // Add day headers
                     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                     days.forEach(day => {
                         calendarHtml += `<div class="calendar-day-header">${day}</div>`;
                     });
                     
-                    // Add days
                     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
                     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
                     
-                    // Empty cells for days before first day of month
                     for (let i = 0; i < firstDay.getDay(); i++) {
                         calendarHtml += `<div class="calendar-day empty"></div>`;
                     }
                     
-                    // Days of the month
                     for (let day = 1; day <= lastDay.getDate(); day++) {
                         const date = new Date(today.getFullYear(), today.getMonth(), day);
                         const dateString = date.toISOString().split('T')[0];
                         const isToday = date.toDateString() === today.toDateString();
                         const isPast = date < today;
                         
-                        // Check if date is available
                         const dateAvailability = availabilityData[dateString];
                         const isAvailable = dateAvailability ? dateAvailability.available : true;
                         const isFullyBooked = dateAvailability ? dateAvailability.fully_booked : false;
+                        const isNotOperating = dateAvailability ? dateAvailability.not_operating : !isOperatingDay(dateString);
                         
                         let dateClass = 'calendar-day';
-                        
                         if (isToday) dateClass += ' today';
                         if (isPast) dateClass += ' past';
-                        if (!isAvailable || isFullyBooked) dateClass += ' unavailable';
+                        if (!isAvailable || isFullyBooked || isNotOperating) dateClass += ' unavailable';
                         if (isFullyBooked) dateClass += ' fully-booked';
                         
                         calendarHtml += `
-                            <div class="${dateClass}" data-date="${dateString}" title="${isFullyBooked ? 'Fully Booked' : (isAvailable ? 'Available' : 'Not Available')}">
+                            <div class="${dateClass}" data-date="${dateString}" 
+                                title="${isNotOperating ? 'Closed' : (isFullyBooked ? 'Fully Booked' : (isAvailable ? 'Available' : 'Not Available'))}">
                                 ${day}
-                                ${isFullyBooked ? '<div class="availability-dot unavailable"></div>' : (isAvailable ? '<div class="availability-dot available"></div>' : '')}
+                                ${isFullyBooked ? '<div class="availability-dot unavailable"></div>' : (isAvailable && !isNotOperating ? '<div class="availability-dot available"></div>' : '')}
                             </div>
                         `;
                     }
@@ -1348,7 +1310,6 @@
                     calendarHtml += '</div>';
                     calendarEl.innerHTML = calendarHtml;
                     
-                    // Add click handlers
                     $('.calendar-day:not(.past):not(.unavailable):not(.fully-booked)').on('click', function() {
                         const selectedDate = $(this).data('date');
                         $('#eventDate').val(selectedDate);
@@ -1356,7 +1317,6 @@
                         $('#eventDate').trigger('change');
                     });
                     
-                    // Add styles for fully booked dates
                     $('<style>')
                         .prop('type', 'text/css')
                         .html('.calendar-day.fully-booked { background: #fee; border-color: #dc3545; color: #dc3545; cursor: not-allowed; }')
@@ -1417,7 +1377,6 @@
                 $('#remainingBalance').text('₱' + summary.remaining_balance);
                 $('#totalAmount').text('₱' + summary.total_amount);
                 
-                // Update payment type display
                 const paymentTypeText = summary.payment_type === 'downpayment' ? '30% Downpayment' : 'Full Payment';
                 $('#summaryPaymentType').remove();
                 $('#summaryPackage').after(`
