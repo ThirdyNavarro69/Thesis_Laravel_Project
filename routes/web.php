@@ -158,7 +158,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/packages/{package}',                       [\App\Http\Controllers\StudioOwner\PackagesController::class, 'show'])->name('owner.packages.show');
 
         // Manage Subscription  
-        Route::get('/view/subscription',                        [\App\Http\Controllers\StudioOwner\SubscriptionPlanController::class, 'index'])->name('owner.subscription-plan.index');
+        Route::get('/view/subscription',                        [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'index'])->name('owner.subscription.index');
+        Route::get('/view/status',                              [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'status'])->name('owner.subscription.status');
+        Route::get('/subscription/{id}',                        [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'show'])->name('owner.subscription.show');
+        Route::post('/subscription/subscribe',                  [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'subscribe'])->name('owner.subscription.subscribe');
+        Route::get('/subscription/history/data',                [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'history'])->name('owner.subscription.history');
+        Route::get('/subscription/verify/{reference}',          [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'verifyPayment'])->name('owner.subscription.verify');
+        Route::get('/subscription/success/{reference}',         [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'paymentSuccess'])->name('owner.subscription.success');
+        Route::get('/subscription/failed/{reference}',          [\App\Http\Controllers\StudioOwner\SubscriptionController::class, 'paymentFailed'])->name('owner.subscription.failed');
     });
 
     // Freelancer Routes ===================================================================================================================================================

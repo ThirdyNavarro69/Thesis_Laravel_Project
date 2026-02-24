@@ -258,20 +258,26 @@
 
             {{-- Manage Subscription --}}
             @php
-                $manageSubscriptionRoutes = Route::is('owner.subscription-plan.index');
+                $manageSubscriptionRoutes = Route::is('owner.subscription.index');
+                $statusSubscriptionRoutes = Route::is('owner.subscription.status');
             @endphp
             
-            <li class="side-nav-item {{ $manageSubscriptionRoutes ? 'active' : '' }}">
-                <a data-bs-toggle="collapse" href="#sidebarManageSubscription" aria-expanded="{{ $manageSubscriptionRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSubscription" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+            <li class="side-nav-item {{ $manageSubscriptionRoutes || $statusSubscriptionRoutes ? 'active' : '' }}">
+                <a data-bs-toggle="collapse" href="#sidebarManageSubscription" aria-expanded="{{ $manageSubscriptionRoutes || $statusSubscriptionRoutes ? 'true' : 'false' }}" aria-controls="sidebarManageSubscription" class="side-nav-link {{ $manageSubscriptionRoutes || $statusSubscriptionRoutes ? 'active' : '' }}">
                     <span class="menu-icon"><i class="ti ti-carambola"></i></span>
                     <span class="menu-text" data-lang="manage-subscription">Subscription</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse {{ $manageSubscriptionRoutes ? 'show' : '' }}" id="sidebarManageSubscription">
+                <div class="collapse {{ $manageSubscriptionRoutes || $statusSubscriptionRoutes ? 'show' : '' }}" id="sidebarManageSubscription">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="{{ route('owner.subscription-plan.index') }}" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
-                                <span class="menu-text" data-lang="subscription-plans">View Subscription Plans</span>
+                            <a href="{{ route('owner.subscription.index') }}" class="side-nav-link {{ $manageSubscriptionRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="subscription-plans">View Subscription</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('owner.subscription.status') }}" class="side-nav-link {{ $statusSubscriptionRoutes ? 'active' : '' }}">
+                                <span class="menu-text" data-lang="subscription-status">Subscription Status</span>
                             </a>
                         </li>
                     </ul>

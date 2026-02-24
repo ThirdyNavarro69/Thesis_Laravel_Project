@@ -33,6 +33,7 @@ class StudioPlanModel extends Model
         'studio_id',
         'plan_id',
         'subscription_reference',
+        'stripe_session_id',
         'start_date',
         'end_date',
         'next_billing_date',

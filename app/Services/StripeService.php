@@ -23,7 +23,7 @@ class StripeService
     }
 
     /**
-     * Create a checkout session with proper redirect URLs
+     * Create a checkout session for booking payments
      */
     public function createCheckoutSession($amount, $bookingReference, $currency = 'PHP', $description = 'Booking Payment')
     {
@@ -69,6 +69,62 @@ class StripeService
 
         } catch (ApiErrorException $e) {
             Log::error('Stripe Checkout Session Failed', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Create a checkout session for subscription payments
+     */
+    public function createSubscriptionCheckoutSession($amount, $subscriptionReference, $planName, $billingCycle, $currency = 'PHP')
+    {
+        try {
+            $successUrl = route('owner.subscription.verify', ['reference' => $subscriptionReference]);
+            $failedUrl = route('owner.subscription.failed', ['reference' => $subscriptionReference]);
+            
+            $description = "Subscription: {$planName} ({$billingCycle})";
+            
+            $session = $this->stripe->checkout->sessions->create([
+                'payment_method_types' => ['card'],
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => $currency,
+                        'product_data' => [
+                            'name' => $description,
+                            'description' => "{$planName} - {$billingCycle} subscription",
+                        ],
+                        'unit_amount' => $amount * 100, // Convert to centavos
+                    ],
+                    'quantity' => 1,
+                ]],
+                'mode' => 'payment',
+                'success_url' => $successUrl . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $failedUrl,
+                'metadata' => [
+                    'subscription_reference' => $subscriptionReference,
+                    'plan_name' => $planName,
+                    'billing_cycle' => $billingCycle,
+                    'type' => 'subscription'
+                ],
+            ]);
+
+            Log::info('Stripe Subscription Checkout Session Created', [
+                'subscription_reference' => $subscriptionReference,
+                'session_id' => $session->id,
+                'checkout_url' => $session->url,
+                'amount' => $amount,
+                'plan_name' => $planName,
+            ]);
+
+            return [
+                'id' => $session->id,
+                'url' => $session->url,
+                'amount' => $amount,
+                'currency' => $currency,
+            ];
+
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe Subscription Checkout Session Failed', ['error' => $e->getMessage()]);
             return null;
         }
     }
